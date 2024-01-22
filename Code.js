@@ -15,4 +15,6 @@ function showParameters()
 {
   let parameters = new tp_parameters();
   parameters.showSecrets();
+
+  let toto = 4;
 }

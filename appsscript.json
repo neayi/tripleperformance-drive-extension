@@ -1,7 +1,41 @@
 {
-  "timeZone": "Europe/Paris",
-  "dependencies": {
+  "addOns": {
+    "common": {
+      "name": "Triple Performance",
+      "logoUrl": "https://wiki.tripleperformance.fr/skins/skin-neayi/favicon/apple-touch-icon.png",
+      "homepageTrigger": {
+        "enabled": true,
+        "runFunction": "card_onHomepage"
+      },
+      "layoutProperties": {
+        "primaryColor": "#15a072",
+        "secondaryColor": "#15a072"
+      },
+      "universalActions": [
+        {
+          "label": "Page d'accueil",
+          "openLink": "https://wiki.tripleperformance.fr"
+        },
+        {
+          "label": "Mentions légales",
+          "openLink": "https://wiki.tripleperformance.fr"
+        }
+      ]
+    },
+  
+    "sheets": {}
   },
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/spreadsheets.currentonly",
+    "https://www.googleapis.com/auth/script.container.ui",
+    "https://www.googleapis.com/auth/script.external_request"
+  ],
+  "urlFetchWhitelist": [
+    "https://wiki.tripleperformance.fr/",
+    "https://en.tripleperformance.ag/"
+  ],
+  "timeZone": "Europe/Paris",
+  "dependencies": {},
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8"
 }

@@ -6,3 +6,4 @@
 !include/**
 !test/**
 !html/**
+!definitions/**
