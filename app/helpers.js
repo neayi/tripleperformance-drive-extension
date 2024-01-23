@@ -1,11 +1,3 @@
-function logObject(functionName, objectName, object) {
-    Logger.log(`${functionName}: ${objectName} = ${JSON.stringify(object)}`);
-    //Logger.log(`${functionName}: ${objectName} = ${JSON.stringify(object, null, "  ")}`);
-}
-
-function logMessage(functionName, message) {
-    Logger.log(`${functionName}: ${message}`);
-}
 
 /**
  * Create a log tab called Triple Performance Log, and clear it if it already exists
@@ -23,9 +15,7 @@ function createLogTab() {
     // Add the header row, put it in bold
     sheet.getRange(1, 1, 1, 5).setValues([
         ["Date et heure", "Action", "Onglet", "Statut", "Commentaire"]
-    ])
-        .getRange(1, 1, 1, sheet.getLastColumn())
-        .setFontWeight("bold");
+    ]).setFontWeight("bold");
 
     // freeze the header row
     sheet.setFrozenRows(1);
@@ -35,6 +25,8 @@ function createLogTab() {
 }
 
 function addMessageToLog(action, tab, status, comments) {
+    Logger.log(action + " - " + tab + " - " + status + " : " + comments);
+
     let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
     let sheet = spreadsheet.getSheetByName("Triple Performance Log");

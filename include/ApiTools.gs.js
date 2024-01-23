@@ -142,6 +142,17 @@ class api_tools {
   }
 
   /**
+   * Replaces oldTemplate with newTemplate, using newParams
+   * newParams must be a scalar array with values of the form : "fieldname = value"
+   */
+  replaceParserFunction(parserFunctionName, newContent, pageContent) {
+
+    const re = new RegExp('{{#' + parserFunctionName + '(\s*:[^}]*)}}', 'i');
+
+    return pageContent.replace(re, newContent);
+  }
+
+  /**
    * Removes oldTemplate
    */
   removeTemplate(oldTemplate, pageContent) {

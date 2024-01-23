@@ -10,23 +10,7 @@ class tp_parameters {
             password: ""
         };
     }
-
-    /**
-     * The user wants to store new secrets
-     */
-    showSecrets() {
-        let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-        let ui = SpreadsheetApp.getUi();
-        let template = HtmlService.createTemplateFromFile('html/WikiPageSelector');
-
-        this.loadSecrets();
-
-        template.CurrentWikiURL = this.secrets.wikiURL;
-        template.CurrentUsername = this.secrets.username;
-
-        ui.showSidebar(template.evaluate());
-    }
-    
+   
     storeSecrets(secrets) {
         this.storeOneSecret('Wiki URL', secrets.wikiURL);
         this.storeOneSecret('Triple Performance Username', secrets.username);
@@ -76,12 +60,3 @@ class tp_parameters {
     }
 }
 
-
-/**
- * Called from HTML on storing secrets
- */
-function storeSecrets(secrets)
-{
-  let parameters = new tp_parameters();
-  parameters.storeSecrets(secrets);
-}

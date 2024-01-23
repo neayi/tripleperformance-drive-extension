@@ -1,13 +1,26 @@
 
 class FarmModel {
-    constructor() {
+    constructor() 
+    {
+        this.apiTools = false;
+    }
 
+    loadApiTools()
+    {
+        if (this.apiTools)
+            return this.apiTools;
+
+        let parameters = new tp_parameters();
+        parameters.loadSecrets();
+        
+        return this.apiTools = new api_tools(parameters.secrets.wikiURL, parameters.secrets.username, parameters.secrets.password);
     }
 
     /**
      * Create a new tab for the comptabilité
      */
-    createComptabiliteTab() {
+    createComptabiliteTab() 
+    {
         let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
         let comments = "";
 
@@ -86,7 +99,7 @@ class FarmModel {
                 else 
                 {
                     // Specific case for "Soldes de gestion"
-                    logMessage("Paramètres de auxiliaires :" + [...totals.entries()]);
+                    Logger.log("Paramètres de auxiliaires :" + [...totals.entries()]);
 
                     sheet.getRange(posteTotalRow, 1, 3, 2).setValues([
                         [postePrincipal, "EBE total"],
@@ -172,19 +185,32 @@ class FarmModel {
             .setNumberFormat("#,##0 €");
     }
 
-    syncToWiki()
+    syncComptabiliteToWiki()
     {
+        Logger.log("syncComptabiliteToWiki");
+
+        let wikiTitle = this.getFarmPageTitle();
+
+        Logger.log(wikiTitle);
+
+        if (!wikiTitle)
+            return;
+
         let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Comptabilité");
         if (sheet == null) {
-            return this.notify("Impossible de trouver l'onglet Comptabilité !");
+            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur", 
+                            "Impossible de trouver l'onglet Comptabilité !");
+            return;
         }
 
         const dataRange = sheet.getDataRange();
 
         if (dataRange.getRow() != 1 ||
             dataRange.getColumn() != 1) {
-            return this.notify("La structure de l'onglet comptabilité a été modifiée. Veuillez créer l'onglet"
+            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur",
+                    "La structure de l'onglet comptabilité a été modifiée. Veuillez créer l'onglet"
                        +" à nouveau, copier les données dans le nouvel onglet et recommencer !")
+            return;
         }
 
         const version = sheet.getRange(1, 2).getValue();
@@ -226,27 +252,54 @@ class FarmModel {
                 {
                     let pArray = [];
                     parameters.forEach( ( value, key ) => { pArray.push(key + ' = ' + value) } );
-                    templateParametersPerYear.push(pArray.join("\n |"));
+                    templateParametersPerYear.push(pArray.join("\n | "));
                 }
             }               
 
-            let template = "{{#economic_charts:\n" + templateParametersPerYear.join("\n |") + '}}';
+            let newCode = "{{#economic_charts:\n   " + templateParametersPerYear.join("\n | ") + '}}';
 
-            addMessageToLog("Synchro économique", "Comptabilité", "OK", template);
+            Logger.log(newCode);
+
+            this.loadApiTools();
+            let pageContent = this.apiTools.getPageContent(wikiTitle);
+
+            pageContent = this.apiTools.replaceParserFunction("economic_charts", newCode, pageContent);
+            this.apiTools.updateWikiPage(wikiTitle, pageContent, "Mise à jour des données de la de la comptabilité");
+
+            Logger.log("Sync done");
+
+            addMessageToLog("Synchro Comptabilité", "Comptabilité", "OK", "La page "+ wikiTitle +" a été mise à jour !");
         }
         else
-            return this.notify(`La version actuelle (${version}) du document n'est pas gérée ! Veuillez créer l'onglet`
+        {
+            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur", `La version actuelle (${version}) du document n'est pas gérée ! Veuillez créer l'onglet`
                               +" à nouveau, copier les données dans le nouvel onglet et recommencer !");
+            return;
+        }
     }
 
-    notify(message)
+    // returns the title of the page where the farm is stored
+    getFarmPageTitle()
     {
-        logMessage(message);
-        addMessageToLog("", "Comptabilité", "", message);
+        let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ferme");
 
-        return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification()
-            .setText(message))
-            .build();
+        Logger.log(sheet);
+
+        if (!sheet) {
+            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur", 
+                "Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");
+            return false;
+        }
+
+        let wikiTitle = String(sheet.getRange(1, 2).getValue());
+        Logger.log(wikiTitle);
+
+        if (wikiTitle.length == 0) {
+            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur", 
+                "Le nom de la page Triple Performance est vide. Veuillez créer puis reporter le nom de la page dans l'onglet Ferme !");
+            return false;
+        }
+        
+        return wikiTitle;
     }
 }

@@ -8,18 +8,19 @@ function sync_tabs(e)
     tabsNames.forEach((element) => {
         switch (element) {
             case 'Ferme':
-                break;
+                return;
 
             case 'Comptabilité':
-                farmModel.syncToWiki();
-                break;
+                Logger.log("Synchro de Comptabilité")
+                farmModel.syncComptabiliteToWiki();
+                return;                
 
             case 'Qualité de la vie':
-                break;
+                return;
         
             default:
                 console.log("Unknown tab to sync");
-                break;
+                return;
         }
     });
 

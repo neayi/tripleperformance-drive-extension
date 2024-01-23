@@ -1,18 +1,17 @@
 // called by the add on when it is opened
 function card_onHomepage(event)
 {
-    logObject("card_onHomepage", "event", event);
     return card_buildHomepageCard();
 }
 
 function showImportCard()
 {
-    logMessage('showImportCard');
+    Logger.log('showImportCard');
 }
 
 function showParametersCard()
 {
-    logMessage('showParametersCard');
+    return parametersbuildCard();
 }
 
 function showSyncCard()
@@ -22,7 +21,7 @@ function showSyncCard()
 
 function showTestCard()
 {
-    logMessage('showTestCard');
+    Logger.log('showTestCard');
 }
 
 function createFarmPortraitCreateTabsCard()
@@ -32,7 +31,7 @@ function createFarmPortraitCreateTabsCard()
 
 function UnhandledEvent(call)
 {
-    logObject(call);
+    Logger.log(call);
 }
 
 /**
