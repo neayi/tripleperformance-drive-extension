@@ -2,12 +2,12 @@
 /**
  * Create a log tab called Triple Performance Log, and clear it if it already exists
  */
-function createLogTab() {
+function getLogTab() {
     let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
     let sheet = spreadsheet.getSheetByName("Triple Performance Log");
     if (sheet) 
-        return;
+        return sheet;
 
     sheet = spreadsheet.insertSheet("Triple Performance Log");
     
@@ -22,14 +22,14 @@ function createLogTab() {
 
     // Change the columns widths
     // todo
+
+    return sheet;
 }
 
 function addMessageToLog(action, tab, status, comments) {
     Logger.log(action + " - " + tab + " - " + status + " : " + comments);
 
-    let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-
-    let sheet = spreadsheet.getSheetByName("Triple Performance Log");
+    let sheet = getLogTab();
 
     let maintenant = new Date();
 
@@ -59,6 +59,6 @@ function setSheetVersion(sheet, version, documentation) {
     ]);
 
     sheet.getRange(1, 1, 1, sheet.getLastColumn()).setFontWeight("bold");
-    sheet.getRange(2, 1, 1, 3).merge();
     sheet.getRange(2, 1, 1, 1).setWrap(true);    
+    sheet.getRange(2, 1, 1, 4).merge();
 }

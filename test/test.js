@@ -1,39 +1,65 @@
 
-function testAPITools() {
-    var apiTools = new api_tools('https://wiki.tripleperformance.fr', 'Bertrand Gorge@Triple_Performance_Robot', 'oggbeitecs3dgqtep18cbm3o5qhpakf2');
+function testUpdate() {
+    var wiki = new wikiPage();
 
-    var pageContent = apiTools.getPageContent("Sandbox");
+    let pageContent = `Du blah blah...
 
-    if (apiTools.hasTemplate(pageContent, "Article détaillé"))
+    Au milieu, soudain, une template !
+
+    {{Ma template | Nom = un nom
+| Tag 1 = titi
+| Image = Une autre image.png
+| Elephant = un éléphant
+}}
+
+Et encore un peu de texte...`;
+
+    if (wiki.hasTemplate(pageContent, "Ma template"))
         console.log("La template est bien dans la page.");
     else
         throw new Error("Template non trouvée");
 
-    if (apiTools.hasTemplate(pageContent, "Template inexistante"))
+    if (wiki.hasTemplate(pageContent, "Template inexistante"))
         throw new Error("Template trouvée ?");
     else
         console.log("La template inéxistante n'est bien pas dans la page.");
 
-    const newPageContent = apiTools.addValueToTemplate("Sandbox", pageContent, "Template de test", "test", "ok", true);
+    const newPageContent = wiki.addValueToTemplate(pageContent, "Template de test", "test", "ok", true);
     console.log("Added the test parameter: " + newPageContent);
 
     // if (newPageContent)
-    //   apiTools.updateWikiPage("Sandbox", newPageContent, "Ajout d'un paramètre à la template Template de test"); 
+    //   apiTools.updateWikiPage(newPageContent, "Ajout d'un paramètre à la template Template de test"); 
 
-    const newerPageContent = apiTools.addValueToTemplate("Sandbox", newPageContent, "Template de test", "test", false, true);
+    const newerPageContent = wiki.addValueToTemplate(newPageContent, "Template de test", "test", false, true);
     console.log("Removed the test parameter: " + newerPageContent);
 
-    const withANewTemplate = apiTools.replaceTemplate('Template de test', 'Test template', ['test1 = 23', 'test2 = top'], newerPageContent);
+    const withANewTemplate = wiki.replaceTemplate('Template de test', 'Test template', ['test1 = 23', 'test2 = top'], newerPageContent);
     console.log("With the template fully replaced: " + withANewTemplate);
 
-    const withoutANewTemplate = apiTools.removeTemplate('Test template', withANewTemplate);
+    const withoutANewTemplate = wiki.removeTemplate('Test template', withANewTemplate);
     console.log("With the template fully removed: " + withoutANewTemplate);
 
-    pageContent = apiTools.getPageContent("Abeille");
-    var withNewKeyword = apiTools.insertKeywordInPage(pageContent, 'emberlificoter');
-    withNewKeyword = apiTools.insertKeywordInPage(withNewKeyword, 'turlupiner');
+    pageContent = wiki.getPageContent("Abeille");
+    var withNewKeyword = wiki.insertKeywordInPage(pageContent, 'emberlificoter');
+    withNewKeyword = wiki.insertKeywordInPage(withNewKeyword, 'turlupiner');
     console.log("With keyword emberlificoter added: " + withNewKeyword);
 
+    let templateParams = wiki.getTemplateParams(pageContent, 'Auxiliaire');
+    console.log("Paramètres de auxiliaires :" + [...templateParams.entries()]);
+
+    let params = new Map();
+    params.set("Tag 2", "toto");
+    params.set("Image", "Une image.jpg");
+    params.set("Rhinocéros", "Un rhino");
+
+    Logger.log(wiki.updateTemplate("Ma template", params, pageContent));
+}
+
+function testAPITools() {
+    var apiTools = new api_tools('https://wiki.tripleperformance.fr', 'Bertrand Gorge@Triple_Performance_Robot', 'oggbeitecs3dgqtep18cbm3o5qhpakf2');
+
+    var pageContent = apiTools.getPageContent("Sandbox");
+    
     let pages = apiTools.getPagesForCategory("Category:Pollinisateurs");
     console.log("Pages dans la catégorie Pollinisateurs : " + pages);
 
@@ -45,9 +71,6 @@ function testAPITools() {
 
     pages = apiTools.getPagesWithTimestamp(10, true);
     console.log("Pages dans le namespace 10 (Timestamp de la template Bioagresseur) : " + pages.Bioagresseur);
-
-    let templateParams = apiTools.getTemplateParams(pageContent, 'Auxiliaire');
-    console.log("Paramètres de auxiliaires :" + [...templateParams.entries()]);
 
     let templates = apiTools.getUsedTemplates(false);
     console.log("Liste de toutes les templates utilisées sur le wiki :" + templates);

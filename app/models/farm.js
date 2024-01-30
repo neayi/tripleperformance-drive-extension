@@ -3,6 +3,8 @@ class FarmModel {
     constructor() 
     {
         this.apiTools = false;
+
+        this.defGeneralites = {};
     }
 
     loadApiTools()
@@ -23,8 +25,6 @@ class FarmModel {
     {
         let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
         let comments = "";
-
-        createLogTab();
 
         let sheet = spreadsheet.getSheetByName("Comptabilité");
         if (sheet != null) {
@@ -190,6 +190,7 @@ class FarmModel {
         Logger.log("syncComptabiliteToWiki");
 
         let wikiTitle = this.getFarmPageTitle();
+        let wiki = new wikiPage();
 
         Logger.log(wikiTitle);
 
@@ -263,12 +264,18 @@ class FarmModel {
             this.loadApiTools();
             let pageContent = this.apiTools.getPageContent(wikiTitle);
 
-            pageContent = this.apiTools.replaceParserFunction("economic_charts", newCode, pageContent);
+            if (wiki.hasParserFunction("economic_charts", pageContent))
+                pageContent = wiki.replaceParserFunction("economic_charts", newCode, pageContent);
+            else
+                pageContent += "\n\n" + newCode;
+
             this.apiTools.updateWikiPage(wikiTitle, pageContent, "Mise à jour des données de la de la comptabilité");
 
             Logger.log("Sync done");
 
             addMessageToLog("Synchro Comptabilité", "Comptabilité", "OK", "La page "+ wikiTitle +" a été mise à jour !");
+
+            return;
         }
         else
         {
@@ -278,20 +285,80 @@ class FarmModel {
         }
     }
 
+    /**
+     * Syncs the data in the ferme tab, and populate the template "Portrait de ferme"
+     * @returns
+     */
+    syncGeneralitesToWiki()
+    {
+        Logger.log("syncGeneralitesToWiki");
+
+        let wikiTitle = this.getFarmPageTitle();
+        let wiki = new wikiPage();
+
+        Logger.log(wikiTitle);
+
+        if (!wikiTitle)
+            return;
+
+        let params = new Map();
+
+        this.loadFarmDefinitions();
+
+        Logger.log(this.defGeneralites);
+
+        this.defGeneralites.forEach( ( category, fields ) => { 
+            fields.foreach( (f) => {
+                if (f.template != 'Portrait de ferme' || !f.TemplateParam)
+                    return;
+
+                const value = this.getGeneraliteValue(f.Intitule);
+
+                if (value == "")
+                    return;
+
+                params.push(f.TemplateParam, value);
+            });
+            
+        } );
+
+        Logger.log(params);
+
+        return;
+
+        // {{Portrait de ferme
+        
+        // "Intitule": "Nom de l'exploitation",
+        // "Description": "Indiquer le nom de l'exploitation (en général, correspond au titre de la page)",
+        // "Template": "Portrait de ferme",
+        // "TemplateParam": "Nom de l'exploitation"
+
+        let newCode = "{{#economic_charts:\n   " + templateParametersPerYear.join("\n | ") + '}}';
+
+        Logger.log(newCode);
+
+        this.loadApiTools();
+        let pageContent = this.apiTools.getPageContent(wikiTitle);
+
+        if (wiki.hasParserFunction("economic_charts", pageContent))
+            pageContent = wiki.replaceParserFunction("economic_charts", newCode, pageContent);
+        else
+            pageContent += "\n\n" + newCode;
+
+        this.apiTools.updateWikiPage(wikiTitle, pageContent, "Mise à jour des données de la de la comptabilité");
+
+        Logger.log("Sync done");
+
+        addMessageToLog("Synchro Comptabilité", "Comptabilité", "OK", "La page "+ wikiTitle +" a été mise à jour !");
+
+        return;
+    }
+
+
     // returns the title of the page where the farm is stored
     getFarmPageTitle()
-    {
-        let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ferme");
-
-        Logger.log(sheet);
-
-        if (!sheet) {
-            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur", 
-                "Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");
-            return false;
-        }
-
-        let wikiTitle = String(sheet.getRange(1, 2).getValue());
+    { 
+        let wikiTitle = String(this.getGeneraliteValue("Nom de la page Triple Performance"));
         Logger.log(wikiTitle);
 
         if (wikiTitle.length == 0) {
@@ -301,5 +368,40 @@ class FarmModel {
         }
         
         return wikiTitle;
+    }
+
+    loadFarmDefinitions()
+    {
+        if (this.defGeneralites.Entreprise)
+            return this.defGeneralites;
+
+        const jsonString = HtmlService.createHtmlOutputFromFile("definitions/generalites_ferme.html").getContent();
+        this.defGeneralites = JSON.parse(jsonString);
+
+        return this.defGeneralites;
+    }
+
+    getGeneraliteValue(fieldname)
+    {
+        let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ferme");
+
+        Logger.log(sheet);
+
+        if (!sheet) {
+            addMessageToLog("", "", "Erreur", 
+                "Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");
+            return null;
+        }
+
+        var range = sheet.getDataRange();
+        var values = range.getValues();
+                
+        for (var r = 0; r < values.length; r++) 
+        {
+            if (values[r][0] == fieldname)
+                return values[r][1];
+        }
+
+        return null;
     }
 }

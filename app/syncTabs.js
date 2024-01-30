@@ -2,12 +2,13 @@
 function sync_tabs(e)
 {
     const tabsNames = e.formInputs.TabsToCreate;
-
     let farmModel = new FarmModel();
-
+    
     tabsNames.forEach((element) => {
         switch (element) {
             case 'Ferme':
+                Logger.log("Synchro de l'onglet Ferme")
+                farmModel.syncGeneralitesToWiki();
                 return;
 
             case 'Comptabilité':
@@ -17,7 +18,7 @@ function sync_tabs(e)
 
             case 'Qualité de la vie':
                 return;
-        
+
             default:
                 console.log("Unknown tab to sync");
                 return;
@@ -47,7 +48,7 @@ function syncTabsBuildCard() {
             case 'Ferme':
             case 'Qualité de la vie':
             case 'Comptabilité':
-                tabsToCreateSelectionInput.addItem(sheetName, sheetName, true)
+                tabsToCreateSelectionInput.addItem(sheetName, sheetName, true);
                 break;
         
             default:

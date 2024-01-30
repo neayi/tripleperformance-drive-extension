@@ -1,7 +1,40 @@
 // called by the add on when it is opened
 function card_onHomepage(event)
 {
+    var ui = SpreadsheetApp.getUi();
+
+    ui.createMenu('Triple Performance')
+        .addSubMenu(ui.createMenu('Formations')
+            .addItem('Synchroniser les formations', 'syncTrainingCourses')
+            .addItem('Synchroniser les intervenants', 'createUsers')
+        )
+        .addSubMenu(ui.createMenu('YouTube')
+            .addItem("Charger les vidéos de la chaîne", 'fetchVideosFromYouTubeChannel')
+            .addItem("Mettre à jour Triple Performance", 'pushVideosToTriplePerformance')
+        )
+        .addToUi();
+    
     return card_buildHomepageCard();
+}
+
+function syncTrainingCourses() {
+    Logger.log("Synchro de la liste des formations")
+    let trainingModel = new TrainingCourseModel();
+    trainingModel.syncTrainings();
+}
+
+function fetchVideosFromYouTubeChannel()
+{
+    Logger.log("fetchVideosFromYouTubeChannel")
+    let youTube = new YoutubeModel();
+    youTube.fetchVideosFromYouTube();
+}
+
+function pushVideosToTriplePerformance()
+{
+    Logger.log("fetchVideosFromYouTubeChannel")
+    let youTube = new YoutubeModel();
+    youTube.syncYoutubeToWiki();
 }
 
 function showImportCard()
@@ -40,137 +73,133 @@ function UnhandledEvent(call)
  * @returns 
  */
 function card_buildHomepageCard() {
-    let cardSection1Grid1Item1Image1CropStyle1 = CardService.newImageCropStyle()
-        .setAspectRatio(3)
+    let cardSection1TriplePerformanceLogoItem1Image1CropStyle1 = CardService.newImageCropStyle()
+        .setAspectRatio(4)
         .setImageCropType(CardService.ImageCropType.RECTANGLE_CUSTOM);
 
-    let cardSection1Grid1Item1Image1 = CardService.newImageComponent()
-        .setImageUrl(
-            'https://wiki.tripleperformance.fr/skins/skin-neayi/favicon/logo-triple-performance.svg'
-        )
-        .setCropStyle(cardSection1Grid1Item1Image1CropStyle1);
+    let cardSection1TriplePerformanceLogoItem1Image1 = CardService.newImageComponent()
+        .setImageUrl('https://neayi.com/Triple%20Performance%20by%20Neayi.png')
+        .setCropStyle(cardSection1TriplePerformanceLogoItem1Image1CropStyle1);
 
-    let cardSection1Grid1Item1 = CardService.newGridItem()
+    let cardSection1TriplePerformanceLogoItem1 = CardService.newGridItem()
         .setTextAlignment(CardService.HorizontalAlignment.START)
         .setLayout(CardService.GridItemLayout.TEXT_BELOW)
-        .setImage(cardSection1Grid1Item1Image1);
+        .setImage(cardSection1TriplePerformanceLogoItem1Image1);
 
-    let cardSection1Grid1BorderStyle1 = CardService.newBorderStyle()
+    let cardSection1TriplePerformanceLogoBorderStyle1 = CardService.newBorderStyle()
         .setType(CardService.BorderType.NO_BORDER)
         .setCornerRadius(0);
 
-    let cardSection1Grid1 = CardService.newGrid()
+    let cardSection1TriplePerformanceLogo = CardService.newGrid()
         .setNumColumns(1)
-        .setBorderStyle(cardSection1Grid1BorderStyle1)
-        .addItem(cardSection1Grid1Item1);
+        .setBorderStyle(cardSection1TriplePerformanceLogoBorderStyle1)
+        .addItem(cardSection1TriplePerformanceLogoItem1);
 
-    let cardSection1TextParagraph1 = CardService.newTextParagraph()
+    let cardSection1CreateTabsTitle = CardService.newTextParagraph()
         .setText('<b>Créer les onglets</b>');
 
-    let cardSection1ButtonList1Button1Action1 = CardService.newAction()
+    let cardSection1ButtonCreateFarmsTabsAction1 = CardService.newAction()
         .setFunctionName('createFarmPortraitCreateTabsCard');
 
-    let cardSection1ButtonList1Button1 = CardService.newTextButton()
+    let cardSection1ButtonCreateFarmsTabs = CardService.newTextButton()
         .setText('Portrait de ferme')
         .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
-        .setOnClickAction(cardSection1ButtonList1Button1Action1);
+        .setOnClickAction(cardSection1ButtonCreateFarmsTabsAction1);
 
-    let cardSection1ButtonList1Button2Action1 = CardService.newAction()
+    let cardSection1ButtonCreateTrainingsTabsAction1 = CardService.newAction()
         .setFunctionName('UnhandledEvent')
-        .setParameters({call: 'cardSection1ButtonList1Button2Action1'});
+        .setParameters({call: 'cardSection1ButtonCreateTrainingsTabsAction1'});
 
-    let cardSection1ButtonList1Button2 = CardService.newTextButton()
+    let cardSection1ButtonCreateTrainingsTabs = CardService.newTextButton()
         .setText('Liste de formations')
         .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
-        .setOnClickAction(cardSection1ButtonList1Button2Action1);
+        .setOnClickAction(cardSection1ButtonCreateTrainingsTabsAction1);
 
-    let cardSection1ButtonList1Button3Action1 = CardService.newAction()
+    let cardSection1ButtonCreateYoutubeTabsAction1 = CardService.newAction()
         .setFunctionName('UnhandledEvent')
-        .setParameters({call: 'cardSection1ButtonList1Button3Action1'});
+        .setParameters({call: 'cardSection1ButtonCreateYoutubeTabsAction1'});
 
-    let cardSection1ButtonList1Button3 = CardService.newTextButton()
+    let cardSection1ButtonCreateYoutubeTabs = CardService.newTextButton()
         .setText('Chaîne youtube')
         .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
-        .setOnClickAction(cardSection1ButtonList1Button3Action1);
+        .setOnClickAction(cardSection1ButtonCreateYoutubeTabsAction1);
 
-    let cardSection1ButtonList1 = CardService.newButtonSet()
-        .addButton(cardSection1ButtonList1Button1)
-        .addButton(cardSection1ButtonList1Button2)
-        .addButton(cardSection1ButtonList1Button3);
+    let cardSection1CreateTabs = CardService.newButtonSet()
+        .addButton(cardSection1ButtonCreateFarmsTabs)
+        .addButton(cardSection1ButtonCreateTrainingsTabs)
+        .addButton(cardSection1ButtonCreateYoutubeTabs);
 
     let cardSection1Divider1 = CardService.newDivider();
 
-    let cardSection1TextParagraph2 = CardService.newTextParagraph()
+    let cardSection1ActionsTitle = CardService.newTextParagraph()
         .setText('<b>Actions</b>');
 
-    let cardSection1DecoratedText1Button1Action1 = CardService.newAction()
+    let cardSection1TestButton1Action1 = CardService.newAction()
         .setFunctionName('showTestCard')
         .setParameters({});
 
-    let cardSection1DecoratedText1Button1 = CardService.newImageButton()
+    let cardSection1TestButton1 = CardService.newImageButton()
         .setIcon(CardService.Icon.VIDEO_PLAY)
         .setAltText('Tester la connexion avec Triple Performance')
-        .setOnClickAction(cardSection1DecoratedText1Button1Action1);
+        .setOnClickAction(cardSection1TestButton1Action1);
 
-    let cardSection1DecoratedText1 = CardService.newDecoratedText()
+    let cardSection1Test = CardService.newDecoratedText()
         .setText('Tester la connexion')
         .setBottomLabel('Tester les identifiants')
-        .setButton(cardSection1DecoratedText1Button1);
+        .setButton(cardSection1TestButton1);
 
-    let cardSection1DecoratedText2Button1Action1 = CardService.newAction()
-        .setFunctionName('showSyncCard')
-        .setParameters({});
-
-    let cardSection1DecoratedText2Button1 = CardService.newImageButton()
-        .setIcon(CardService.Icon.VIDEO_PLAY)
-        .setAltText('Synchroniser')
-        .setOnClickAction(cardSection1DecoratedText2Button1Action1);
-
-    let cardSection1DecoratedText2 = CardService.newDecoratedText()
-        .setText('Synchroniser...')
-        .setBottomLabel('Synchroniser vers Triple Performance')
-        .setButton(cardSection1DecoratedText2Button1);
-
-    let cardSection1DecoratedText3Button1Action1 = CardService.newAction()
+    let cardSection1ImportButton1Action1 = CardService.newAction()
         .setFunctionName('showImportCard')
         .setParameters({});
 
-    let cardSection1DecoratedText3Button1 = CardService.newImageButton()
+    let cardSection1ImportButton1 = CardService.newImageButton()
         .setIcon(CardService.Icon.VIDEO_PLAY)
         .setAltText('import')
-        .setOnClickAction(cardSection1DecoratedText3Button1Action1);
+        .setOnClickAction(cardSection1ImportButton1Action1);
 
-    let cardSection1DecoratedText3 = CardService.newDecoratedText()
+    let cardSection1Import = CardService.newDecoratedText()
         .setText('Importer')
         .setBottomLabel('Importer les données...')
-        .setButton(cardSection1DecoratedText3Button1);
+        .setButton(cardSection1ImportButton1);
 
-    let cardSection1DecoratedText4Button1Action1 = CardService.newAction()
+    let cardSection1ParametersButton1Action1 = CardService.newAction()
         .setFunctionName('showParametersCard')
         .setParameters({});
 
-    let cardSection1DecoratedText4Button1 = CardService.newImageButton()
+    let cardSection1ParametersButton1 = CardService.newImageButton()
         .setIcon(CardService.Icon.VIDEO_PLAY)
         .setAltText('Voir les paramètres de connexion')
-        .setOnClickAction(cardSection1DecoratedText4Button1Action1);
+        .setOnClickAction(cardSection1ParametersButton1Action1);
 
-    let cardSection1DecoratedText4 = CardService.newDecoratedText()
+    let cardSection1Parameters = CardService.newDecoratedText()
         .setText('Paramètres')
         .setBottomLabel('Paramètres de connexion')
-        .setButton(cardSection1DecoratedText4Button1);
+        .setButton(cardSection1ParametersButton1);
+
+    let cardFooter1Button1Action1 = CardService.newAction()
+        .setFunctionName('showSyncCard')
+        .setParameters({});
+
+    let cardFooter1Button1 = CardService.newTextButton()
+        .setText('Synchroniser')
+        .setBackgroundColor('#15a072')
+        .setOnClickAction(cardFooter1Button1Action1);
+
+    let cardFooter1 = CardService.newFixedFooter()
+        .setPrimaryButton(cardFooter1Button1);
 
     let cardSection1 = CardService.newCardSection()
-        .addWidget(cardSection1Grid1)
-        .addWidget(cardSection1TextParagraph1)
-        .addWidget(cardSection1ButtonList1)
+        .addWidget(cardSection1TriplePerformanceLogo)
+        .addWidget(cardSection1CreateTabsTitle)
+        .addWidget(cardSection1CreateTabs)
         .addWidget(cardSection1Divider1)
-        .addWidget(cardSection1TextParagraph2)
-        .addWidget(cardSection1DecoratedText1)
-        .addWidget(cardSection1DecoratedText2)
-        .addWidget(cardSection1DecoratedText3)
-        .addWidget(cardSection1DecoratedText4);
+        .addWidget(cardSection1ActionsTitle)
+        .addWidget(cardSection1Test)
+        .addWidget(cardSection1Import)
+        .addWidget(cardSection1Parameters);
 
     let card = CardService.newCardBuilder()
+        .setFixedFooter(cardFooter1)
         .addSection(cardSection1)
         .build();
 
