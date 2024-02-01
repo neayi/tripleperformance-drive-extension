@@ -33,10 +33,45 @@ class YoutubeModel {
      */
     fetchVideosFromYouTube() {
         let sheet = SpreadsheetApp.getActiveSheet();
+        let ids  = [];
 
         let channelId = this.getSheetsChannelID(sheet);
-        if (!channelId) {
+        let playlistId = this.getSheetsPlaylistID(sheet);
+
+        if (channelId) 
+        {
+            let sr = YouTube.Search.list("id", { 
+                channelId: channelId,
+                maxResults: 1000,
+                order: 'date' });
+
+            let vids = sr.items.filter(function (res) { return res.id.kind === "youtube#video" });
+
+            ids = vids.map(function (v) { return v.id.videoId; });
+        }
+        else if (playlistId) 
+        {
+            let sr = YouTube.playlistItems.list({
+                "part": [
+                  "id",
+                  "contentDetails"
+                ],
+                "playlistId": playlistId
+              });
+
+            let vids = sr.items.filter(function (res) { return res.id.kind === "youtube#playlistItem" });
+
+            ids = vids.map(function (v) { return v.contentDetails.videoId; });              
+        }
+        else
+        {
             SpreadsheetApp.getUi().alert("Veuillez saisir un ID de chaîne valide");
+            return;
+        }
+
+        if (ids.length == 0)
+        {
+            SpreadsheetApp.getUi().alert("Aucune vidéo trouvée. Veuillez vérifier l'ID de votre chaîne ou de votre playlist");
             return;
         }
 
@@ -44,15 +79,6 @@ class YoutubeModel {
         let existingYouTubeIds = existingValues.map(function (r) { return r[0]; }).filter(function (v) { return v != "" });
 
         sheet.getRange(3, 1, 1, this.columns.length).setValues([this.columns]);
-
-        let sr = YouTube.Search.list("snippet, id", { 
-            channelId: channelId,
-            maxResults: 1000,
-            order: 'date' });
-
-        let vids = sr.items.filter(function (res) { return res.id.kind === "youtube#video" });
-
-        let ids = vids.map(function (v) { return v.id.videoId; });
 
         let newVideosIds = ids.filter(videoId => !existingYouTubeIds.includes(videoId));
 
@@ -441,6 +467,23 @@ class YoutubeModel {
 
         return channelId;
     }
+
+    getSheetsPlaylistID(sheet) {
+        let channelId = "";
+        let values = sheet.getRange(1, 1, 1, 4).getValues();
+
+        if ((values[0][0] == "Playlist" || values[0][0] == "playlist" || values[0][0] == "Liste")
+            && values[0][2] == "Playlist ID") {
+            channelId = values[0][3];
+        }
+
+        if (channelId == "") {
+            Logger.log(values);
+            return false;
+        }
+
+        return channelId;
+    }    
 
     createNewSheet() {
         sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
