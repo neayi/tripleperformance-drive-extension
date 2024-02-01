@@ -51,15 +51,15 @@ class YoutubeModel {
         }
         else if (playlistId) 
         {
-            let sr = YouTube.playlistItems.list({
-                "part": [
-                  "id",
-                  "contentDetails"
-                ],
-                "playlistId": playlistId
-              });
+            let sr = YouTube.PlaylistItems.list("id,contentDetails,status",
+                {
+                    playlistId: playlistId
+                });
 
-            let vids = sr.items.filter(function (res) { return res.id.kind === "youtube#playlistItem" });
+            let vids = sr.items.filter(function (res) {
+                return res.kind === "youtube#playlistItem" && 
+                       res.status?.privacyStatus === "public"
+                });
 
             ids = vids.map(function (v) { return v.contentDetails.videoId; });              
         }
@@ -68,6 +68,10 @@ class YoutubeModel {
             SpreadsheetApp.getUi().alert("Veuillez saisir un ID de chaîne valide");
             return;
         }
+        
+        sheet.getRange(3, 1, 1, this.columns.length).setValues([this.columns]).setFontWeight("bold");
+        sheet.setFrozenRows(3);
+        sheet.setFrozenColumns(4);
 
         if (ids.length == 0)
         {
@@ -77,8 +81,6 @@ class YoutubeModel {
 
         let existingValues = sheet.getDataRange().getValues();
         let existingYouTubeIds = existingValues.map(function (r) { return r[0]; }).filter(function (v) { return v != "" });
-
-        sheet.getRange(3, 1, 1, this.columns.length).setValues([this.columns]);
 
         let newVideosIds = ids.filter(videoId => !existingYouTubeIds.includes(videoId));
 
@@ -121,10 +123,13 @@ class YoutubeModel {
                 return;
             
             if (video.url.length > 0)
-                return; // the details where already fetch for this video, skip
+                return; // the details where already fetched for this video, skip
             
             ids.push(video.videoID);
         });
+
+        Logger.log("Fetching the following videos:");
+        Logger.log(ids);
 
         let videosDetails = this.fetchDetailsForVideoIDs(ids);
 
@@ -143,12 +148,20 @@ class YoutubeModel {
             if (video.videoID.length != 11)
                 return;
 
+            if (video.url.length > 0)
+                return; // the details where already fetched for this video, skip
+            
             let details = videosDetails.get(video.videoID);
             if (details === undefined)
+            {
+                Logger.log(video.videoID + " not found in the results");
                 return;
+            }
 
             sheet.getRange(rowIndex + startRow, 2, 1, details.length).setValues([details]);
         });
+
+        SpreadsheetApp.getUi().alert(`Détail des vidéos récupéré pour ${ids.length} vidéos`);
     }
     
 
@@ -162,13 +175,12 @@ class YoutubeModel {
         let sr = YouTube.Videos.list(part.join(','), {id:ids.join(',')});
 
         let vids = sr.items.filter(function (res) { return res.kind === "youtube#video" });
-
+        
         let self = this;
 
         let data = new Map();
         
         vids.forEach((v) => { 
-            
             let duration = v.contentDetails.duration; // PT5M45S
             let matches = duration.match(/^PT(([0-9]+)H)?(([0-9]+)M)?([0-9]+S)?$/);
             let minutes = (matches[2]??0) * 60 + Number(matches[4]??0);
@@ -455,8 +467,7 @@ class YoutubeModel {
         let channelId = "";
         let values = sheet.getRange(1, 1, 1, 4).getValues();
 
-        if ((values[0][0] == "Chaîne" || values[0][0] == "Chaine" || values[0][0] == "Channel")
-            && values[0][2] == "Channel ID") {
+        if (values[0][2] == "Channel ID") {
             channelId = values[0][3];
         }
 
@@ -469,20 +480,19 @@ class YoutubeModel {
     }
 
     getSheetsPlaylistID(sheet) {
-        let channelId = "";
+        let playlistId = "";
         let values = sheet.getRange(1, 1, 1, 4).getValues();
 
-        if ((values[0][0] == "Playlist" || values[0][0] == "playlist" || values[0][0] == "Liste")
-            && values[0][2] == "Playlist ID") {
-            channelId = values[0][3];
+        if (values[0][2] == "Playlist ID") {
+                playlistId = values[0][3];
         }
 
-        if (channelId == "") {
+        if (playlistId == "") {
             Logger.log(values);
             return false;
         }
 
-        return channelId;
+        return playlistId;
     }    
 
     createNewSheet() {
