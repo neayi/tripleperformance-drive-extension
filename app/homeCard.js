@@ -6,14 +6,15 @@ function card_onHomepage(event)
     ui.createMenu('Triple Performance')
         .addSubMenu(ui.createMenu('Formations')
             .addItem('Synchroniser les formations', 'syncTrainingCourses')
-            .addItem('Synchroniser les intervenants', 'createUsers')
+            .addItem('Synchroniser les vignettes', 'pushTrainingCoursesThumbnailsToTriplePerformance')
+            .addItem('Mettre à jour la liste des intervenants', 'updateTrainingCoursesSpeakersList')
         )
         .addSubMenu(ui.createMenu('YouTube')
             .addItem("Charger les nouvelles vidéos de la chaîne", 'fetchVideosFromYouTubeChannel')
             .addItem("Charger le détail des vidéos", 'fetchVideosDetailsFromYouTubeChannel')
             .addItem("Mettre à jour les vignettes", 'pushThumbnailsToTriplePerformance')
             .addItem("Mettre à jour Triple Performance", 'pushVideosToTriplePerformance')
-            .addItem("Mettre à jour la liste des intervenants", 'updateSpeakersList')
+            .addItem("Mettre à jour la liste des intervenants", 'updateYoutubeSpeakersList')
         )
         .addToUi();
     
@@ -24,6 +25,20 @@ function syncTrainingCourses() {
     Logger.log("Synchro de la liste des formations")
     let trainingModel = new TrainingCourseModel();
     trainingModel.syncTrainings();
+}
+
+function pushTrainingCoursesThumbnailsToTriplePerformance()
+{
+    Logger.log("pushTrainingCoursesThumbnailsToTriplePerformance")
+    let trainingModel = new TrainingCourseModel();
+    trainingModel.syncThumbnails();
+}
+
+function updateTrainingCoursesSpeakersList()
+{
+    Logger.log("updateTrainingCoursesSpeakersList")
+    let trainingModel = new TrainingCourseModel();
+    trainingModel.buildSpeakersList();
 }
 
 function fetchVideosFromYouTubeChannel()
@@ -54,8 +69,8 @@ function pushThumbnailsToTriplePerformance()
     youTube.addThumbnailsToWiki();
 }
 
-function updateSpeakersList() {
-    Logger.log("updateSpeakersList")
+function updateYoutubeSpeakersList() {
+    Logger.log("updateYoutubeSpeakersList")
     let youTube = new YoutubeModel();
     youTube.buildSpeakersList();
 }
@@ -82,7 +97,20 @@ function showTestCard()
 
 function createFarmPortraitCreateTabsCard()
 {
-    return fermeCreateTabsBuildCard();
+    let farm = new FarmModel();    
+    return onCreateNewTabsCard("Portraits de ferme", farm.getTabs());
+}
+
+function createTrainingCoursesCreateTabsCard()
+{
+    let tcModel = new TrainingCourseModel();
+    return onCreateNewTabsCard("Liste des formations", tcModel.getTabs());
+}
+
+function createYoutubeCreateTabsCard()
+{
+    let ytModel = new YoutubeModel();
+    return onCreateNewTabsCard("Liste des formations", ytModel.getTabs());
 }
 
 function UnhandledEvent(call)
@@ -130,8 +158,7 @@ function card_buildHomepageCard() {
         .setOnClickAction(cardSection1ButtonCreateFarmsTabsAction1);
 
     let cardSection1ButtonCreateTrainingsTabsAction1 = CardService.newAction()
-        .setFunctionName('UnhandledEvent')
-        .setParameters({call: 'cardSection1ButtonCreateTrainingsTabsAction1'});
+        .setFunctionName('createTrainingCoursesCreateTabsCard');
 
     let cardSection1ButtonCreateTrainingsTabs = CardService.newTextButton()
         .setText('Liste de formations')
@@ -139,8 +166,7 @@ function card_buildHomepageCard() {
         .setOnClickAction(cardSection1ButtonCreateTrainingsTabsAction1);
 
     let cardSection1ButtonCreateYoutubeTabsAction1 = CardService.newAction()
-        .setFunctionName('UnhandledEvent')
-        .setParameters({call: 'cardSection1ButtonCreateYoutubeTabsAction1'});
+        .setFunctionName('createYoutubeCreateTabsCard');
 
     let cardSection1ButtonCreateYoutubeTabs = CardService.newTextButton()
         .setText('Chaîne youtube')

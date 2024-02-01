@@ -5,6 +5,8 @@ class FarmModel {
         this.apiTools = false;
 
         this.defGeneralites = {};
+
+        this.tabs = ["Comptabilité"];
     }
 
     loadApiTools()
@@ -20,22 +22,29 @@ class FarmModel {
         return this.apiTools = new api_tools(parameters.secrets.wikiURL, parameters.secrets.username, parameters.secrets.password);
     }
 
+    getTabs()
+    {
+        return this.tabs;
+    }
+    
+    createTab(tabName)
+    {
+        if (!this.tabs.includes(tabName))
+            return false;
+
+        let sheet = renameAndCreateTab(tabName);
+
+        if (tabName == "Comptabilité")
+        {
+            this.createComptabiliteTab();
+        }
+    }
     /**
      * Create a new tab for the comptabilité
      */
     createComptabiliteTab() 
     {
-        let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-        let comments = "";
-
-        let sheet = spreadsheet.getSheetByName("Comptabilité");
-        if (sheet != null) {
-            const newName = renameSheet(sheet, "Comptabilité");
-            comments = "Un onglet Comptabilité a été trouvé dans la feuille, et a été renommé en " + newName;
-        }
-
-        sheet = spreadsheet.insertSheet("Comptabilité");
-        addMessageToLog("Creation d'un nouvel onglet Comptabilité", "Comptabilité", "OK", comments);
+        let sheet = renameAndCreateTab("Comptabilité");
 
         setSheetVersion(sheet, 1, "Vous pouvez ajouter, supprimer ou renommer des années. N'ajoutez pas et ne modifiez pas"
             + " les noms des lignes. Vous pouvez laisser des lignes vides ou les supprimer si vous ne"
@@ -201,8 +210,7 @@ class FarmModel {
 
         let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Comptabilité");
         if (sheet == null) {
-            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur", 
-                            "Impossible de trouver l'onglet Comptabilité !");
+            SpreadsheetApp.getUi().alert("Impossible de trouver l'onglet Comptabilité !");
             return;
         }
 
@@ -210,8 +218,7 @@ class FarmModel {
 
         if (dataRange.getRow() != 1 ||
             dataRange.getColumn() != 1) {
-            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur",
-                    "La structure de l'onglet comptabilité a été modifiée. Veuillez créer l'onglet"
+                SpreadsheetApp.getUi().alert("La structure de l'onglet comptabilité a été modifiée. Veuillez créer l'onglet"
                        +" à nouveau, copier les données dans le nouvel onglet et recommencer !")
             return;
         }
@@ -275,13 +282,13 @@ class FarmModel {
 
             Logger.log("Sync done");
 
-            addMessageToLog("Synchro Comptabilité", "Comptabilité", "OK", "La page "+ wikiTitle +" a été mise à jour !");
+            SpreadsheetApp.getUi().alert("La page "+ wikiTitle +" a été mise à jour !");
 
             return;
         }
         else
         {
-            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur", `La version actuelle (${version}) du document n'est pas gérée ! Veuillez créer l'onglet`
+            SpreadsheetApp.getUi().alert(`La version actuelle (${version}) du document n'est pas gérée ! Veuillez créer l'onglet`
                               +" à nouveau, copier les données dans le nouvel onglet et recommencer !");
             return;
         }
@@ -351,7 +358,7 @@ class FarmModel {
 
         Logger.log("Sync done");
 
-        addMessageToLog("Synchro Comptabilité", "Comptabilité", "OK", "La page "+ wikiTitle +" a été mise à jour !");
+        SpreadsheetApp.getUi().alert("La page "+ wikiTitle +" a été mise à jour !");
 
         return;
     }
@@ -364,8 +371,7 @@ class FarmModel {
         Logger.log(wikiTitle);
 
         if (wikiTitle.length == 0) {
-            addMessageToLog("Synchro Comptabilité", "Comptabilité", "Erreur", 
-                "Le nom de la page Triple Performance est vide. Veuillez créer puis reporter le nom de la page dans l'onglet Ferme !");
+            SpreadsheetApp.getUi().alert("Le nom de la page Triple Performance est vide. Veuillez créer puis reporter le nom de la page dans l'onglet Ferme !");
             return false;
         }
         
@@ -390,8 +396,7 @@ class FarmModel {
         Logger.log(sheet);
 
         if (!sheet) {
-            addMessageToLog("", "", "Erreur", 
-                "Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");
+            SpreadsheetApp.getUi().alert("Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");
             return null;
         }
 

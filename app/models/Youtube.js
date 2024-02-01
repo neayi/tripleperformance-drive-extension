@@ -11,6 +11,8 @@ class YoutubeModel {
             "Titre corrigé", "Description courte", "Production", "Intervenants", "Mots clés", "ok pour wiki",
             "thumbnail", "wiki"
         ];
+
+        this.tabs = ["Vidéos d'une chaîne", "Vidéos d'une playlist", "Intervenants"];
     }
 
     getApiTools()
@@ -108,7 +110,7 @@ class YoutubeModel {
         let ids = [];
 
         data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == "ID")
+            if (!idFound && row[0] == this.columns[0])
             {
                 idFound = true;
                 return;
@@ -134,7 +136,7 @@ class YoutubeModel {
         let videosDetails = this.fetchDetailsForVideoIDs(ids);
 
         data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == "ID")
+            if (!idFound && row[0] == this.columns[0])
             {
                 idFound = true;
                 return;
@@ -227,7 +229,7 @@ class YoutubeModel {
         const wikiCol = this.getColNumber("thumbnail");
 
         data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == "ID")
+            if (!idFound && row[0] == this.columns[0])
             {
                 idFound = true;
                 return;
@@ -251,7 +253,7 @@ class YoutubeModel {
 
             // Find the URL for this thumbnail
             const destName = `Thumbnail_youtube_${video.videoID}.jpg`;
-            let comment = `Image accompagnant la formation [[${video.fixedTitle} (formation)]]`;
+            let comment = `Image accompagnant la vidéo [[${video.fixedTitle}]]`;
 
             Logger.log("Getting thumbnail for " + video.videoID + " " + video.thumbnailURL + " " + destName);
             let ret = apiTools.uploadImage(video.thumbnailURL, destName, comment);
@@ -274,7 +276,7 @@ class YoutubeModel {
         const wikiCol = this.getColNumber("wiki");
 
         data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == "ID")
+            if (!idFound && row[0] == this.columns[0])
             {
                 idFound = true;
                 return;
@@ -354,7 +356,7 @@ class YoutubeModel {
         let speakers = [];
 
         sheet.getDataRange().getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == "ID")
+            if (!idFound && row[0] == this.columns[0])
             {
                 idFound = true;
                 return;
@@ -380,40 +382,10 @@ class YoutubeModel {
             });
         });
 
-        // Unique speakers only
-        speakers = speakers.filter((value, index, array) => array.indexOf(value) === index);
+        let speakersManager = new speakersModel();
+        let newSpeakers = speakersManager.addSpeakers(speakers);
 
-        Logger.log("Intervenants dans les vidéos");
-        Logger.log(speakers);
-
-        let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-        let speakerSheet = spreadsheet.getSheetByName("Intervenants");
-        if (!speakerSheet)
-            speakerSheet = spreadsheet.insertSheet("Intervenants");
-        
-        // Now prepare the sheet for more logging:
-        // Add the header row, put it in bold
-        let columns = ["Nom dans la vidéo", "Nom corrigé", "URL de la photo", "Photo", "Biographie", "URL bio", "Page Wiki"];
-        speakerSheet.getRange(1, 1, 1, columns.length).setValues([columns]).setFontWeight("bold");
-        speakerSheet.setFrozenRows(1);
-
-        let existingSpeakers = speakerSheet.getDataRange().getValues().map((r) => { r[0]; }).filter((v) => { v != "" });
-        Logger.log("Intervenants préexistants");
-        Logger.log(existingSpeakers);
-
-        let newSpeakers = speakers.filter(speakername => !existingSpeakers.includes(speakername));
-
-        Logger.log("Nouveaux intervenants");
-        Logger.log(newSpeakers);
-
-        if (newSpeakers.length > 0)
-        {
-            newSpeakers.forEach(speaker => {
-                speakerSheet.appendRow([speaker]);
-            });
-        }
-
-        SpreadsheetApp.getUi().alert(`Terminé - ${newSpeakers.length} intervenants ajoutés (veuillez compléter leur bio)`);
+        SpreadsheetApp.getUi().alert(`Terminé - ${newSpeakers} intervenants ajoutés (veuillez compléter leur bio)`);
     }
 
 
@@ -484,7 +456,7 @@ class YoutubeModel {
         let values = sheet.getRange(1, 1, 1, 4).getValues();
 
         if (values[0][2] == "Playlist ID") {
-                playlistId = values[0][3];
+            playlistId = values[0][3];
         }
 
         if (playlistId == "") {
@@ -495,12 +467,41 @@ class YoutubeModel {
         return playlistId;
     }    
 
-    createNewSheet() {
-        sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
-        sheet.setName("Vidéos de la chaîne quelquechose");
+    getTabs()
+    {
+        return this.tabs;
+    }
 
-        sheet.getRange(1, 1, 1, 5).setValues([["Chaîne", "", "Channel ID", "", "https://stackoverflow.com/a/76285153"]]);
-        sheet.getRange(3, 1, 1, 4).setValues([["ID", "URL", "Titre", "Description"]]);
+    createTab(tabName)
+    {
+        if (!this.tabs.includes(tabName))
+            return false;
+
+        if (tabName == "Intervenants")
+        {
+            let speakM = new speakersModel();
+            return speakM.createTab(tabName);
+        }
+
+        let sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+
+        let cols = [];
+        if (tabName == "Vidéos d'une chaîne")
+        {
+            sheet.setName("Vidéos de la chaîne quelquechose");
+            cols = ["Chaîne", "Ver de Terre Production", "Channel ID", "UCUaPiJJ2wH9CpuPN4zEB3nA", "https://stackoverflow.com/a/76285153"];
+        }
+        else if (tabName == "Vidéos d'une playlist")
+        {
+            sheet.setName("Vidéos de la chaîne quelquechose");
+            cols = ["Playlist", "https://www.youtube.com/playlist?list=PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7", "Playlist ID", "PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7"];
+        }
+
+        sheet.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight("bold");
+        sheet.setFrozenRows(3);
+        sheet.setFrozenColumns(4);      
+
+        return sheet;
     }
 
     getRelevantDescription(description)

@@ -10,7 +10,7 @@ function parameters_save(e)
 
     parameters.storeSecrets(secrets);
 
-    addMessageToLog("Paramètres", "", "OK", "Les paramètres ont été enregistrés.");
+    SpreadsheetApp.getUi().alert("Les paramètres ont été enregistrés.");
 }
 
 function parametersbuildCard() {
