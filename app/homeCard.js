@@ -9,8 +9,11 @@ function card_onHomepage(event)
             .addItem('Synchroniser les intervenants', 'createUsers')
         )
         .addSubMenu(ui.createMenu('YouTube')
-            .addItem("Charger les vidéos de la chaîne", 'fetchVideosFromYouTubeChannel')
+            .addItem("Charger les nouvelles vidéos de la chaîne", 'fetchVideosFromYouTubeChannel')
+            .addItem("Charger le détail des vidéos", 'fetchVideosDetailsFromYouTubeChannel')
+            .addItem("Mettre à jour les vignettes", 'pushThumbnailsToTriplePerformance')
             .addItem("Mettre à jour Triple Performance", 'pushVideosToTriplePerformance')
+            .addItem("Mettre à jour la liste des intervenants", 'updateSpeakersList')
         )
         .addToUi();
     
@@ -30,11 +33,31 @@ function fetchVideosFromYouTubeChannel()
     youTube.fetchVideosFromYouTube();
 }
 
+function fetchVideosDetailsFromYouTubeChannel()
+{
+    Logger.log("fetchVideosDetailsFromYouTubeChannel")
+    let youTube = new YoutubeModel();
+    youTube.fetchDetailsFromYoutube();
+}
+
 function pushVideosToTriplePerformance()
 {
-    Logger.log("fetchVideosFromYouTubeChannel")
+    Logger.log("pushVideosToTriplePerformance")
     let youTube = new YoutubeModel();
     youTube.syncYoutubeToWiki();
+}
+
+function pushThumbnailsToTriplePerformance()
+{
+    Logger.log("pushThumbnailsToTriplePerformance")
+    let youTube = new YoutubeModel();
+    youTube.addThumbnailsToWiki();
+}
+
+function updateSpeakersList() {
+    Logger.log("updateSpeakersList")
+    let youTube = new YoutubeModel();
+    youTube.buildSpeakersList();
 }
 
 function showImportCard()

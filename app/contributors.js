@@ -1,7 +1,7 @@
 
 function createUsers() {
     let sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    const tripleperformanceURL = "https://wiki.tripleperformance.fr";
+    const tripleperformanceURL = "https://wiki.tripleperformance.fr/";
 
     // Ignore the first row for the column names
     for (let rowId = 2; rowId <= sheet.getLastRow(); rowId++) {
@@ -26,7 +26,8 @@ function createUsers() {
             this.apiTools.createWikiPage(userpage, pageContent, "Création de la page");
         }
 
-        sheet.getRange(rowId, 3, 1, 1).setValues([["=HYPERLINK(\"" + tripleperformanceURL + "/wiki/" + userpage + "\"; \"" + username + "\")"]]);
+        let content = getHyperlinkedTitle(tripleperformanceURL, userpage, username);
+        sheet.getRange(rowId, 3, 1, 1).setValue(content);
     }
 
     SpreadsheetApp.getUi() // Or DocumentApp, SlidesApp or FormApp.

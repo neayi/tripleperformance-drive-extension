@@ -14,7 +14,9 @@ class FarmModel {
 
         let parameters = new tp_parameters();
         parameters.loadSecrets();
-        
+        if (!parameters.checkSecrets())
+            return;
+
         return this.apiTools = new api_tools(parameters.secrets.wikiURL, parameters.secrets.username, parameters.secrets.password);
     }
 

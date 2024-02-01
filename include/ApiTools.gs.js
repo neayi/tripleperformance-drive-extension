@@ -37,10 +37,10 @@ class api_tools {
 
     let result = JSON.parse(json);
 
-    if (!result.query.pages || 
-        result.query.pages.length == 0 || 
-        !result.query.pages[0].revisions ||
-        result.query.pages[0].revisions.length == 0) {
+    if (!result.query.pages ||
+      result.query.pages.length == 0 ||
+      !result.query.pages[0].revisions ||
+      result.query.pages[0].revisions.length == 0) {
       return false;
     }
 
@@ -285,6 +285,70 @@ class api_tools {
       console.error(error.message);
       return {};
     }
+  }
+
+  /**
+   * Uploads an image to the wiki, from a given URL
+   * NB : it's ok to upload an image in PNG and asking a filename in JPG - it'll be converted on the fly
+   * 
+   * @param {*} imageURL 
+   * @param {*} desFilename 
+   * @param {*} comment 
+   * @returns 
+   */
+  uploadImage(imageURL, desFilename, comment) {
+    const edittoken = this.api.getEditToken();
+
+    if (edittoken === null) {
+      throw new Error("Unable to acquire an edit token");
+    }
+
+    const uploadData = {
+      url: imageURL,
+      filename: desFilename,
+      comment: comment,
+      token: edittoken
+    };
+
+    const r = this.api.upload(uploadData);
+
+    if (r.error || !r.upload.result || r.upload.result !== 'Success') {
+
+      if (r.upload?.result == 'Warning') {
+        Logger.log("Warning on uploading the image: " + desFilename + " " + JSON.stringify(r));
+        return JSON.stringify(r.upload.warnings);
+      }
+
+      throw new Error("Could not upload image: " + JSON.stringify(r));
+    }
+
+    Logger.log("Uploaded");
+
+    return r.upload.filename;
+  }
+
+  /**
+   * Check that a page exists
+   * @param String or Array title 
+   * @returns a Map with the requested pages, with true or false depending on existance
+   */
+  pageExists(title) {
+    if (title instanceof Array)
+      title = title.join('|');
+
+    const args = { titles: title };
+    const content = this.api.query(args);
+
+    Logger.log(content);
+
+    let ret = new Map();
+    if (content.query?.pages) {
+      for (const [key, value] of Object.entries(content.query.pages)) {
+        ret.set(value.title, key > 0);
+      }
+    }
+
+    return ret;
   }
 
   objectToQueryParams(obj) {

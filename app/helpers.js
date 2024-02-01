@@ -62,3 +62,14 @@ function setSheetVersion(sheet, version, documentation) {
     sheet.getRange(2, 1, 1, 1).setWrap(true);    
     sheet.getRange(2, 1, 1, 4).merge();
 }
+
+function getHyperlinkedTitle(tripleperformanceURL, pageTitle, displayTitle = "")
+{
+    if (displayTitle.length == 0)
+        displayTitle = pageTitle;
+
+    displayTitle = displayTitle.replaceAll('"', '""');
+
+    let pageURL = encodeURI(pageTitle.replaceAll(' ', '_'));
+    return `=HYPERLINK("${tripleperformanceURL}wiki/${pageURL}"; "${displayTitle}")`;    
+}

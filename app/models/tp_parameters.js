@@ -50,6 +50,22 @@ class tp_parameters {
         return;
     }
 
+    /**
+     * Makes sure that secrets are fully set before going further
+     */
+    checkSecrets() {
+        
+        if (this.secrets.wikiURL.length == 0 ||
+            this.secrets.username.length == 0 ||
+            this.secrets.password.length == 0)
+        {
+            SpreadsheetApp.getUi().alert("Veuillez saisir les paramètres de l'add-on (identifiants et mots de passe du wiki)");
+            return false;
+        }
+
+        return true;
+    }
+
     loadOneSecret(key) {
         const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
         let metaData = spreadsheet.createDeveloperMetadataFinder().withKey(key).find();

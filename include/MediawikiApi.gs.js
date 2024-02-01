@@ -32,7 +32,11 @@ class MediawikiAPI {
   edit(args) {
     return this.__call('edit', args);
   }
-
+  
+  upload(args) {
+    return this.__call('upload', args);
+  }
+  
   /**
    * Return edit token - if none is available try to get one from the api
    *

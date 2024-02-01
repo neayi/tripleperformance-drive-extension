@@ -8,6 +8,9 @@ class TrainingCourseModel {
     {
         let parameters = new tp_parameters();
         parameters.loadSecrets();
+        if (!parameters.checkSecrets())
+            return;
+
         this.tripleperformanceURL = parameters.secrets.wikiURL;
 
         return new api_tools(parameters.secrets.wikiURL, parameters.secrets.username, parameters.secrets.password);
@@ -78,8 +81,10 @@ class TrainingCourseModel {
             }
 
             let maintenant = new Date();
+            let content = getHyperlinkedTitle(this.tripleperformanceURL, wikiTitle, wikiTitle);
+
             sheet.getRange(rowId, 19, 1, 2).setValues([
-                ["=HYPERLINK(\"" + this.tripleperformanceURL + "/wiki/" + wikiTitle + "\"; \"" + wikiTitle + "\")", Utilities.formatDate(maintenant, 'Europe/Paris', 'dd-MMM HH-mm')]
+                [content, Utilities.formatDate(maintenant, 'Europe/Paris', 'dd-MMM HH-mm')]
             ]);
         }
 
