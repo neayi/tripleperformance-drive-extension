@@ -51,3 +51,90 @@ function getLightGrayColor()
 {
     return "#f3f3f3";
 }
+
+
+/**
+ * Given a RichTextValue Object, iterate over the individual runs
+ *    and call out to htmlStyleRtRun() to return the text wrapped
+ *    in <span> tags with specific styling.
+ * @see https://gist.github.com/mvogelgesang/8fe14931d79ed79d73154d969f02aada
+ * 
+ * @param {RichTextValue} richTextValue a RichTextValue object
+ *    from a given Cell.
+ * @return {string} HTML encoded text 
+ */
+function htmlEncodeRichText(richTextValue) {
+    // create an empty string which will hold the html content
+    var htmlString = "";
+    // get an array of Runs for the given Rich Text
+    var rtRuns = richTextValue.getRuns();
+    // loop the array
+    for (var i = 0; i < rtRuns.length; i++) {
+      // return html version of a given run, append to existing string
+      htmlString += htmlStyleRtRun(rtRuns[i]);
+    }
+    return htmlString;
+  }
+  
+  /**
+   * Given a RichTextValue Run, evaluates for style attributes and 
+   *    builds a <span> tag with in-line styles. 
+   *    For instance:
+   *    <span style="color: cyan">text</span>
+   *
+   * @see https://gist.github.com/mvogelgesang/8fe14931d79ed79d73154d969f02aada
+   * 
+   * @param {RichTextValue} richTextRun an instance of a
+   *    RichTextValue run
+   * @return {string} inputted text wrapped in <span> tag with 
+   *    applicable styling. 
+   */
+  function htmlStyleRtRun(richTextRun) {
+    // string to hold the inline style key value pairs
+    var styleString = "";
+    // evaluate the attributes of a given Run and construct style attributes
+    if (richTextRun.getTextStyle().isBold()) {
+      styleString += "font-weight:bold;"
+    }
+    if (richTextRun.getTextStyle().isItalic()) {
+      styleString += "font-style:italic;"
+    }
+    
+    // fetch values for font family, size, and color attributes
+    // styleString += "font-family:" + richTextRun.getTextStyle().getFontFamily() +
+    //   ";";
+    // styleString += "font-size:" + richTextRun.getTextStyle().getFontSize() +
+    //   "px;";
+    // styleString += "color:" + richTextRun.getTextStyle().getForegroundColor() +
+    //   ";";
+  
+    // underline and strikethrough use the same style key, text-decoration, must evaluate together, otherwise, the styling breaks. 
+    // both false 
+    if (!richTextRun.getTextStyle().isUnderline() && !richTextRun.getTextStyle().isStrikethrough()) {
+      // do nothing
+    }
+    // underline true, strikethrough false
+    else if (richTextRun.getTextStyle().isUnderline() && !richTextRun.getTextStyle()
+      .isStrikethrough()) {
+      styleString += "text-decoration: underline;";
+    }
+    // underline false, strikethrough true
+    else if (!richTextRun.getTextStyle().isUnderline() && richTextRun.getTextStyle()
+      .isStrikethrough()) {
+      styleString += "text-decoration: line-through;";
+    }
+    // both true
+    else {
+      styleString += "text-decoration: line-through underline;";
+    }
+  
+    // line breaks don't get converted, run regex and insert <br> to replace \n
+    var richText = richTextRun.getText();
+    var re = new RegExp("\n", "g");
+    var richText = richText.replace(re, "<br>");
+  
+    // bring it all together
+    var formattedText = '<span style="' + styleString + '">' + richText +
+      '</span>';
+    return formattedText;
+  }
