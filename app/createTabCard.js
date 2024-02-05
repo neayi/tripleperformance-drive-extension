@@ -16,14 +16,18 @@ function onCreateTabSubmit(e)
         if (tcModel.createTab(element))
             return;
 
-         console.log("Unknown tab");
+        let chartsModel = new chartsBuilder();
+        if (chartsModel.createChart(element))
+            return;
+    
+        Logger.log("Unknown tab");
     });
 }
 
 /**
  * https://gw-card-builder.web.app/#gahzZWN0aW9uc5GBp3dpZGdldHOTga10ZXh0UGFyYWdyYXBogaR0ZXh0uTxiPlBvcnRyYWl0cyBkZSBmZXJtZTwvYj6BrnNlbGVjdGlvbklucHV0hKR0eXBlqUNIRUNLX0JPWKVsYWJlbLFPbmdsZXRzIMOgIGNyw6llcqRuYW1lrFRhYnNUb0NyZWF0ZaVpdGVtc5ODpHRleHSlRmVybWWldmFsdWWlRmVybWWoc2VsZWN0ZWTDg6R0ZXh0rUNvbXB0YWJpbGl0w6mldmFsdWWtQ29tcHRhYmlsaXTDqahzZWxlY3RlZMODpHRleHSyUXVhbGl0w6kgZGUgbGEgdmllpXZhbHVlslF1YWxpdMOpIGRlIGxhIHZpZahzZWxlY3RlZMOCqmJ1dHRvbkxpc3SBp2J1dHRvbnORg6R0ZXh0skNyw6llciBsZXMgb25nbGV0c6dvbkNsaWNrgaZhY3Rpb26CqGZ1bmN0aW9usGZhcm1fY3JlYXRlX3RhYnOqcGFyYW1ldGVyc5CnYWx0VGV4dKCzaG9yaXpvbnRhbEFsaWdubWVudKNFTkQ=
  */
-function onCreateNewTabsCard(title, tabs) {
+function onCreateNewTabsCard(title, tabs, actionName = 'Créer les onglets') {
     let cardSection1TextParagraph1 = CardService.newTextParagraph()
         .setText('<b>' + title + '</b>');
 
@@ -39,7 +43,7 @@ function onCreateNewTabsCard(title, tabs) {
         .setParameters({});
 
     let cardSection1ButtonList1Button1 = CardService.newTextButton()
-        .setText('Créer les onglets')
+        .setText(actionName)
         .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
         .setOnClickAction(cardSection1ButtonList1Button1Action1);
 

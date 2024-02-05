@@ -3,8 +3,6 @@ class YoutubeModel {
         this.apiTools = false;
         this.tripleperformanceURL = "";
 
-        this.defGeneralites = {};
-
         this.columns = [
             "ID", "URL", "ThumbnailURL", "Vignette", "Titre", "Description", "Producteur", "Date de mise en ligne", 
             "Durée", "Sous-titres", "Vues", "Commentaires",
@@ -109,7 +107,7 @@ class YoutubeModel {
         let idFound = false;
         let ids = [];
 
-        data.getValues().forEach((row, rowIndex) => {
+        data.getValues().forEach((row) => {
             if (!idFound && row[0] == this.columns[0])
             {
                 idFound = true;

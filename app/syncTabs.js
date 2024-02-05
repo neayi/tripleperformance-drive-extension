@@ -24,8 +24,17 @@ function sync_tabs(e)
                 return;
         }
     });
+}
 
-
+function sync_charts(e)
+{
+    const chartsNames = e.formInputs.TabsToCreate;
+    let charts = new chartsBuilder();
+    
+    chartsNames.forEach((element) => {
+        Logger.log(element);
+        charts.syncCharts(element);
+    });
 }
 
 /**
@@ -35,33 +44,51 @@ function syncTabsBuildCard() {
     let cardSection1TextParagraph1 = CardService.newTextParagraph()
         .setText('<b>Synchronisation vers le wiki</b>');
 
+    const charts = new chartsBuilder();
+    const chartNames = charts.findChartsOnPage();
+
+    Logger.log(chartNames);
+
+    let title = 'Onglets à synchroniser';
+    let buttonCaption = 'Synchroniser les onglets';
+    if (chartNames.length > 0)
+    {
+        title = 'Graphiques à synchroniser';
+        buttonCaption = 'Synchroniser les graphiques';
+    }
+
     let tabsToCreateSelectionInput = CardService.newSelectionInput()
         .setFieldName('TabsToCreate')
-        .setTitle('Onglets à synchroniser')
+        .setTitle(title)
         .setType(CardService.SelectionInputType.CHECK_BOX);
 
-    let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    var sheets = spreadsheet.getSheets();
-    sheets.forEach(function(s) {
-        const sheetName = s.getName();
-        switch (sheetName) {
-            case 'Ferme':
-            case 'Qualité de la vie':
-            case 'Comptabilité':
-                tabsToCreateSelectionInput.addItem(sheetName, sheetName, true);
-                break;
-        
-            default:
-                break;
-        }
-    });
+    let callBack = 'sync_tabs';
+    if (chartNames.length > 0)
+    {
+        chartNames.forEach((chartName) => {
+            tabsToCreateSelectionInput.addItem(chartName, chartName, true);
+        });
+
+        callBack = 'sync_charts';
+    }
+    else
+    {
+        // Afficher les onglets courants qui sont synchronisables
+        const tabs = new FarmModel().getSynchronizableTabs();
+
+        tabs.forEach((sheetName) => {
+            tabsToCreateSelectionInput.addItem(sheetName, sheetName, true);
+        });
+
+        callBack = 'sync_tabs';
+    }
 
     let cardSection1ButtonList1Button1Action1 = CardService.newAction()
-        .setFunctionName('sync_tabs')
+        .setFunctionName(callBack)
         .setParameters({});
 
     let cardSection1ButtonList1Button1 = CardService.newTextButton()
-        .setText('Synchroniser les onglets')
+        .setText(buttonCaption)
         .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
         .setOnClickAction(cardSection1ButtonList1Button1Action1);
 

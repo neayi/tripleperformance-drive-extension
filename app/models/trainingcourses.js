@@ -250,7 +250,7 @@ class TrainingCourseModel {
         let idFound = false;
         let speakers = [];
 
-        sheet.getDataRange().getValues().forEach((row, rowIndex) => {
+        sheet.getDataRange().getValues().forEach((row) => {
             if (!idFound && row[0] == this.columns[0])
             {
                 idFound = true;
@@ -297,7 +297,7 @@ class TrainingCourseModel {
             sheet.getRange(1, 1, 1, this.columns.length)
                 .setValues([this.columns])
                 .setFontWeight("bold")
-                .setBackground("#f3f3f3");
+                .setBackground(getLightGrayColor());
             sheet.setFrozenRows(1);
         }
         else if (tabName == "Structure de formation")

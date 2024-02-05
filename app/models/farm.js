@@ -39,6 +39,25 @@ class FarmModel {
             this.createComptabiliteTab();
         }
     }
+
+    /**
+     * Returns a list of existing tabs in the spreadsheet that we know how to synchronize
+     */
+    getSynchronizableTabs()
+    {
+        let tabsToSynchronize = [];
+
+        let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+        var sheets = spreadsheet.getSheets();
+        sheets.forEach((s) => {
+            const sheetName = s.getName();
+            if (this.tabs.includes(sheetName))
+                tabsToSynchronize.push(sheetName);
+        });
+
+        return tabsToSynchronize;
+    }
+
     /**
      * Create a new tab for the comptabilité
      */
@@ -58,7 +77,7 @@ class FarmModel {
         sheet.getRange(4, 1, 1, 6).setValues([["", "Année", year - 4, year - 3, year - 2, year - 1]])
             .setFontWeight("bold")
             .setFontSize(15)
-            .setBackground("#f3f3f3");
+            .setBackground(getLightGrayColor());
 
         sheet.setFrozenRows(4);
 
@@ -182,7 +201,7 @@ class FarmModel {
                 sheet.getRange(posteTotalRow, 1, 1, 6)
                     .setFontWeight("bold")
                     .setFontSize(15)
-                    .setBackground("#f3f3f3");
+                    .setBackground(getLightGrayColor());
 
                 totals.set(compte, posteTotalRow);
 

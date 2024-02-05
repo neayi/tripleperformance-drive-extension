@@ -95,22 +95,43 @@ function showTestCard()
     Logger.log('showTestCard');
 }
 
+function createNewTabs(e)
+{
+    switch (e.parameters.tab) {
+        case "Portraits de ferme":
+            let farm = new FarmModel();    
+            return onCreateNewTabsCard("Portraits de ferme", farm.getTabs());
+
+        case "Liste des formations":
+            let tcModel = new TrainingCourseModel();
+            return onCreateNewTabsCard("Liste des formations", tcModel.getTabs());
+
+        case "Chaîne youtube":
+            let ytModel = new YoutubeModel();
+            return onCreateNewTabsCard("Chaîne youtube", ytModel.getTabs());
+
+        case "Graphiques":
+            let chartModel = new chartsBuilder();
+            return onCreateNewTabsCard("Graphiques", chartModel.getCharts(), "Créer des graphiques");
+                
+        default:
+            break;
+    }
+}
+
 function createFarmPortraitCreateTabsCard()
 {
-    let farm = new FarmModel();    
-    return onCreateNewTabsCard("Portraits de ferme", farm.getTabs());
+
 }
 
 function createTrainingCoursesCreateTabsCard()
 {
-    let tcModel = new TrainingCourseModel();
-    return onCreateNewTabsCard("Liste des formations", tcModel.getTabs());
+
 }
 
 function createYoutubeCreateTabsCard()
 {
-    let ytModel = new YoutubeModel();
-    return onCreateNewTabsCard("Liste des formations", ytModel.getTabs());
+
 }
 
 function UnhandledEvent(call)
@@ -147,36 +168,20 @@ function card_buildHomepageCard() {
         .addItem(cardSection1TriplePerformanceLogoItem1);
 
     let cardSection1CreateTabsTitle = CardService.newTextParagraph()
-        .setText('<b>Créer les onglets</b>');
+        .setText('<b>Créer les onglets ou des graphiques</b>');
 
-    let cardSection1ButtonCreateFarmsTabsAction1 = CardService.newAction()
-        .setFunctionName('createFarmPortraitCreateTabsCard');
+    let cardSection1CreateTabs = CardService.newButtonSet();
+    ['Portrait de ferme', 'Graphiques', 'Liste de formations', 'Chaîne youtube'].forEach((tab) => {
 
-    let cardSection1ButtonCreateFarmsTabs = CardService.newTextButton()
-        .setText('Portrait de ferme')
-        .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
-        .setOnClickAction(cardSection1ButtonCreateFarmsTabsAction1);
+        let button = CardService.newTextButton()
+            .setText(tab)
+            .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
+            .setOnClickAction(CardService.newAction()
+                .setFunctionName('createNewTabs')
+                .setParameters({"tab": tab}));
 
-    let cardSection1ButtonCreateTrainingsTabsAction1 = CardService.newAction()
-        .setFunctionName('createTrainingCoursesCreateTabsCard');
-
-    let cardSection1ButtonCreateTrainingsTabs = CardService.newTextButton()
-        .setText('Liste de formations')
-        .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
-        .setOnClickAction(cardSection1ButtonCreateTrainingsTabsAction1);
-
-    let cardSection1ButtonCreateYoutubeTabsAction1 = CardService.newAction()
-        .setFunctionName('createYoutubeCreateTabsCard');
-
-    let cardSection1ButtonCreateYoutubeTabs = CardService.newTextButton()
-        .setText('Chaîne youtube')
-        .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
-        .setOnClickAction(cardSection1ButtonCreateYoutubeTabsAction1);
-
-    let cardSection1CreateTabs = CardService.newButtonSet()
-        .addButton(cardSection1ButtonCreateFarmsTabs)
-        .addButton(cardSection1ButtonCreateTrainingsTabs)
-        .addButton(cardSection1ButtonCreateYoutubeTabs);
+        cardSection1CreateTabs.addButton(button);
+    });
 
     let cardSection1Divider1 = CardService.newDivider();
 

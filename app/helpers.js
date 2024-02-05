@@ -46,3 +46,8 @@ function getHyperlinkedTitle(tripleperformanceURL, pageTitle, displayTitle = "")
     let pageURL = encodeURI(pageTitle.replaceAll(' ', '_'));
     return `=HYPERLINK("${tripleperformanceURL}wiki/${pageURL}"; "${displayTitle}")`;    
 }
+
+function getLightGrayColor()
+{
+    return "#f3f3f3";
+}
