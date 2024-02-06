@@ -8,13 +8,15 @@ function card_onHomepage(event)
             .addItem('Synchroniser les formations', 'syncTrainingCourses')
             .addItem('Synchroniser les vignettes', 'pushTrainingCoursesThumbnailsToTriplePerformance')
             .addItem('Mettre à jour la liste des intervenants', 'updateTrainingCoursesSpeakersList')
+            .addItem("Pousser les intervenants vers Triple Performance", 'pushSpeakersToTriplePerformance')
         )
         .addSubMenu(ui.createMenu('YouTube')
             .addItem("Charger les nouvelles vidéos de la chaîne", 'fetchVideosFromYouTubeChannel')
             .addItem("Charger le détail des vidéos", 'fetchVideosDetailsFromYouTubeChannel')
-            .addItem("Mettre à jour les vignettes", 'pushThumbnailsToTriplePerformance')
-            .addItem("Mettre à jour Triple Performance", 'pushVideosToTriplePerformance')
+            .addItem("Pousser les vignettes vers Triple Performance", 'pushThumbnailsToTriplePerformance')
+            .addItem("Pousser les vidéos vers Triple Performance", 'pushVideosToTriplePerformance')
             .addItem("Mettre à jour la liste des intervenants", 'updateYoutubeSpeakersList')
+            .addItem("Pousser les intervenants vers Triple Performance", 'pushSpeakersToTriplePerformance')
         )
         .addToUi();
     
@@ -75,6 +77,12 @@ function updateYoutubeSpeakersList() {
     youTube.buildSpeakersList();
 }
 
+function pushSpeakersToTriplePerformance() {
+    Logger.log("pushSpeakersToTriplePerformance")
+    let speakers = new speakersModel();
+    speakers.syncSpeakersToWiki();
+}
+
 function showImportCard()
 {
     Logger.log('showImportCard');
@@ -90,9 +98,27 @@ function showSyncCard()
     return syncTabsBuildCard();
 }
 
-function showTestCard()
+function testConnection()
 {
-    Logger.log('showTestCard');
+    Logger.log('testConnection');
+
+    let parameters = new tp_parameters();
+    parameters.loadSecrets();
+    if (!parameters.checkSecrets())
+    {
+        SpreadsheetApp.getUi().alert("Les paramètres n'ont pas été saisis...!");
+        return;
+    }
+
+    let api = new MediawikiAPI(parameters.secrets.wikiURL + "/api.php", parameters.secrets.username, parameters.secrets.password);
+
+    let logindata = api.login();
+    if (!logindata.login.result || logindata.login.result != 'Success') {
+      SpreadsheetApp.getUi().alert("La connexion n'a pas fonctionné...\n " + JSON.stringify(logindata, null, 3));
+      return;
+    }
+
+    SpreadsheetApp.getUi().alert("La connexion fonctionne correctement.");
 }
 
 function createNewTabs(e)
@@ -189,8 +215,7 @@ function card_buildHomepageCard() {
         .setText('<b>Actions</b>');
 
     let cardSection1TestButton1Action1 = CardService.newAction()
-        .setFunctionName('showTestCard')
-        .setParameters({});
+        .setFunctionName('testConnection');
 
     let cardSection1TestButton1 = CardService.newImageButton()
         .setIcon(CardService.Icon.VIDEO_PLAY)

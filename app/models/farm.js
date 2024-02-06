@@ -2,24 +2,9 @@
 class FarmModel {
     constructor() 
     {
-        this.apiTools = false;
-
         this.defGeneralites = {};
 
         this.tabs = ["Comptabilité"];
-    }
-
-    loadApiTools()
-    {
-        if (this.apiTools)
-            return this.apiTools;
-
-        let parameters = new tp_parameters();
-        parameters.loadSecrets();
-        if (!parameters.checkSecrets())
-            return;
-
-        return this.apiTools = new api_tools(parameters.secrets.wikiURL, parameters.secrets.username, parameters.secrets.password);
     }
 
     getTabs()
@@ -289,15 +274,16 @@ class FarmModel {
 
             Logger.log(newCode);
 
-            this.loadApiTools();
-            let pageContent = this.apiTools.getPageContent(wikiTitle);
+            let apiTools = getApiTools();
+
+            let pageContent = apiTools.getPageContent(wikiTitle);
 
             if (wiki.hasParserFunction("economic_charts", pageContent))
                 pageContent = wiki.replaceParserFunction("economic_charts", newCode, pageContent);
             else
                 pageContent += "\n\n" + newCode;
 
-            this.apiTools.updateWikiPage(wikiTitle, pageContent, "Mise à jour des données de la de la comptabilité");
+            apiTools.updateWikiPage(wikiTitle, pageContent, "Mise à jour des données de la de la comptabilité");
 
             Logger.log("Sync done");
 
@@ -365,15 +351,15 @@ class FarmModel {
 
         Logger.log(newCode);
 
-        this.loadApiTools();
-        let pageContent = this.apiTools.getPageContent(wikiTitle);
+        let apiTools = getApiTools();
+        let pageContent = apiTools.getPageContent(wikiTitle);
 
         if (wiki.hasParserFunction("economic_charts", pageContent))
             pageContent = wiki.replaceParserFunction("economic_charts", newCode, pageContent);
         else
             pageContent += "\n\n" + newCode;
 
-        this.apiTools.updateWikiPage(wikiTitle, pageContent, "Mise à jour des données de la de la comptabilité");
+        apiTools.updateWikiPage(wikiTitle, pageContent, "Mise à jour des données de la de la comptabilité");
 
         Logger.log("Sync done");
 

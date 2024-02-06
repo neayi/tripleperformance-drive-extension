@@ -3,10 +3,17 @@ function parameters_save(e)
     let parameters = new tp_parameters();
 
     let secrets = {
-        wikiURL: e.formInputs.URL[0],
-        username: e.formInputs.username[0],
-        password: e.formInputs.password[0]
+        wikiURL: '',
+        username: '',
+        password: ''
     };
+
+    if (e.formInputs.URL && e.formInputs.URL.length > 0)
+        secrets.wikiURL = e.formInputs.URL[0];
+    if (e.formInputs.username && e.formInputs.username.length > 0)
+        secrets.username = e.formInputs.username[0];
+    if (e.formInputs.password && e.formInputs.password.length > 0)
+        secrets.password = e.formInputs.password[0];
 
     parameters.storeSecrets(secrets);
 
@@ -47,8 +54,7 @@ function parametersbuildCard() {
         .setMultiline(false);
     
     let cardSection1ButtonList1Button1Action1 = CardService.newAction()
-        .setFunctionName('parameters_save')
-        .setParameters({});
+        .setFunctionName('parameters_save');
 
     let cardSection1ButtonList1Button1 = CardService.newTextButton()
         .setText('Enregistrer les paramètres')

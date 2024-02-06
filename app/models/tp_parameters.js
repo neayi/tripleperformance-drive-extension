@@ -20,8 +20,6 @@ class tp_parameters {
 
         // Force reload the secrets
         this.loadSecrets(true);
-
-        SpreadsheetApp.getUi().alert("Secrets enregistrés");
         
         return true;
     }

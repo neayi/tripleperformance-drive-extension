@@ -165,7 +165,7 @@ class MediawikiAPI {
     if (results === false) {
       strError = "request to " + url + "\n";
       strError += "with data " + params;
-      strError += "posted as ".contentType + "\n\n";
+      strError += "posted as " + contentType + "\n\n";
       strError += "Error " + results.getResponseCode() + "\n";
 
       throw new Error("Error Processing Request\n" + strError, 1);

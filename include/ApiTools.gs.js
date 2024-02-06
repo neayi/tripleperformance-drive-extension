@@ -6,7 +6,7 @@ class api_tools {
 
     let logindata = this.api.login();
     if (!logindata.login.result || logindata.login.result != 'Success') {
-      throw new Error("login returned an error: ".logindata);
+      throw new Error("login returned an error: " + logindata);
     }
   }
 

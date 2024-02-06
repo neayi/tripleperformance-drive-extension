@@ -1,8 +1,5 @@
 class TrainingCourseModel {
     constructor() {
-        this.apiTools = false;
-        this.tripleperformanceURL = "";
-
         this.columns = [
             "Code formation", "URL", "URL Image", "Rendu de l'image", "Titre de la formation", "Durée (heures)", 
             "Coût", "Modalité", "Intervenant", "Fournisseur", "Filière", "Finançable VIVEA, OPCO", "Présentation", 
@@ -44,18 +41,6 @@ class TrainingCourseModel {
         return course;
     }
 
-    getApiTools()
-    {
-        let parameters = new tp_parameters();
-        parameters.loadSecrets();
-        if (!parameters.checkSecrets())
-            return;
-
-        this.tripleperformanceURL = parameters.secrets.wikiURL;
-
-        return new api_tools(parameters.secrets.wikiURL, parameters.secrets.username, parameters.secrets.password);
-    }
-
     syncThumbnails() {
         let sheet = SpreadsheetApp.getActiveSheet();
 
@@ -85,7 +70,7 @@ class TrainingCourseModel {
             if (course.tripleperformanceImage.length > 0)
                 return;
 
-            let apiTools = this.getApiTools();
+            let apiTools = getApiTools();
 
             // Find the URL for this thumbnail
             const destName = `Illustration Formation ${course.courseCode}.jpg`;
@@ -95,7 +80,7 @@ class TrainingCourseModel {
             let ret = apiTools.uploadImage(course.courseImageURL, destName, comment);
             Logger.log(ret);
 
-            let content = getHyperlinkedTitle(this.tripleperformanceURL, 'File:' + destName, destName);
+            let content = getHyperlinkedTitle(getTriplePerformanceURL(), 'File:' + destName, destName);
             sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
 
             imagesAdded++;
@@ -112,7 +97,7 @@ class TrainingCourseModel {
         }
 
         let wiki = new wikiPage();
-        this.apiTools = this.getApiTools();
+        let apiTools = getApiTools();
 
         let newCourses = 0;
         let updatedCourses = 0;
@@ -129,11 +114,10 @@ class TrainingCourseModel {
 
             Logger.log(wikiTitle);
 
-            let bModified = false;
 
             if (wikiTitle) {
                 // Update the page
-                let pageContent = this.apiTools.getPageContent(wikiTitle);
+                let pageContent = apiTools.getPageContent(wikiTitle);
 
                 if (!wiki.hasTemplate(pageContent, "Formation")) {
                     throw new Error("La page " + wikiTitle + " a été trouvée pour la formation " + trainingParams.get("Titre") + " mais elle ne contient pas la template formation!");
@@ -145,16 +129,14 @@ class TrainingCourseModel {
                     untouchedCourses++
                 else
                 {
-                    let apiTools = this.getApiTools();
                     apiTools.updateWikiPage(wikiTitle, newPageContent, "Mise à jour des données de la formation");
                     updatedCourses++;
-                    bModified = true;
                 }
             }            
             else {
                 // Create a new page
                 wikiTitle = trainingParams.get("Titre") + " (formation)";
-                let pageContent = this.apiTools.getPageContent(wikiTitle);
+                let pageContent = apiTools.getPageContent(wikiTitle);
 
                 // Check if a page doesn't exist with the same title already, if yes, ask to change the course title
                 if (pageContent) {
@@ -179,14 +161,12 @@ class TrainingCourseModel {
                 if (target.length > 0)
                     pageContent += "\n\n== Public visé et prérequis ==\n" + target;
     
-                let apiTools = this.getApiTools();
                 apiTools.createWikiPage(wikiTitle, pageContent, "Création de la page");
-                bModified = true;
                 newCourses++;
             }
 
             let maintenant = new Date();
-            let content = getHyperlinkedTitle(this.tripleperformanceURL, wikiTitle, wikiTitle);
+            let content = getHyperlinkedTitle(getTriplePerformanceURL(), wikiTitle, wikiTitle);
 
             sheet.getRange(rowId, dateCol, 1, 2).setValues([
                 [content, Utilities.formatDate(maintenant, 'Europe/Paris', 'dd-MMM HH-mm')]
@@ -197,7 +177,9 @@ class TrainingCourseModel {
     }
 
     findPageForTraining(Code, Structure) {
-        let pages = this.apiTools.getPagesWithForSemanticQuery("[[A un code de formation::" + Code + "]][[Est produit par::" + Structure + "]]");
+        let apiTools = getApiTools();
+
+        let pages = apiTools.getPagesWithForSemanticQuery("[[A un code de formation::" + Code + "]][[Est produit par::" + Structure + "]]");
         if (pages.length > 0)
             return pages[0];
 

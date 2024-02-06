@@ -1,8 +1,5 @@
 class YoutubeModel {
     constructor() {
-        this.apiTools = false;
-        this.tripleperformanceURL = "";
-
         this.columns = [
             "ID", "URL", "ThumbnailURL", "Vignette", "Titre", "Description", "Producteur", "Date de mise en ligne", 
             "Durée", "Sous-titres", "Vues", "Commentaires",
@@ -11,19 +8,6 @@ class YoutubeModel {
         ];
 
         this.tabs = ["Vidéos d'une chaîne", "Vidéos d'une playlist", "Intervenants"];
-    }
-
-    getApiTools()
-    {
-        let parameters = new tp_parameters();
-        parameters.loadSecrets();
-
-        if (!parameters.checkSecrets())
-            return;
-
-        this.tripleperformanceURL = parameters.secrets.wikiURL;
-
-        return new api_tools(parameters.secrets.wikiURL, parameters.secrets.username, parameters.secrets.password);
     }
 
     /**
@@ -182,8 +166,13 @@ class YoutubeModel {
         
         vids.forEach((v) => { 
             let duration = v.contentDetails.duration; // PT5M45S
-            let matches = duration.match(/^PT(([0-9]+)H)?(([0-9]+)M)?([0-9]+S)?$/);
-            let minutes = (matches[2]??0) * 60 + Number(matches[4]??0);
+            let minutes = 0;
+
+            if (duration != "P0D") // Not yet streamed probably
+            {
+                let matches = duration.match(/^PT(([0-9]+)H)?(([0-9]+)M)?([0-9]+S)?$/);
+                minutes = (matches[2]??0) * 60 + Number(matches[4]??0);
+            }
 
             let publishedAt = new Date(v.snippet.publishedAt);
 
@@ -247,7 +236,7 @@ class YoutubeModel {
             if (video.okForWiki !== "o")
                 return;
 
-            let apiTools = this.getApiTools();
+            let apiTools = getApiTools();
 
             // Find the URL for this thumbnail
             const destName = `Thumbnail_youtube_${video.videoID}.jpg`;
@@ -257,7 +246,7 @@ class YoutubeModel {
             let ret = apiTools.uploadImage(video.thumbnailURL, destName, comment);
             Logger.log(ret);
 
-            let content = getHyperlinkedTitle(this.tripleperformanceURL, 'File:' + destName, destName);
+            let content = getHyperlinkedTitle(getTriplePerformanceURL(), 'File:' + destName, destName);
             sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
         });
 
@@ -295,7 +284,7 @@ class YoutubeModel {
             if (video.wiki.length > 0)
                 return;
 
-            let apiTools = this.getApiTools();
+            let apiTools = getApiTools();
 
             // if the page is not set, try to find the page using the youtube URL
             let pages = apiTools.getPagesWithForSemanticQuery("[[A une URL de vidéo::" + video.url + "]]");
@@ -304,7 +293,7 @@ class YoutubeModel {
                 let pageTitle = pages[0];
 
                 // if found, just set the page in the col and go the the next row
-                let content = getHyperlinkedTitle(this.tripleperformanceURL, pageTitle);
+                let content = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
 
                 sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
                 return;
@@ -343,7 +332,7 @@ class YoutubeModel {
             let pageTitle = video.fixedTitle;
             apiTools.createWikiPage(pageTitle, pageContent, "Création de la page");
 
-            let cellcontent = getHyperlinkedTitle(this.tripleperformanceURL, pageTitle);
+            let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
             sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(cellcontent);
         });
     }
