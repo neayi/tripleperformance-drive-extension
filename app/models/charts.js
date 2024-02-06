@@ -1,6 +1,6 @@
 class chartsBuilder {
     constructor() {
-        this.charts = ["Histogramme par année", "Assolement", "Rotation"];
+        this.charts = ["Histogramme par année", "Assolement", "Rotation", "Radar"];
     }
 
     /**
@@ -100,6 +100,10 @@ class chartsBuilder {
 
             case "Rotation":
                 chart = this.getRotation(range);
+                break;
+
+            case "Radar":
+                chart = this.getRadar(range);
                 break;
 
             default:
@@ -212,7 +216,7 @@ class chartsBuilder {
 
             const color = bgColors[rowIndex][0];
             if (color != '#ffffff')
-                series.itemStyle = {'color': color};
+                series.itemStyle = { 'color': color };
 
             Logger.log(series.name);
             Logger.log(seriesData);
@@ -350,7 +354,7 @@ class chartsBuilder {
             },
             tooltip: {
                 formatter: (item) => {
-                  return item.data?.description ?? '';
+                    return item.data?.description ?? '';
                 }
             },
             series: []
@@ -383,22 +387,22 @@ class chartsBuilder {
                 break; // We are at the end of our table
 
             let description = htmlEncodeRichText(richTextValues[rowIndex][2])
-            
+
             // escape HTML because our extension tends to lose them
             description = description.replace(/&/g, "¤amp;")
-                                    .replace(/</g, "¤lt;")
-                                    .replace(/>/g, "¤gt;")
-                                    .replace(/"/g, "¤quot;");
+                .replace(/</g, "¤lt;")
+                .replace(/>/g, "¤gt;")
+                .replace(/"/g, "¤quot;");
 
             let item = {
-                'name': culture, 
+                'name': culture,
                 'value': nbMois,
                 'description': description
             };
 
             const color = bgColors[rowIndex][0];
             if (color != '#ffffff')
-                item.itemStyle = {'color': color};
+                item.itemStyle = { 'color': color };
 
             crops.data.push(item);
 
@@ -428,7 +432,7 @@ class chartsBuilder {
         let currentDate = this.getChartValue("Mois de démarrage", values);
         for (let month = 1; month <= totalMonths; month++) {
             let monthName = currentDate.toLocaleDateString(undefined, { month: 'short' });
-            
+
             let item = { 'name': monthName, 'value': 1 };
             const year = currentDate.getFullYear();
             if (year % 2 == 0)
@@ -439,8 +443,8 @@ class chartsBuilder {
             let currentMonthsPerYear = monthsPerYear.get(year);
             if (currentMonthsPerYear == undefined)
                 currentMonthsPerYear = 0;
-            monthsPerYear.set(year, ++currentMonthsPerYear );
-          
+            monthsPerYear.set(year, ++currentMonthsPerYear);
+
             // increment the current month
             currentDate.setMonth(currentDate.getMonth() + 1);
         }
@@ -454,22 +458,22 @@ class chartsBuilder {
             type: 'pie',
             radius: ['45%', '60%'],
             label: {
-              position: 'inner',
-              rotate: 'tangential'
+                position: 'inner',
+                rotate: 'tangential'
             },
             tooltip: {
-              show: false
+                show: false
             },
             itemStyle: {
-              color: '#FFFFFF',
-              borderWidth: 1
+                color: '#FFFFFF',
+                borderWidth: 1
             },
             data: []
         };
 
-        monthsPerYear.forEach( ( nbMonths, year ) => { 
+        monthsPerYear.forEach((nbMonths, year) => {
             years.data.push({ 'name': year, 'value': nbMonths });
-        } );
+        });
         option.series.push(years);
 
         Logger.log(option);
@@ -492,6 +496,74 @@ class chartsBuilder {
           },`);
 
         return parserFunction;
+    }
+
+    getRadar(range) {
+        const values = range.getValues();
+        const title = this.getChartValue("Titre", values);
+
+        let option = {
+            "legend": {},
+            "radar": {
+                "radius": "60%",
+                "center": ["50%", "60%"],
+                "indicator": []
+            },
+            "series": [
+                {
+                    "type": "radar",
+                    "data": [
+                        {
+                            "value": [],
+                            "name": "",
+                            "emphasis": {
+                                "label": {"show": true}
+                            },
+                            "itemStyle": {"width": 3, "color": "#f1894c"},
+                            "lineStyle": {"width": 3, "color": "#f1894c"},
+                            "areaStyle": {"color": "#f1894c"}
+                        },
+                        {
+                            "value": [],
+                            "name": "Moyenne",
+                            "emphasis": {
+                                "title": {"show": true},
+                                "label": {"show": true}
+                            },
+                            "lineStyle": {"width": 3}
+                        }
+                    ]
+                }
+            ]
+        };
+
+        const footerRow = this.getChartRowIndex("Fin du graphique", values);
+        for (let rowIndex = 1; rowIndex < footerRow; rowIndex++) {
+            let [nomAxe, value, average, max] = values[rowIndex];
+
+            if (average == "Moyenne")
+            {
+                option.series[0].data[0].name = value;
+                continue;
+            }
+
+            if (typeof max !== 'number')
+                continue;
+
+            option.series[0].data[0].value.push(Number(value));
+            option.series[0].data[1].value.push(Number(average));
+            option.radar.indicator.push({
+                "name": nomAxe,
+                "max": max
+            });
+        }
+
+        Logger.log(option);
+
+        return this.buildParserFunction(option,
+            this.getChartValue("Largeur", values),
+            this.getChartValue("Hauteur", values),
+            this.getChartValue("Alignement", values));
     }
 
     buildParserFunction(option, width, height, align) {
@@ -576,6 +648,9 @@ class chartsBuilder {
         }
         else if (chartName == "Rotation") {
             this.createRotation();
+        }        
+        else if (chartName == "Radar") {
+            this.createRadar();
         }
 
     }
@@ -609,7 +684,7 @@ class chartsBuilder {
         sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
 
         sheet.getRange(insertRow, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Header
-        sheet.getRange(insertRow + 6, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Columns titles
+        sheet.getRange(insertRow + 6, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignments('right'); // Columns titles
         sheet.getRange(insertRow + 10, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Totals
         sheet.getRange(insertRow + 15, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // End
         sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
@@ -632,4 +707,45 @@ class chartsBuilder {
     createRotation() {
 
     }
+
+    createRadar() {
+        let sheet = SpreadsheetApp.getActiveSheet();
+
+        const insertRow = sheet.getLastRow() + 2;
+        const totalStartRow = insertRow + 7;
+        const totalEndRow = insertRow + 9;
+
+        let values = [
+            ["Graphique", "Radar", "", ""],
+            ["Titre", "Votre radar", "", ""],
+            ["Alignement", "Centrer", "Centrer / Droite / Gauche", ""],
+            ["Largeur", "500px", "Par défaut : 500px", ""],
+            ["Hauteur", "400px", "Par défaut : 400px", ""],
+            ["", "", "", ""],
+            ["", "Une ferme", "Moyenne", "Max"],
+            ["Un axe",                      8, 6, 10],
+            ["Autre chose",                 7, 5, 10],
+            ["Un super indicateur",         9, 5, 10],
+            ["Quelque chose de pertinent", 10, 8, 10],
+            ["Un autre indicateur",         6, 4, 10],
+            ["", "", "", ""],
+            ["Documentation", "", "", ""],
+            ["Vous pouvez ajouter ou supprimer des lignes. La colonne max est obligatoire !", "", "", ""],
+            ["", "", "", ""],
+            ["Fin du graphique", "(garder cette ligne intacte)", "", ""]
+        ];
+
+        sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
+
+        sheet.getRange(insertRow, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Header
+        sheet.getRange(insertRow + 6, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignments('right'); // Columns titles
+        sheet.getRange(insertRow + 16, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // End
+        sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
+        
+        sheet.getRange(insertRow + 2, 3, 3, 1).setFontStyle("italic"); // doc col
+        sheet.getRange(insertRow + 14, 1, 1, 4).merge().setFontStyle("italic").setFontWeight("normal").setWrap(true); // doc
+
+        sheet.getRange(insertRow + 1, 2, 1, 1).setFontWeight("bold").setFontSize(13); // Title
+    }
+
 }
