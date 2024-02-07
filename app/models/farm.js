@@ -207,8 +207,6 @@ class FarmModel {
         let wikiTitle = this.getFarmPageTitle();
         let wiki = new wikiPage();
 
-        Logger.log(wikiTitle);
-
         if (!wikiTitle)
             return;
 
@@ -272,8 +270,6 @@ class FarmModel {
 
             let newCode = "{{#economic_charts:\n   " + templateParametersPerYear.join("\n | ") + '}}';
 
-            Logger.log(newCode);
-
             let apiTools = getApiTools();
 
             let pageContent = apiTools.getPageContent(wikiTitle);
@@ -310,16 +306,12 @@ class FarmModel {
         let wikiTitle = this.getFarmPageTitle();
         let wiki = new wikiPage();
 
-        Logger.log(wikiTitle);
-
         if (!wikiTitle)
             return;
 
         let params = new Map();
 
         this.loadFarmDefinitions();
-
-        Logger.log(this.defGeneralites);
 
         this.defGeneralites.forEach( ( category, fields ) => { 
             fields.foreach( (f) => {
@@ -336,8 +328,6 @@ class FarmModel {
             
         } );
 
-        Logger.log(params);
-
         return;
 
         // {{Portrait de ferme
@@ -348,8 +338,6 @@ class FarmModel {
         // "TemplateParam": "Nom de l'exploitation"
 
         let newCode = "{{#economic_charts:\n   " + templateParametersPerYear.join("\n | ") + '}}';
-
-        Logger.log(newCode);
 
         let apiTools = getApiTools();
         let pageContent = apiTools.getPageContent(wikiTitle);
@@ -373,7 +361,6 @@ class FarmModel {
     getFarmPageTitle()
     { 
         let wikiTitle = String(this.getGeneraliteValue("Nom de la page Triple Performance"));
-        Logger.log(wikiTitle);
 
         if (wikiTitle.length == 0) {
             SpreadsheetApp.getUi().alert("Le nom de la page Triple Performance est vide. Veuillez créer puis reporter le nom de la page dans l'onglet Ferme !");
@@ -397,8 +384,6 @@ class FarmModel {
     getGeneraliteValue(fieldname)
     {
         let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ferme");
-
-        Logger.log(sheet);
 
         if (!sheet) {
             SpreadsheetApp.getUi().alert("Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");

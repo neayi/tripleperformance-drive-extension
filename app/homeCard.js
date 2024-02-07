@@ -227,19 +227,19 @@ function card_buildHomepageCard() {
         .setBottomLabel('Tester les identifiants')
         .setButton(cardSection1TestButton1);
 
-    let cardSection1ImportButton1Action1 = CardService.newAction()
-        .setFunctionName('showImportCard')
-        .setParameters({});
+    // let cardSection1ImportButton1Action1 = CardService.newAction()
+    //     .setFunctionName('showImportCard')
+    //     .setParameters({});
 
-    let cardSection1ImportButton1 = CardService.newImageButton()
-        .setIcon(CardService.Icon.VIDEO_PLAY)
-        .setAltText('import')
-        .setOnClickAction(cardSection1ImportButton1Action1);
+    // let cardSection1ImportButton1 = CardService.newImageButton()
+    //     .setIcon(CardService.Icon.VIDEO_PLAY)
+    //     .setAltText('import')
+    //     .setOnClickAction(cardSection1ImportButton1Action1);
 
-    let cardSection1Import = CardService.newDecoratedText()
-        .setText('Importer')
-        .setBottomLabel('Importer les données...')
-        .setButton(cardSection1ImportButton1);
+    // let cardSection1Import = CardService.newDecoratedText()
+    //     .setText('Importer')
+    //     .setBottomLabel('Importer les données...')
+    //     .setButton(cardSection1ImportButton1);
 
     let cardSection1ParametersButton1Action1 = CardService.newAction()
         .setFunctionName('showParametersCard')
@@ -274,7 +274,7 @@ function card_buildHomepageCard() {
         .addWidget(cardSection1Divider1)
         .addWidget(cardSection1ActionsTitle)
         .addWidget(cardSection1Test)
-        .addWidget(cardSection1Import)
+//        .addWidget(cardSection1Import)
         .addWidget(cardSection1Parameters);
 
     let card = CardService.newCardBuilder()

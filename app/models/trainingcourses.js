@@ -78,7 +78,6 @@ class TrainingCourseModel {
 
             Logger.log("Getting thumbnail for " + course.courseCode + " " + course.courseImageURL + " " + destName);
             let ret = apiTools.uploadImage(course.courseImageURL, destName, comment);
-            Logger.log(ret);
 
             let content = getHyperlinkedTitle(getTriplePerformanceURL(), 'File:' + destName, destName);
             sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
@@ -111,9 +110,6 @@ class TrainingCourseModel {
             const trainingParams = this.getTrainingDataFromSpreadsheet(sheet, rowId);
 
             let wikiTitle = this.findPageForTraining(trainingParams.get('Code'), trainingParams.get('Structure'));
-
-            Logger.log(wikiTitle);
-
 
             if (wikiTitle) {
                 // Update the page
@@ -217,8 +213,6 @@ class TrainingCourseModel {
         training.set("Département",	course.department);
         training.set("Structure",	course.structure);
         training.set("URL Structure",	course.structureURL);
-
-        Logger.log([...training.entries()]);
 
         return training;
     }

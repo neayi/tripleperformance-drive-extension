@@ -244,7 +244,6 @@ class YoutubeModel {
 
             Logger.log("Getting thumbnail for " + video.videoID + " " + video.thumbnailURL + " " + destName);
             let ret = apiTools.uploadImage(video.thumbnailURL, destName, comment);
-            Logger.log(ret);
 
             let content = getHyperlinkedTitle(getTriplePerformanceURL(), 'File:' + destName, destName);
             sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
@@ -431,7 +430,6 @@ class YoutubeModel {
         }
 
         if (channelId == "") {
-            Logger.log(values);
             return false;
         }
 
@@ -447,7 +445,6 @@ class YoutubeModel {
         }
 
         if (playlistId == "") {
-            Logger.log(values);
             return false;
         }
 
@@ -597,7 +594,6 @@ class YoutubeModel {
        */
     
       let matches = title.match(/(,|par|avec|-|\?)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+)(\s+et\s+([A-Za-zÀ-ÖØ-öø-ÿ]+)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+))?\s*$/);
-      Logger.log(matches);
       let intervenants = [];
       if (matches)
       {

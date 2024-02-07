@@ -339,8 +339,6 @@ class api_tools {
     const args = { titles: title };
     const content = this.api.query(args);
 
-    Logger.log(content);
-
     let ret = new Map();
     if (content.query?.pages) {
       for (const [key, value] of Object.entries(content.query.pages)) {

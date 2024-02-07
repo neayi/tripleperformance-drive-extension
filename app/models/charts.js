@@ -76,7 +76,6 @@ class chartsBuilder {
         const range = this.getRangeForChart(chartname);
 
         if (!range) {
-            Logger.log(range);
             SpreadsheetApp.getUi().alert("Impossible de trouver le chart complet pour " + chartname + ". " +
                 "Il est possible qu'il ait été modifié dans sa structure, vérifiez en particulier qu'il y " +
                 "ait bien la ligne \"Graphique\" et la ligne \"Fin du graphique\"");
@@ -120,8 +119,6 @@ class chartsBuilder {
 
         let farm = new FarmModel()
         let wikiTitle = farm.getFarmPageTitle();
-
-        Logger.log(wikiTitle);
 
         if (!wikiTitle)
             return;
@@ -181,9 +178,6 @@ class chartsBuilder {
         else
             numCols = option.xAxis.data.length;
 
-        Logger.log("Columns:");
-        Logger.log(option.xAxis.data);
-
         option.yAxis.name = this.getChartValue("Titre", values);
 
         const headerRow = this.getChartRowIndex("Colonnes ➜", values);
@@ -217,10 +211,6 @@ class chartsBuilder {
             const color = bgColors[rowIndex][0];
             if (color != '#ffffff')
                 series.itemStyle = { 'color': color };
-
-            Logger.log(series.name);
-            Logger.log(seriesData);
-
 
             option.series.push(series);
         }
@@ -271,8 +261,6 @@ class chartsBuilder {
         for (let rowIndex = headerRow + 1; rowIndex < footerRow; rowIndex++) {
             let [cat, item, value] = values[rowIndex];
 
-            Logger.log("row: " + cat + " - " + item + " - " + value);
-
             if (cat == "" && item == "" && value == "")
                 break; // We are at the end of our table
 
@@ -301,6 +289,10 @@ class chartsBuilder {
             if (item == "")
                 item = cat;
 
+            // in some cases, getValues picks up the unit as well, so remove all non numeric features:
+            if (typeof value == 'string')
+                value = Number.parseFloat(value);
+
             let childData = {
                 name: item,
                 value: value,
@@ -318,8 +310,6 @@ class chartsBuilder {
         if (currentCategoryJSON.name != "") {
             option.series[0].data.push(currentCategoryJSON);
         }
-
-        Logger.log(option);
 
         let parserFunction = this.buildParserFunction(option,
             this.getChartValue("Largeur", values),
@@ -429,7 +419,7 @@ class chartsBuilder {
             data: []
         };
         let monthsPerYear = new Map();
-        let currentDate = this.getChartValue("Mois de démarrage", values);
+        let currentDate = this.getChartValue("Date de démarrage", values);
         for (let month = 1; month <= totalMonths; month++) {
             let monthName = currentDate.toLocaleDateString(undefined, { month: 'short' });
 
@@ -449,8 +439,6 @@ class chartsBuilder {
             currentDate.setMonth(currentDate.getMonth() + 1);
         }
         option.series.push(months);
-
-        Logger.log(monthsPerYear);
 
         // Create the calendar years ring
         let years = {
@@ -475,8 +463,6 @@ class chartsBuilder {
             years.data.push({ 'name': year, 'value': nbMonths });
         });
         option.series.push(years);
-
-        Logger.log(option);
 
         let parserFunction = this.buildParserFunction(option,
             this.getChartValue("Largeur", values),
@@ -538,6 +524,7 @@ class chartsBuilder {
         };
 
         const footerRow = this.getChartRowIndex("Fin du graphique", values);
+        let hasMoyenne = false;
         for (let rowIndex = 1; rowIndex < footerRow; rowIndex++) {
             let [nomAxe, value, average, max] = values[rowIndex];
 
@@ -552,13 +539,19 @@ class chartsBuilder {
 
             option.series[0].data[0].value.push(Number(value));
             option.series[0].data[1].value.push(Number(average));
+
+            if (average > 0)
+                hasMoyenne = true;
+
             option.radar.indicator.push({
                 "name": nomAxe,
                 "max": max
             });
         }
 
-        Logger.log(option);
+        // if no average has been found, just remove the average series
+        if (!hasMoyenne)
+            option.series[0].data.pop();
 
         return this.buildParserFunction(option,
             this.getChartValue("Largeur", values),
@@ -700,20 +693,132 @@ class chartsBuilder {
     }
 
     createTreeMap() {
-        // Devise personnalisée # \h\a
-        // Alignement vertical middle
+        let sheet = SpreadsheetApp.getActiveSheet();
+        const insertRow = sheet.getLastRow() + 2;
+
+        let values = [        
+            ["Graphique", "Assolement", ""],
+            ["Titre", "Mon assolement", ""],
+            ["Alignement", "Centrer", "Centrer / Droite / Gauche"],
+            ["Largeur", "", "Par défaut : 500px"],
+            ["Hauteur", "", "Par défaut : 400px"],
+            ["", "", ""],
+            ["Catégorie", "Assolement", "Surface"],
+            ["Surface fourragère", "Prairie permanente", "25 ha"],
+            ["", "Prairie temporaires", "20 ha"],
+            ["", "Méteil", "12 ha"],
+            ["Cultures de vente", "Blé tendre", "3 ha"],
+            ["", "Moha", "15 ha"],
+            ["Jachère", "", "10 ha"],
+            ["SIE", "", "5 ha"],
+            ["", "", ""],
+            ["Documentation", "", ""],
+            ["Vous pouvez ajouter des lignes. Si les entêtes de ligne sont sur fond de couleur, alors cette couleur sera reprise dans le graphique."+
+             "Il faut fusionner la première colonne des lignes dans une même catégorie.", "", ""],
+            ["", "", ""],
+            ["Fin du graphique", "(garder cette ligne intacte)", ""]
+        ];
+
+        sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
+
+        sheet.getRange(insertRow, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Header
+        sheet.getRange(insertRow + 6, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Columns titles
+        sheet.getRange(insertRow + 18, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // End
+        sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
+        
+        sheet.getRange(insertRow + 2, 3, 3, 1).setFontStyle("italic"); // doc col
+        sheet.getRange(insertRow + 16, 1, 1, 3).merge().setFontStyle("italic").setFontWeight("normal").setWrap(true); // doc
+
+        sheet.getRange(insertRow + 1, 2, 1, 1).setFontWeight("bold").setFontSize(13); // Chart title
+
+        sheet.getRange(insertRow + 7,  1, 7, 3).setVerticalAlignment("middle"); // values
+        sheet.getRange(insertRow + 7,  1, 3, 1).merge().setBackground("#afd095"); // Surface fourragère
+        sheet.getRange(insertRow + 10, 1, 2, 1).merge().setBackground("#ffe599"); // Cultures de vente
+        sheet.getRange(insertRow + 12, 1, 1, 1).setBackground("#efefef"); // Jachère
+        sheet.getRange(insertRow + 13, 1, 1, 1).setBackground("#ead1dc"); // SIE
+
+        // Devise personnalisée pour 50 ha
+        sheet.getRange(insertRow + 7, 3, 7, 1).setNumberFormat("# \\h\\a");
+        sheet.getRange(insertRow + 6, 3, 8, 1).setHorizontalAlignment('right');
     }
 
     createRotation() {
 
+        let sheet = SpreadsheetApp.getActiveSheet();
+        const insertRow = sheet.getLastRow() + 2;
+
+        let values = [        
+            ["Graphique", "Rotation", ""],
+            ["Titre", "Ma rotation", ""],
+            ["Alignement", "Centrer", "Centrer / Droite / Gauche"],
+            ["Largeur", "", "Par défaut : 500px"],
+            ["Hauteur", "", "Par défaut : 400px"],
+            ["Date de démarrage", "15/03/2024", "Une date à partir de laquelle on démarre la rotation"],
+            ["", "", ""],
+            ["Cultures/couverts", "1 mois = 1 unité", "Actions menées (travail du sol, semis, couverts, mois ou sols nus)"],
+            ["Colza", "3", ""],
+            ["Blé dûr", "4", "Irrigation : 1500 m³/ha au total - arrosage tous les 10 jours"],
+            ["Soja", "5", "Désherbage pré-levée : jusqu'à ce que le soja tombe en feuille"],
+            ["Blé tendre", "6", ""],
+            ["Moha", "2", ""],
+            ["Jachère", "3", ""],
+            ["", "", ""],
+            ["Documentation", "", ""],
+            ["Vous pouvez ajouter des lignes. Si les entêtes de ligne sont sur fond de couleur, alors cette couleur sera reprise dans le graphique."+
+             "Vous pouvez mettre des retours chariot (ctrl-entrée), du gras et de l'italique dans la colonne Actions Menées.", "", ""],
+            ["", "", ""],
+            ["Fin du graphique", "(garder cette ligne intacte)", ""]
+        ];
+
+        sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
+
+        sheet.getRange(insertRow, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Header
+        sheet.getRange(insertRow + 7, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Columns titles
+        sheet.getRange(insertRow + 18, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // End
+        sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
+        
+        sheet.getRange(insertRow + 2, 3, 4, 1).setFontStyle("italic"); // doc col
+        sheet.getRange(insertRow + 16, 1, 1, 3).merge().setFontStyle("italic").setFontWeight("normal").setWrap(true); // doc
+
+        sheet.getRange(insertRow + 1, 2, 1, 1).setFontWeight("bold").setFontSize(13); // Chart title
+
+        sheet.getRange(insertRow + 8,  1, 6, 3).setVerticalAlignment("middle"); // values
+        sheet.getRange(insertRow + 8,  1, 1, 1).setBackground("#ffd966"); // colza
+        sheet.getRange(insertRow + 9,  1, 1, 1).setBackground("#fff2cc"); // Blé dûr
+        sheet.getRange(insertRow + 10, 1, 1, 1).setBackground("#d9ead3"); // Soja
+        sheet.getRange(insertRow + 11, 1, 1, 1).setBackground("#ffe599"); // Blé tendre
+        sheet.getRange(insertRow + 12, 1, 1, 1).setBackground("#d9ead3"); // Moha
+        sheet.getRange(insertRow + 13, 1, 1, 1).setBackground("#efefef"); // Jachère
+
+        // Create a HTMLRichText as an example
+        var bold = SpreadsheetApp.newTextStyle()
+            .setBold(true)
+            .build();
+
+        let textParts = [
+            ["Préparation du sol", "cover crop (2 passages) puis herse rotative"],
+            ["Labour", "tous les 3 ans"],
+            ["Type de semoir", "mono simple monoshock"],
+            ["Semis", "dense avec inter-rang inférieur à 80cm"],
+            ["Date de semis", "27/06"],
+            ["Densité de semis", "600 000 grains / ha"]];
+
+        let richTextBuilder = SpreadsheetApp.newRichTextValue()
+            .setText(textParts.map((row) => { return row.join(" : ") }).join("\n"));
+
+        let start = 0;
+        textParts.forEach((row) => {
+            let end = start + row[0].length + 2;
+            richTextBuilder = richTextBuilder.setTextStyle(start, end, bold);
+            start += row.join(" : ").length + 1;
+        });
+            
+        sheet.getRange(insertRow + 8, 3).setRichTextValue(richTextBuilder.build());
     }
 
     createRadar() {
         let sheet = SpreadsheetApp.getActiveSheet();
-
         const insertRow = sheet.getLastRow() + 2;
-        const totalStartRow = insertRow + 7;
-        const totalEndRow = insertRow + 9;
 
         let values = [
             ["Graphique", "Radar", "", ""],
@@ -738,7 +843,7 @@ class chartsBuilder {
         sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
 
         sheet.getRange(insertRow, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Header
-        sheet.getRange(insertRow + 6, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignments('right'); // Columns titles
+        sheet.getRange(insertRow + 6, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignment('right'); // Columns titles
         sheet.getRange(insertRow + 16, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // End
         sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
         
