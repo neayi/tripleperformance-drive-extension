@@ -677,7 +677,7 @@ class chartsBuilder {
         sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
 
         sheet.getRange(insertRow, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Header
-        sheet.getRange(insertRow + 6, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignments('right'); // Columns titles
+        sheet.getRange(insertRow + 6, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignment('right'); // Columns titles
         sheet.getRange(insertRow + 10, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // Totals
         sheet.getRange(insertRow + 15, 1, 1, values[0].length).setFontWeight("bold").setBackground(getLightGrayColor()); // End
         sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
