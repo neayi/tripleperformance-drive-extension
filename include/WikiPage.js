@@ -180,7 +180,7 @@ class wikiPage {
      */
     replaceParserFunction(parserFunctionName, newContent, pageContent) {
 
-        const re = new RegExp('{{#' + parserFunctionName + '(\s*:[^}]*)}}', 'i');
+        const re = new RegExp('{{#' + parserFunctionName + '(\\s*:[^}]*)}}', 'i');
 
         return pageContent.replace(re, newContent);
     }
@@ -325,6 +325,66 @@ class wikiPage {
 
             break;
         }
+
+        return pageContent;
+    }
+
+
+    /**
+     * Finds all charts in the page, and if one matches the given title, replace it with the one passed in parameter.
+     * If none is found, then simply adds the chart at the end of the page.
+     * @param {*} chartName 
+     * @param {*} chartCode 
+     * @param {*} content 
+     */
+    replaceOrAddChart(chartType, chartName, chartCode, pageContent) {
+
+        chartName = chartName.trim().toLowerCase();
+        
+        const re = new RegExp('\{\{#' + chartType + '\s*:(.*?)\}\}', 'sgmi');
+
+        let matches = pageContent.match(re);
+        let originalChart = '';
+
+        if (matches) {
+
+            Logger.log(`${matches.length} charts found`);
+            Logger.log(matches);
+
+            matches.forEach((chart) => {
+                if (originalChart != "")
+                    return;
+
+                const re = new RegExp('\{\{#' + chartType + '\s*:', 'i');
+
+                let chartcontent = chart.replace(re, '');
+                let existing_args = chartcontent.split('|').map((x) => x.trim());
+
+                existing_args.forEach((anArg) => {
+                    let parts = anArg.split('=');
+
+                    if (parts.length == 1)
+                        return;
+
+                    let field = parts[0].trim().toLowerCase();
+                    let value = parts[1].trim().toLowerCase();
+                    if (field == 'title' && value == chartName) {
+                        // Found !
+                        originalChart = chart;
+                        Logger.log(`Chart ${chartName} found`);
+
+                    }
+                });
+            });
+        }
+        else
+            Logger.log(`Chart ${chartName} not found`);
+            
+
+        if (originalChart != "")
+            pageContent = pageContent.replace(originalChart, chartCode);
+        else
+            pageContent = pageContent + "\n\n" + chartCode;
 
         return pageContent;
     }

@@ -1,9 +1,8 @@
 // called by the add on when it is opened
-function card_onHomepage(event)
-{
+function card_onHomepage(event) {
     var ui = SpreadsheetApp.getUi();
 
-    ui.createMenu('Triple Performance')
+    ui.createAddonMenu()
         .addSubMenu(ui.createMenu('Formations')
             .addItem('Synchroniser les formations', 'syncTrainingCourses')
             .addItem('Synchroniser les vignettes', 'pushTrainingCoursesThumbnailsToTriplePerformance')
@@ -19,7 +18,7 @@ function card_onHomepage(event)
             .addItem("Pousser les intervenants vers Triple Performance", 'pushSpeakersToTriplePerformance')
         )
         .addToUi();
-    
+
     return card_buildHomepageCard();
 }
 
@@ -29,43 +28,37 @@ function syncTrainingCourses() {
     trainingModel.syncTrainings();
 }
 
-function pushTrainingCoursesThumbnailsToTriplePerformance()
-{
+function pushTrainingCoursesThumbnailsToTriplePerformance() {
     Logger.log("pushTrainingCoursesThumbnailsToTriplePerformance")
     let trainingModel = new TrainingCourseModel();
     trainingModel.syncThumbnails();
 }
 
-function updateTrainingCoursesSpeakersList()
-{
+function updateTrainingCoursesSpeakersList() {
     Logger.log("updateTrainingCoursesSpeakersList")
     let trainingModel = new TrainingCourseModel();
     trainingModel.buildSpeakersList();
 }
 
-function fetchVideosFromYouTubeChannel()
-{
+function fetchVideosFromYouTubeChannel() {
     Logger.log("fetchVideosFromYouTubeChannel")
     let youTube = new YoutubeModel();
     youTube.fetchVideosFromYouTube();
 }
 
-function fetchVideosDetailsFromYouTubeChannel()
-{
+function fetchVideosDetailsFromYouTubeChannel() {
     Logger.log("fetchVideosDetailsFromYouTubeChannel")
     let youTube = new YoutubeModel();
     youTube.fetchDetailsFromYoutube();
 }
 
-function pushVideosToTriplePerformance()
-{
+function pushVideosToTriplePerformance() {
     Logger.log("pushVideosToTriplePerformance")
     let youTube = new YoutubeModel();
     youTube.syncYoutubeToWiki();
 }
 
-function pushThumbnailsToTriplePerformance()
-{
+function pushThumbnailsToTriplePerformance() {
     Logger.log("pushThumbnailsToTriplePerformance")
     let youTube = new YoutubeModel();
     youTube.addThumbnailsToWiki();
@@ -83,29 +76,24 @@ function pushSpeakersToTriplePerformance() {
     speakers.syncSpeakersToWiki();
 }
 
-function showImportCard()
-{
+function showImportCard() {
     Logger.log('showImportCard');
 }
 
-function showParametersCard()
-{
+function showParametersCard() {
     return parametersbuildCard();
 }
 
-function showSyncCard()
-{
+function showSyncCard() {
     return syncTabsBuildCard();
 }
 
-function testConnection()
-{
+function testConnection() {
     Logger.log('testConnection');
 
     let parameters = new tp_parameters();
     parameters.loadSecrets();
-    if (!parameters.checkSecrets())
-    {
+    if (!parameters.checkSecrets()) {
         SpreadsheetApp.getUi().alert("Les paramètres n'ont pas été saisis...!");
         return;
     }
@@ -114,18 +102,17 @@ function testConnection()
 
     let logindata = api.login();
     if (!logindata.login.result || logindata.login.result != 'Success') {
-      SpreadsheetApp.getUi().alert("La connexion n'a pas fonctionné...\n " + JSON.stringify(logindata, null, 3));
-      return;
+        SpreadsheetApp.getUi().alert("La connexion n'a pas fonctionné...\n " + JSON.stringify(logindata, null, 3));
+        return;
     }
 
     SpreadsheetApp.getUi().alert("La connexion fonctionne correctement.");
 }
 
-function createNewTabs(e)
-{
+function createNewTabs(e) {
     switch (e.parameters.tab) {
         case "Portraits de ferme":
-            let farm = new FarmModel();    
+            let farm = new FarmModel();
             return onCreateNewTabsCard("Portraits de ferme", farm.getTabs());
 
         case "Liste des formations":
@@ -139,29 +126,34 @@ function createNewTabs(e)
         case "Graphiques":
             let chartModel = new chartsBuilder();
             return onCreateNewTabsCard("Graphiques", chartModel.getCharts(), "Créer des graphiques");
-                
+
         default:
             break;
     }
 }
 
-function createFarmPortraitCreateTabsCard()
-{
+function createChart(e) {
+    const chartsModel = new chartsBuilder();
+    let chartName = e.parameters.grid_item_identifier;
+    if (!chartName)
+        chartName = e.parameters.chart;
+
+    chartsModel.createChart(chartName);
+}
+
+function createFarmPortraitCreateTabsCard() {
 
 }
 
-function createTrainingCoursesCreateTabsCard()
-{
+function createTrainingCoursesCreateTabsCard() {
 
 }
 
-function createYoutubeCreateTabsCard()
-{
+function createYoutubeCreateTabsCard() {
 
 }
 
-function UnhandledEvent(call)
-{
+function UnhandledEvent(call) {
     Logger.log(call);
 }
 
@@ -171,116 +163,105 @@ function UnhandledEvent(call)
  * @returns 
  */
 function card_buildHomepageCard() {
-    let cardSection1TriplePerformanceLogoItem1Image1CropStyle1 = CardService.newImageCropStyle()
-        .setAspectRatio(4)
-        .setImageCropType(CardService.ImageCropType.RECTANGLE_CUSTOM);
 
-    let cardSection1TriplePerformanceLogoItem1Image1 = CardService.newImageComponent()
-        .setImageUrl('https://neayi.com/Triple%20Performance%20by%20Neayi.png')
-        .setCropStyle(cardSection1TriplePerformanceLogoItem1Image1CropStyle1);
+    var builder = CardService.newCardBuilder();
 
-    let cardSection1TriplePerformanceLogoItem1 = CardService.newGridItem()
-        .setTextAlignment(CardService.HorizontalAlignment.START)
-        .setLayout(CardService.GridItemLayout.TEXT_BELOW)
-        .setImage(cardSection1TriplePerformanceLogoItem1Image1);
+    builder.setFixedFooter(CardService.newFixedFooter()
+        .setPrimaryButton(CardService.newTextButton()
+            .setText('Synchroniser la page')
+            .setBackgroundColor('#15a072')
+            .setOnClickAction(CardService.newAction()
+                .setFunctionName('showSyncCard'))));
 
-    let cardSection1TriplePerformanceLogoBorderStyle1 = CardService.newBorderStyle()
-        .setType(CardService.BorderType.NO_BORDER)
-        .setCornerRadius(0);
+    let cardSectionHeader = CardService.newCardSection();
 
-    let cardSection1TriplePerformanceLogo = CardService.newGrid()
+    cardSectionHeader.addWidget(CardService.newGrid()
         .setNumColumns(1)
-        .setBorderStyle(cardSection1TriplePerformanceLogoBorderStyle1)
-        .addItem(cardSection1TriplePerformanceLogoItem1);
+        .setBorderStyle(CardService.newBorderStyle()
+            .setType(CardService.BorderType.NO_BORDER)
+            .setCornerRadius(0))
+        .addItem(CardService.newGridItem()
+            .setTextAlignment(CardService.HorizontalAlignment.START)
+            .setLayout(CardService.GridItemLayout.TEXT_BELOW)
+            .setImage(CardService.newImageComponent()
+                .setImageUrl('https://neayi.com/Triple%20Performance%20by%20Neayi.png')
+                .setCropStyle(CardService.newImageCropStyle()
+                    .setAspectRatio(4)
+                    .setImageCropType(CardService.ImageCropType.RECTANGLE_CUSTOM)))));
 
-    let cardSection1CreateTabsTitle = CardService.newTextParagraph()
-        .setText('<b>Créer les onglets ou des graphiques</b>');
+    cardSectionHeader.addWidget(CardService.newTextParagraph().setText('<b>Créer les onglets ou des graphiques</b>'));
 
-    let cardSection1CreateTabs = CardService.newButtonSet();
-    ['Portrait de ferme', 'Graphiques', 'Liste de formations', 'Chaîne youtube'].forEach((tab) => {
+    let cardSectionHeaderCreateTabs = CardService.newButtonSet();
 
+    ['Liste de formations', 'Chaîne youtube'].forEach((tab) => {
         let button = CardService.newTextButton()
             .setText(tab)
             .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
             .setOnClickAction(CardService.newAction()
                 .setFunctionName('createNewTabs')
-                .setParameters({"tab": tab}));
+                .setParameters({ "tab": tab }));
 
-        cardSection1CreateTabs.addButton(button);
+        cardSectionHeaderCreateTabs.addButton(button);
+    });
+    cardSectionHeader.addWidget(cardSectionHeaderCreateTabs);
+
+    cardSectionHeader.addWidget(CardService.newDivider());
+    builder.addSection(cardSectionHeader);
+
+    let cardSectionNewChart = CardService.newCardSection()
+        .addWidget(CardService.newTextParagraph().setText('<b>Ajouter un graphique à la page</b>'));
+
+    let chartsGrid = CardService.newGrid()
+        .setNumColumns(2)
+        .setBorderStyle(CardService.newBorderStyle()
+            .setType(CardService.BorderType.STROKE)
+            .setStrokeColor('#e0e0e0')
+            .setCornerRadius(4))
+        .setOnClickAction(CardService.newAction().setFunctionName('createChart'));
+
+    let chartModel = new chartsBuilder();
+    chartModel.getCharts().forEach((chart) => {
+        chartsGrid.addItem(CardService.newGridItem()
+            .setTitle(chart.type)
+            .setIdentifier(chart.name)
+            .setSubtitle(chart.name)
+            .setTextAlignment(CardService.HorizontalAlignment.START)
+            .setLayout(CardService.GridItemLayout.TEXT_BELOW)
+            .setImage(CardService.newImageComponent().setImageUrl(chart.image)));
     });
 
-    let cardSection1Divider1 = CardService.newDivider();
+    cardSectionNewChart.addWidget(chartsGrid);
 
-    let cardSection1ActionsTitle = CardService.newTextParagraph()
-        .setText('<b>Actions</b>');
 
-    let cardSection1TestButton1Action1 = CardService.newAction()
-        .setFunctionName('testConnection');
+/////
 
-    let cardSection1TestButton1 = CardService.newImageButton()
-        .setIcon(CardService.Icon.VIDEO_PLAY)
-        .setAltText('Tester la connexion avec Triple Performance')
-        .setOnClickAction(cardSection1TestButton1Action1);
+    builder.addSection(cardSectionNewChart);
 
-    let cardSection1Test = CardService.newDecoratedText()
-        .setText('Tester la connexion')
-        .setBottomLabel('Tester les identifiants')
-        .setButton(cardSection1TestButton1);
 
-    // let cardSection1ImportButton1Action1 = CardService.newAction()
-    //     .setFunctionName('showImportCard')
-    //     .setParameters({});
+    let cardSectionParams = CardService.newCardSection();
 
-    // let cardSection1ImportButton1 = CardService.newImageButton()
-    //     .setIcon(CardService.Icon.VIDEO_PLAY)
-    //     .setAltText('import')
-    //     .setOnClickAction(cardSection1ImportButton1Action1);
+    cardSectionParams.addWidget(CardService.newTextParagraph().setText('<b>Paramètres</b>'));
 
-    // let cardSection1Import = CardService.newDecoratedText()
-    //     .setText('Importer')
-    //     .setBottomLabel('Importer les données...')
-    //     .setButton(cardSection1ImportButton1);
-
-    let cardSection1ParametersButton1Action1 = CardService.newAction()
-        .setFunctionName('showParametersCard')
-        .setParameters({});
-
-    let cardSection1ParametersButton1 = CardService.newImageButton()
-        .setIcon(CardService.Icon.VIDEO_PLAY)
-        .setAltText('Voir les paramètres de connexion')
-        .setOnClickAction(cardSection1ParametersButton1Action1);
-
-    let cardSection1Parameters = CardService.newDecoratedText()
+    cardSectionParams.addWidget(CardService.newDecoratedText()
         .setText('Paramètres')
         .setBottomLabel('Paramètres de connexion')
-        .setButton(cardSection1ParametersButton1);
+        .setButton(CardService.newImageButton()
+            .setIcon(CardService.Icon.VIDEO_PLAY)
+            .setAltText('Voir les paramètres de connexion')
+            .setOnClickAction(CardService.newAction()
+                .setFunctionName('showParametersCard'))));
 
-    let cardFooter1Button1Action1 = CardService.newAction()
-        .setFunctionName('showSyncCard')
-        .setParameters({});
+    cardSectionParams.addWidget(CardService.newDecoratedText()
+        .setText('Tester la connexion')
+        .setBottomLabel('Tester les identifiants')
+        .setButton(CardService.newImageButton()
+            .setIcon(CardService.Icon.VIDEO_PLAY)
+            .setAltText('Tester la connexion avec Triple Performance')
+            .setOnClickAction(CardService.newAction()
+                .setFunctionName('testConnection'))));
 
-    let cardFooter1Button1 = CardService.newTextButton()
-        .setText('Synchroniser')
-        .setBackgroundColor('#15a072')
-        .setOnClickAction(cardFooter1Button1Action1);
+    builder.addSection(cardSectionParams);
 
-    let cardFooter1 = CardService.newFixedFooter()
-        .setPrimaryButton(cardFooter1Button1);
 
-    let cardSection1 = CardService.newCardSection()
-        .addWidget(cardSection1TriplePerformanceLogo)
-        .addWidget(cardSection1CreateTabsTitle)
-        .addWidget(cardSection1CreateTabs)
-        .addWidget(cardSection1Divider1)
-        .addWidget(cardSection1ActionsTitle)
-        .addWidget(cardSection1Test)
-//        .addWidget(cardSection1Import)
-        .addWidget(cardSection1Parameters);
-
-    let card = CardService.newCardBuilder()
-        .setFixedFooter(cardFooter1)
-        .addSection(cardSection1)
-        .build();
-
-    return card;
+    return builder.build();
 }

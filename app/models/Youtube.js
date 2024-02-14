@@ -53,10 +53,6 @@ class YoutubeModel {
             return;
         }
         
-        sheet.getRange(3, 1, 1, this.columns.length).setValues([this.columns]).setFontWeight("bold");
-        sheet.setFrozenRows(3);
-        sheet.setFrozenColumns(4);
-
         if (ids.length == 0)
         {
             SpreadsheetApp.getUi().alert("Aucune vidéo trouvée. Veuillez vérifier l'ID de votre chaîne ou de votre playlist");
@@ -115,35 +111,7 @@ class YoutubeModel {
         Logger.log("Fetching the following videos:");
         Logger.log(ids);
 
-        let videosDetails = this.fetchDetailsForVideoIDs(ids);
-
-        data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == this.columns[0])
-            {
-                idFound = true;
-                return;
-            }
-
-            if (!idFound)
-                return;
-
-            let video = this.getVideoFromRow(row);
-   
-            if (video.videoID.length != 11)
-                return;
-
-            if (video.url.length > 0)
-                return; // the details where already fetched for this video, skip
-            
-            let details = videosDetails.get(video.videoID);
-            if (details === undefined)
-            {
-                Logger.log(video.videoID + " not found in the results");
-                return;
-            }
-
-            sheet.getRange(rowIndex + startRow, 2, 1, details.length).setValues([details]);
-        });
+        this.fetchDetailsForVideoIDs(ids);
 
         SpreadsheetApp.getUi().alert(`Détail des vidéos récupéré pour ${ids.length} vidéos`);
     }
@@ -161,8 +129,6 @@ class YoutubeModel {
         let vids = sr.items.filter(function (res) { return res.kind === "youtube#video" });
         
         let self = this;
-
-        let data = new Map();
         
         vids.forEach((v) => { 
             let duration = v.contentDetails.duration; // PT5M45S
@@ -180,7 +146,7 @@ class YoutubeModel {
             if (!thumbnailURL)
                 thumbnailURL = v.snippet.thumbnails.standard.url;
             
-            data.set(v.id, [
+            let detail = [
                 "https://www.youtube.com/watch?v=" + v.id,
                 thumbnailURL,
                 "=IMAGE(\""+thumbnailURL+"\")",
@@ -196,10 +162,45 @@ class YoutubeModel {
                 self.getRelevantDescription(v.snippet.description),
                 self.getProductionFromTitle(v.snippet.title),
                 self.getIntervenantFromTitle(v.snippet.title).join(', ')
-            ]);
+            ];
+
+            this.setValuesForVideo(v.id, detail);
+        });
+    }
+
+    setValuesForVideo(videoId, videoDetail)
+    {
+        let sheet = SpreadsheetApp.getActiveSheet();
+
+        let data = sheet.getDataRange();
+        let startRow = data.getRow();
+        let videoRow = -1;
+        let idFound = false;
+
+        data.getValues().forEach((row, rowIndex) => {
+            if (!idFound && row[0] == this.columns[0])
+            {
+                idFound = true;
+                return;
+            }
+
+            if (!idFound || videoRow > 0)
+                return;
+
+            let video = this.getVideoFromRow(row);
+    
+            if (video.url.length > 0)
+                return; // the details were already fetched for this video, skip
+            
+            if (video.videoID == videoId)
+            {
+                videoRow = rowIndex
+                return;
+            }
         });
 
-        return data;
+        if (videoRow > 0)
+            sheet.getRange(videoRow + startRow, 2, 1, videoDetail.length).setValues([videoDetail]);
     }
 
     /**
@@ -472,18 +473,49 @@ class YoutubeModel {
         let cols = [];
         if (tabName == "Vidéos d'une chaîne")
         {
-            sheet.setName("Vidéos de la chaîne quelquechose");
             cols = ["Chaîne", "Ver de Terre Production", "Channel ID", "UCUaPiJJ2wH9CpuPN4zEB3nA", "https://stackoverflow.com/a/76285153"];
         }
         else if (tabName == "Vidéos d'une playlist")
         {
-            sheet.setName("Vidéos de la chaîne quelquechose");
             cols = ["Playlist", "https://www.youtube.com/playlist?list=PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7", "Playlist ID", "PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7"];
         }
 
         sheet.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight("bold");
+        sheet.getRange(3, 1, 1, this.columns.length).setValues([this.columns]).setFontWeight("bold");
+
         sheet.setFrozenRows(3);
         sheet.setFrozenColumns(4);      
+
+        sheet.setRowHeightsForced(4, 900, 70);
+        sheet.getRange(4, 1, 900, sheet.getMaxColumns()).setVerticalAlignment("middle");
+
+        // Wrap the description cols
+        sheet.getRange(4, this.getColNumber("Titre"), 900, 1).setWrap(true).setFontWeight("bold");
+        sheet.getRange(4, this.getColNumber("Description"), 900, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Titre corrigé"), 900, 1).setWrap(true).setFontWeight("bold");
+        sheet.getRange(4, this.getColNumber("Description courte"), 900, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Intervenants"), 900, 1).setWrap(true);
+        sheet.setColumnWidth(this.getColNumber("Titre"), 300);
+        sheet.setColumnWidth(this.getColNumber("Description"), 300);
+        sheet.setColumnWidth(this.getColNumber("Titre corrigé"), 300);
+        sheet.setColumnWidth(this.getColNumber("Description courte"), 300);
+        sheet.setColumnWidth(this.getColNumber("Intervenants"), 300);
+
+        var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), 900, 1).setHorizontalAlignment("center");
+        var ruleImportRow = SpreadsheetApp.newConditionalFormatRule()
+          .whenTextEqualTo("o")
+          .setBackground("#B7E1CD")
+          .setRanges([range])
+          .build();    
+        var ruleDoNotImportRow = SpreadsheetApp.newConditionalFormatRule()
+          .whenTextEqualTo("n")
+          .setBackground("#F4C7C3")
+          .setRanges([range])
+          .build();    
+        var rules = sheet.getConditionalFormatRules();
+        rules.push(ruleImportRow);
+        rules.push(ruleDoNotImportRow);
+        sheet.setConditionalFormatRules(rules);
 
         return sheet;
     }

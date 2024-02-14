@@ -1,31 +1,4 @@
 
-function sync_tabs(e)
-{
-    const tabsNames = e.formInputs.TabsToCreate;
-    let farmModel = new FarmModel();
-    
-    tabsNames.forEach((element) => {
-        switch (element) {
-            case 'Ferme':
-                Logger.log("Synchro de l'onglet Ferme")
-                farmModel.syncGeneralitesToWiki();
-                return;
-
-            case 'Comptabilité':
-                Logger.log("Synchro de Comptabilité")
-                farmModel.syncComptabiliteToWiki();
-                return;                
-
-            case 'Qualité de la vie':
-                return;
-
-            default:
-                console.log("Unknown tab to sync");
-                return;
-        }
-    });
-}
-
 function sync_charts(e)
 {
     const chartsNames = e.formInputs.TabsToCreate;
@@ -47,20 +20,13 @@ function syncTabsBuildCard() {
     const charts = new chartsBuilder();
     const chartNames = charts.findChartsOnPage();
 
-    Logger.log(chartNames);
-
-    let title = 'Onglets à synchroniser';
-    let buttonCaption = 'Synchroniser les onglets';
-    if (chartNames.length > 0)
-    {
-        title = 'Graphiques à synchroniser';
-        buttonCaption = 'Synchroniser les graphiques';
-    }
+    let title = 'Graphiques sur la page';
+    let buttonCaption = 'Synchroniser le graphique';
 
     let tabsToCreateSelectionInput = CardService.newSelectionInput()
         .setFieldName('TabsToCreate')
         .setTitle(title)
-        .setType(CardService.SelectionInputType.CHECK_BOX);
+        .setType(CardService.SelectionInputType.RADIO_BUTTON);
 
     let callBack = 'sync_tabs';
     if (chartNames.length > 0)
@@ -71,21 +37,9 @@ function syncTabsBuildCard() {
 
         callBack = 'sync_charts';
     }
-    else
-    {
-        // Afficher les onglets courants qui sont synchronisables
-        const tabs = new FarmModel().getSynchronizableTabs();
-
-        tabs.forEach((sheetName) => {
-            tabsToCreateSelectionInput.addItem(sheetName, sheetName, true);
-        });
-
-        callBack = 'sync_tabs';
-    }
 
     let cardSection1ButtonList1Button1Action1 = CardService.newAction()
-        .setFunctionName(callBack)
-        .setParameters({});
+        .setFunctionName(callBack);
 
     let cardSection1ButtonList1Button1 = CardService.newTextButton()
         .setText(buttonCaption)
