@@ -736,6 +736,9 @@ class chartsBuilder {
         if (!this.charts.find((element) => element.name == chartName))
             return false;
 
+        let farm = new FarmModel()
+        farm.createFermeTab();
+
         if (chartName == "Histogramme par année") {
             this.createBarChartPerYear();
         }
@@ -751,6 +754,12 @@ class chartsBuilder {
         else if (chartName == "Comptabilité") {
             this.createComptabilite();
         }
+        else {
+            SpreadsheetApp.getUi().alert("Ce graphique n'a pas encore été implémenté !");
+            return;
+        }
+
+        SpreadsheetApp.getUi().alert("Le graphique a été ajouté à la fin de la page.");
     }
 
     createBarChartPerYear() {

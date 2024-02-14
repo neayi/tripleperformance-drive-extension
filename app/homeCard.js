@@ -189,28 +189,8 @@ function card_buildHomepageCard() {
                     .setAspectRatio(4)
                     .setImageCropType(CardService.ImageCropType.RECTANGLE_CUSTOM)))));
 
-    cardSectionHeader.addWidget(CardService.newTextParagraph().setText('<b>Créer les onglets ou des graphiques</b>'));
-
-    let cardSectionHeaderCreateTabs = CardService.newButtonSet();
-
-    ['Liste de formations', 'Chaîne youtube'].forEach((tab) => {
-        let button = CardService.newTextButton()
-            .setText(tab)
-            .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
-            .setOnClickAction(CardService.newAction()
-                .setFunctionName('createNewTabs')
-                .setParameters({ "tab": tab }));
-
-        cardSectionHeaderCreateTabs.addButton(button);
-    });
-    cardSectionHeader.addWidget(cardSectionHeaderCreateTabs);
-
-    cardSectionHeader.addWidget(CardService.newDivider());
-    builder.addSection(cardSectionHeader);
-
-    let cardSectionNewChart = CardService.newCardSection()
-        .addWidget(CardService.newTextParagraph().setText('<b>Ajouter un graphique à la page</b>'));
-
+    // Add the grid with all the available charts
+    cardSectionHeader.addWidget(CardService.newTextParagraph().setText('<b>Ajouter un graphique à la page</b>'));
     let chartsGrid = CardService.newGrid()
         .setNumColumns(2)
         .setBorderStyle(CardService.newBorderStyle()
@@ -230,18 +210,27 @@ function card_buildHomepageCard() {
             .setImage(CardService.newImageComponent().setImageUrl(chart.image)));
     });
 
-    cardSectionNewChart.addWidget(chartsGrid);
+    cardSectionHeader.addWidget(chartsGrid);
+    builder.addSection(cardSectionHeader);
 
+    // Add the link to the other Cards
+    let cardSectionOthePages = CardService.newCardSection();
+    cardSectionOthePages.addWidget(CardService.newTextParagraph().setText("<b>Gérer d'autres types de données</b>"));
+    let buttonSet = CardService.newButtonSet();
+    ['Liste de formations', 'Import youtube'].forEach((tab) => {
+        buttonSet.addButton(CardService.newTextButton()
+            .setText(tab)
+            .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
+            .setOnClickAction(CardService.newAction()
+                .setFunctionName('createNewTabs')
+                .setParameters({ "tab": tab })));
+    });
+    cardSectionOthePages.addWidget(buttonSet);
+    builder.addSection(cardSectionOthePages);
 
-/////
-
-    builder.addSection(cardSectionNewChart);
-
-
+    // Add the parameters section
     let cardSectionParams = CardService.newCardSection();
-
     cardSectionParams.addWidget(CardService.newTextParagraph().setText('<b>Paramètres</b>'));
-
     cardSectionParams.addWidget(CardService.newDecoratedText()
         .setText('Paramètres')
         .setBottomLabel('Paramètres de connexion')
