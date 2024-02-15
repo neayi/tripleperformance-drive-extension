@@ -152,3 +152,12 @@ function getTriplePerformanceURL()
 
     return parameters.secrets.wikiURL;
 }
+
+function alert(message) {
+    try {
+        Logger.log(message);
+        SpreadsheetApp.getUi().alert(message);
+    } catch (error) {
+        
+    }
+}

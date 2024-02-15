@@ -1,5 +1,126 @@
+function onFetchNewVideos(event = null)
+{
+    Logger.log('onFetchNewVideos');
+        
+    let ytModel = new YoutubeModel();
+
+    // First lets check if we have a list of tabs to look for. If not, build it.
+    let nextTab = ytModel.getNextTabInQueue();
+    if (!nextTab)
+    {
+        alert("Les nouvelles vidéos ont été importées");
+        return;
+    }
+    
+    try {
+        // Then for each tab, look for new videos
+        while (nextTab) {
+            ytModel.checkTime();
+
+            ytModel.fetchNewVideosForTab(ytModel.getSheetByName(nextTab));
+
+            nextTab = ytModel.shiftQueue();
+        }
+    } catch (e) {
+        Logger.log(e);
+
+        if (e == 'time up')
+        {
+            ytModel.startTrigger('onFetchNewVideos');
+            alert("Il reste des vidéos à importer, le processus se continuera en tâche de fond.");
+            return;
+        }
+
+        throw(e);
+    }
+
+    ytModel.removeTrigger();
+    alert("Les nouvelles vidéos ont été importées");
+}
+
+function onFetchVideosDetails(event = null)
+{
+    Logger.log('onFetchVideosDetails');
+    
+    let ytModel = new YoutubeModel();
+
+    // First lets check if we have a list of tabs to look for. If not, build it.
+    let nextTab = ytModel.getNextTabInQueue();
+    if (!nextTab)
+    {
+        alert(`Détail des vidéos récupéré pour les vidéos`);
+        return;
+    }
+
+    // Then for each tab, look for new videos
+    try {
+        while (nextTab) {
+            ytModel.checkTime();
+            ytModel.fetchVideosDetailsForTab(ytModel.getSheetByName(nextTab));
+            nextTab = ytModel.shiftQueue();
+        } 
+    } catch (e) {
+        Logger.log(e);
+
+        if (e == 'time up')
+        {
+            ytModel.startTrigger('onFetchVideosDetails');
+            alert("Il reste des vidéos à importer, le processus se continuera en tâche de fond.");
+            return;
+        }
+
+        throw(e);        
+    }
+
+    ytModel.removeTrigger();
+    alert(`Détail des vidéos récupéré pour les vidéos`);
+}
+
+function onAddThumbnailsToWiki(event = null) {
+    Logger.log('onAddThumbnailsToWiki');
+    
+    let ytModel = new YoutubeModel();
+
+    // First lets check if we have a list of tabs to look for. If not, build it.
+    let nextTab = ytModel.getNextTabInQueue();
+    if (!nextTab)
+    {
+        alert("Vignettes exportées");
+        return;
+    }
+
+    // Then for each tab, look for new videos
+    try {
+        while (nextTab) {
+            ytModel.checkTime();
+            ytModel.addThumbnailsToWikiForSheet(ytModel.getSheetByName(nextTab));
+            nextTab = ytModel.shiftQueue();
+        } 
+    } catch (e) {
+        Logger.log(e);
+
+        if (e == 'time up')
+        {
+            ytModel.startTrigger('onFetchVideosDetails');
+            alert("Il reste des vignettes à déposer sur le wiki, le processus se continuera en tâche de fond.");
+            return;
+        }
+
+        throw(e);        
+    }
+
+    ytModel.removeTrigger();
+    alert("Vignettes exportées");
+}
+
 class YoutubeModel {
     constructor() {
+
+        this.startTime = new Date();
+        this.triggerFunctionName = "";
+
+        this.rowIndexForYoutubeId = new Map();
+
         this.columns = [
             "ID", "URL", "ThumbnailURL", "Vignette", "Titre", "Description", "Producteur", "Date de mise en ligne", 
             "Durée", "Sous-titres", "Vues", "Commentaires",
@@ -17,6 +138,10 @@ class YoutubeModel {
      */
     fetchVideosFromYouTube() {
         let sheet = SpreadsheetApp.getActiveSheet();
+        this.fetchNewVideosForTab(sheet);
+    }
+    
+    fetchNewVideosForTab(sheet) {
         let ids  = [];
 
         let channelId = this.getSheetsChannelID(sheet);
@@ -35,8 +160,7 @@ class YoutubeModel {
         }
         else if (playlistId) 
         {
-            let sr = YouTube.PlaylistItems.list("id,contentDetails,status",
-                {
+            let sr = YouTube.PlaylistItems.list("id,contentDetails,status", {
                     playlistId: playlistId
                 });
 
@@ -49,15 +173,11 @@ class YoutubeModel {
         }
         else
         {
-            SpreadsheetApp.getUi().alert("Veuillez saisir un ID de chaîne valide");
             return;
         }
         
         if (ids.length == 0)
-        {
-            SpreadsheetApp.getUi().alert("Aucune vidéo trouvée. Veuillez vérifier l'ID de votre chaîne ou de votre playlist");
             return;
-        }
 
         let existingValues = sheet.getDataRange().getValues();
         let existingYouTubeIds = existingValues.map(function (r) { return r[0]; }).filter(function (v) { return v != "" });
@@ -65,29 +185,146 @@ class YoutubeModel {
         let newVideosIds = ids.filter(videoId => !existingYouTubeIds.includes(videoId));
 
         if (newVideosIds.length == 0)
+            return;
+
+        let values = newVideosIds.map((id) => [id]);
+
+        const insertRow = sheet.getLastRow() + 1;
+        sheet.getRange(insertRow, 1, values.length, 1).setValues(values);
+
+        Logger.log(newVideosIds.length + " nouvelles videos trouvées");
+    }
+    
+    fetchNewVideos() {
+        Logger.log('fetchNewVideos');
+
+        // Remove any existing trigger first
+        this.removeTrigger();
+
+        this.getYouTubeTabsNames();
+
+        // Proceed !
+        onFetchNewVideos();
+    }
+    
+    fetchVideoDetails() {
+
+        Logger.log('fetchVideoDetails');
+
+        // Remove any existing trigger first
+        this.removeTrigger();
+
+        this.getYouTubeTabsNames();
+
+        onFetchVideosDetails();
+    }
+
+    getNextTabInQueue()
+    {
+        const documentProperties = PropertiesService.getDocumentProperties();
+        const tabs = documentProperties.getProperty('queuedTabsForTrigger');
+        let tabNames = tabs.split('|');
+    
+        if (tabNames.length == 0)
         {
-            SpreadsheetApp.getUi().alert("Aucune nouvelle vidéo trouvée");
+            // We are done, kill the trigger and exit
+            this.removeTrigger();
+            return false;
+        }
+
+        Logger.log("Get next tab in queue : " + tabNames[0]);
+
+        return tabNames[0];
+    }
+
+    shiftQueue()
+    {
+        const documentProperties = PropertiesService.getDocumentProperties();
+        const tabs = documentProperties.getProperty('queuedTabsForTrigger');
+        let tabNames = tabs.split('|');
+    
+        if (tabNames.length == 0)
+            return false;
+
+        tabNames.shift();
+        documentProperties.setProperty('queuedTabsForTrigger', tabNames.join('|'));
+        Logger.log("shifting queue. New queue is : " + tabNames.join(', '));
+
+        if (tabNames.length == 0)
+            return false;
+        
+        return tabNames[0];
+    }
+
+    getYouTubeTabsNames() {
+        const self = this;
+
+        let tabNames = [];
+
+        var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+        sheets.forEach((sheet) => {
+            
+            let channelId = self.getSheetsChannelID(sheet);
+            let playlistId = self.getSheetsPlaylistID(sheet);
+
+            if (!channelId && !playlistId)
+                return;
+
+            tabNames.push(sheet.getName());
+        });
+
+        PropertiesService.getDocumentProperties().setProperty('queuedTabsForTrigger', tabNames.join('|'));
+    }
+
+    startTrigger(callbackFunction) {
+        Logger.log("startTrigger for " + callbackFunction);
+
+        if (ScriptApp.getProjectTriggers().length > 0)
+        {
+            Logger.log("Trigger alredy added");
             return;
         }
 
-        newVideosIds.forEach(id => {
-            sheet.appendRow([id]);
+        ScriptApp.newTrigger(callbackFunction)
+            .timeBased()
+            .everyHours(1)
+            .create();
+
+        Logger.log("New trigger added");
+    }
+
+    removeTrigger()
+    {
+        Logger.log("Removing existing triggers");
+
+        const documentProperties = PropertiesService.getDocumentProperties();
+        ScriptApp.getProjectTriggers().forEach((trigger) => {
+            ScriptApp.deleteTrigger(trigger);
         });
 
-        SpreadsheetApp.getUi().alert(newVideosIds.length + " nouvelles vidéos ont été ajoutées");
+        documentProperties.deleteProperty('queuedTabsForTrigger');        
+    }
+
+    checkTime() {
+        Logger.log("checkTime " + this.startTime + new Date());
+        if (new Date().getTime() - this.startTime.getTime() > 43000) // 45 seconds from start of the script
+            throw("time up");
     }
     
-    fetchDetailsFromYoutube()
-    {
-        let sheet = SpreadsheetApp.getActiveSheet();
+    fetchVideosDetailsForTab(sheet) {
 
+        Logger.log("fetchVideosDetailsForTab");
+
+        const sheetName = sheet.getName();
         let data = sheet.getDataRange();
         let startRow = data.getRow();
+
+        const self = this;
 
         let idFound = false;
         let ids = [];
 
-        data.getValues().forEach((row) => {
+        data.getValues().forEach((row, rowIndex) => {
             if (!idFound && row[0] == this.columns[0])
             {
                 idFound = true;
@@ -106,23 +343,31 @@ class YoutubeModel {
                 return; // the details where already fetched for this video, skip
             
             ids.push(video.videoID);
+
+            self.rowIndexForYoutubeId.set(sheetName + video.videoID, rowIndex + startRow);
         });
 
         Logger.log("Fetching the following videos:");
         Logger.log(ids);
 
-        this.fetchDetailsForVideoIDs(ids);
+        this.fetchDetailsForVideoIDs(ids, sheet);
+    }
 
-        SpreadsheetApp.getUi().alert(`Détail des vidéos récupéré pour ${ids.length} vidéos`);
+    fetchDetailsFromYoutube()
+    {
+        let sheet = SpreadsheetApp.getActiveSheet();
+        this.fetchVideosDetailsForTab(sheet);
+        alert(`Détail des vidéos récupéré pour les vidéos`);
     }
     
-
     /**
      * From an array of ids, returns details for each video in a map
      * @param {*} ids 
      */
-    fetchDetailsForVideoIDs(ids)
+    fetchDetailsForVideoIDs(ids, sheet)
     {
+        Logger.log("fetchDetailsForVideoIDs " + ids.join(', '));
+
         let part = ['id', 'snippet', 'contentDetails', 'statistics'];
         let sr = YouTube.Videos.list(part.join(','), {id:ids.join(',')});
 
@@ -131,6 +376,9 @@ class YoutubeModel {
         let self = this;
         
         vids.forEach((v) => { 
+
+            self.checkTime();
+
             let duration = v.contentDetails.duration; // PT5M45S
             let minutes = 0;
 
@@ -164,43 +412,18 @@ class YoutubeModel {
                 self.getIntervenantFromTitle(v.snippet.title).join(', ')
             ];
 
-            this.setValuesForVideo(v.id, detail);
+            this.setValuesForVideo(v.id, detail, sheet);
+            SpreadsheetApp.flush();
         });
     }
 
-    setValuesForVideo(videoId, videoDetail)
+    setValuesForVideo(videoId, videoDetail, sheet)
     {
-        let sheet = SpreadsheetApp.getActiveSheet();
+        let videoRow = this.rowIndexForYoutubeId.get(sheet.getName() + videoId)
 
-        let data = sheet.getDataRange();
-        let startRow = data.getRow();
-        let videoRow = -1;
-        let idFound = false;
-
-        data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == this.columns[0])
-            {
-                idFound = true;
-                return;
-            }
-
-            if (!idFound || videoRow > 0)
-                return;
-
-            let video = this.getVideoFromRow(row);
-    
-            if (video.url.length > 0)
-                return; // the details were already fetched for this video, skip
-            
-            if (video.videoID == videoId)
-            {
-                videoRow = rowIndex
-                return;
-            }
-        });
-
-        if (videoRow > 0)
-            sheet.getRange(videoRow + startRow, 2, 1, videoDetail.length).setValues([videoDetail]);
+        if (videoRow)
+            sheet.getRange(videoRow, 2, 1, videoDetail.length)
+                .setValues([videoDetail]);
     }
 
     /**
@@ -208,23 +431,28 @@ class YoutubeModel {
      * check that the col 
      */
     addThumbnailsToWiki() {
-        let sheet = SpreadsheetApp.getActiveSheet();
+        Logger.log('fetchVideoDetails');
+
+        // Remove any existing trigger first
+        this.removeTrigger();
+
+        this.getYouTubeTabsNames();
+
+        onAddThumbnailsToWiki();
+    }
+
+    addThumbnailsToWikiForSheet(sheet) {
 
         let data = sheet.getDataRange();
         let startRow = data.getRow();
 
-        let idFound = false;
         const wikiCol = this.getColNumber("thumbnail");
 
-        data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == this.columns[0])
-            {
-                idFound = true;
-                return;
-            }
+        const self = this;
 
-            if (!idFound)
-                return;
+        data.getValues().forEach((row, rowIndex) => {
+
+            self.checkTime();
 
             let video = this.getVideoFromRow(row);
    
@@ -232,10 +460,10 @@ class YoutubeModel {
                 return;
             
             if (video.thumbnail.length > 0)
-                return;
+                return; // Already on the wiki
             
             if (video.okForWiki !== "o")
-                return;
+                return; // Not to be pushed
 
             let apiTools = getApiTools();
 
@@ -248,9 +476,8 @@ class YoutubeModel {
 
             let content = getHyperlinkedTitle(getTriplePerformanceURL(), 'File:' + destName, destName);
             sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
+            SpreadsheetApp.flush();
         });
-
-        SpreadsheetApp.getUi().alert("Vignettes mises à jour !");
     }
 
     syncYoutubeToWiki() {
@@ -372,7 +599,7 @@ class YoutubeModel {
         let speakersManager = new speakersModel();
         let newSpeakers = speakersManager.addSpeakers(speakers);
 
-        SpreadsheetApp.getUi().alert(`Terminé - ${newSpeakers} intervenants ajoutés (veuillez compléter leur bio)`);
+        alert(`Terminé - ${newSpeakers} intervenants ajoutés (veuillez compléter leur bio)`);
     }
 
 
@@ -438,18 +665,18 @@ class YoutubeModel {
     }
 
     getSheetsPlaylistID(sheet) {
-        let playlistId = "";
-        let values = sheet.getRange(1, 1, 1, 4).getValues();
 
-        if (values[0][2] == "Playlist ID") {
-            playlistId = values[0][3];
-        }
+        let values = sheet.getRange(1, 1, 1, 2).getValues();
 
-        if (playlistId == "") {
-            return false;
-        }
+        // https://www.youtube.com/playlist?list=PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7
 
-        return playlistId;
+        let playlistId = values[0][1];
+        let matches = playlistId.match(/list=([^&]+)/);
+
+        if (matches && matches[1].length > 1)
+            return matches[1];
+
+        return false;
     }    
 
     getTabs()
@@ -457,6 +684,64 @@ class YoutubeModel {
         return this.tabs;
     }
 
+    createPlaylistTab() {
+        const cols = ["Playlist", "https://www.youtube.com/playlist?list=PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7"];
+        return this.createCommonTab(cols);   
+    }
+
+    createChannelTab() {
+        const cols = ["Chaîne", "Ver de Terre Production", "Channel ID", "UCUaPiJJ2wH9CpuPN4zEB3nA", "https://stackoverflow.com/a/76285153"];        
+        return this.createCommonTab(cols);
+    }
+
+    createCommonTab(cols) {
+        let sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+
+        sheet.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight("bold");
+        sheet.getRange(3, 1, 1, this.columns.length).setValues([this.columns]).setFontWeight("bold");
+
+        sheet.setFrozenRows(3);
+        sheet.setFrozenColumns(4);      
+
+        sheet.setRowHeightsForced(4, 900, 70);
+        sheet.getRange(4, 1, 900, sheet.getMaxColumns()).setVerticalAlignment("middle");
+
+        // Wrap the description cols
+        sheet.getRange(4, this.getColNumber("Titre"), 900, 1).setWrap(true).setFontWeight("bold");
+        sheet.getRange(4, this.getColNumber("Description"), 900, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Titre corrigé"), 900, 1).setWrap(true).setFontWeight("bold");
+        sheet.getRange(4, this.getColNumber("Description courte"), 900, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Intervenants"), 900, 1).setWrap(true);
+        sheet.setColumnWidth(this.getColNumber("Titre"), 300);
+        sheet.setColumnWidth(this.getColNumber("Description"), 300);
+        sheet.setColumnWidth(this.getColNumber("Titre corrigé"), 300);
+        sheet.setColumnWidth(this.getColNumber("Description courte"), 300);
+        sheet.setColumnWidth(this.getColNumber("Intervenants"), 300);
+
+        var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), 900, 1).setHorizontalAlignment("center");
+        var ruleImportRow = SpreadsheetApp.newConditionalFormatRule()
+          .whenTextEqualTo("o")
+          .setBackground("#B7E1CD")
+          .setRanges([range])
+          .build();    
+        var ruleDoNotImportRow = SpreadsheetApp.newConditionalFormatRule()
+          .whenTextEqualTo("n")
+          .setBackground("#F4C7C3")
+          .setRanges([range])
+          .build();    
+        var rules = sheet.getConditionalFormatRules();
+        rules.push(ruleImportRow);
+        rules.push(ruleDoNotImportRow);
+        sheet.setConditionalFormatRules(rules);
+
+        return sheet;
+    }
+
+    /**
+     * Deprecated
+     * @param {*} tabName 
+     * @returns 
+     */
     createTab(tabName)
     {
         if (!this.tabs.includes(tabName))
@@ -477,7 +762,7 @@ class YoutubeModel {
         }
         else if (tabName == "Vidéos d'une playlist")
         {
-            cols = ["Playlist", "https://www.youtube.com/playlist?list=PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7", "Playlist ID", "PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7"];
+            cols = ["Playlist", "https://www.youtube.com/playlist?list=PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7"];
         }
 
         sheet.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight("bold");
@@ -642,4 +927,17 @@ class YoutubeModel {
     {
       return str[0].toUpperCase() + str.slice(1).toLowerCase();
     }    
+
+    getSheetByName(sheetName)
+    {
+        let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
+        let sheet = spreadsheet.getSheetByName(sheetName);
+        if (!sheet)
+            Throw (`Tab ${sheetName} not found...?`);
+
+        return sheet;
+    }
+
+
 }

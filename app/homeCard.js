@@ -43,13 +43,15 @@ function updateTrainingCoursesSpeakersList() {
 function fetchVideosFromYouTubeChannel() {
     Logger.log("fetchVideosFromYouTubeChannel")
     let youTube = new YoutubeModel();
-    youTube.fetchVideosFromYouTube();
+    //youTube.fetchVideosFromYouTube();
+    youTube.fetchNewVideos();
 }
 
 function fetchVideosDetailsFromYouTubeChannel() {
     Logger.log("fetchVideosDetailsFromYouTubeChannel")
     let youTube = new YoutubeModel();
-    youTube.fetchDetailsFromYoutube();
+    //youTube.fetchDetailsFromYoutube();
+    youTube.fetchVideoDetails();
 }
 
 function pushVideosToTriplePerformance() {
@@ -119,9 +121,11 @@ function createNewTabs(e) {
             let tcModel = new TrainingCourseModel();
             return onCreateNewTabsCard("Liste des formations", tcModel.getTabs());
 
-        case "Chaîne youtube":
-            let ytModel = new YoutubeModel();
-            return onCreateNewTabsCard("Chaîne youtube", ytModel.getTabs());
+        case "Import YouTube":
+            return card_buildYoutubeCard();
+
+            // let ytModel = new YoutubeModel();
+            // return onCreateNewTabsCard("Chaîne youtube", ytModel.getTabs());
 
         case "Graphiques":
             let chartModel = new chartsBuilder();
@@ -217,7 +221,7 @@ function card_buildHomepageCard() {
     let cardSectionOthePages = CardService.newCardSection();
     cardSectionOthePages.addWidget(CardService.newTextParagraph().setText("<b>Gérer d'autres types de données</b>"));
     let buttonSet = CardService.newButtonSet();
-    ['Liste de formations', 'Import youtube'].forEach((tab) => {
+    ['Liste de formations', 'Import YouTube'].forEach((tab) => {
         buttonSet.addButton(CardService.newTextButton()
             .setText(tab)
             .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
