@@ -26,7 +26,7 @@ function onFetchNewVideos(event = null)
 
         if (e == 'time up')
         {
-            ytModel.startTrigger('onFetchNewVideos');
+            startTrigger('onFetchNewVideos');
             alert("Il reste des vidéos à importer, le processus se continuera en tâche de fond.");
             return;
         }
@@ -34,7 +34,7 @@ function onFetchNewVideos(event = null)
         throw(e);
     }
 
-    ytModel.removeTrigger();
+    removeTrigger();
     alert("Les nouvelles vidéos ont été importées");
 }
 
@@ -64,7 +64,7 @@ function onFetchVideosDetails(event = null)
 
         if (e == 'time up')
         {
-            ytModel.startTrigger('onFetchVideosDetails');
+            startTrigger('onFetchVideosDetails');
             alert("Il reste des vidéos à importer, le processus se continuera en tâche de fond.");
             return;
         }
@@ -72,12 +72,12 @@ function onFetchVideosDetails(event = null)
         throw(e);        
     }
 
-    ytModel.removeTrigger();
+    removeTrigger();
     alert(`Détail des vidéos récupéré pour les vidéos`);
 }
 
-function onAddThumbnailsToWiki(event = null) {
-    Logger.log('onAddThumbnailsToWiki');
+function onPushThumbnailsToWiki(event = null) {
+    Logger.log('onPushThumbnailsToWiki');
     
     let ytModel = new YoutubeModel();
 
@@ -93,7 +93,7 @@ function onAddThumbnailsToWiki(event = null) {
     try {
         while (nextTab) {
             ytModel.checkTime();
-            ytModel.addThumbnailsToWikiForSheet(ytModel.getSheetByName(nextTab));
+            ytModel.pushThumbnailsToWikiForSheet(ytModel.getSheetByName(nextTab));
             nextTab = ytModel.shiftQueue();
         } 
     } catch (e) {
@@ -101,7 +101,7 @@ function onAddThumbnailsToWiki(event = null) {
 
         if (e == 'time up')
         {
-            ytModel.startTrigger('onFetchVideosDetails');
+            startTrigger('onFetchVideosDetails');
             alert("Il reste des vignettes à déposer sur le wiki, le processus se continuera en tâche de fond.");
             return;
         }
@@ -109,6 +109,43 @@ function onAddThumbnailsToWiki(event = null) {
         throw(e);        
     }
 
-    ytModel.removeTrigger();
+    removeTrigger();
     alert("Vignettes exportées");
+}
+
+function onPushYoutubePagesToWiki(event = null) {
+    Logger.log('onPushYoutubePagesToWiki');
+    
+    let ytModel = new YoutubeModel();
+
+    // First lets check if we have a list of tabs to look for
+    let nextTab = ytModel.getNextTabInQueue();
+    if (!nextTab)
+    {
+        alert("Pages wiki créées");
+        return;
+    }
+
+    // Then for each tab, look for new videos
+    try {
+        while (nextTab) {
+            ytModel.checkTime();
+            ytModel.pushYoutubePagesToWikiForSheet(ytModel.getSheetByName(nextTab));
+            nextTab = ytModel.shiftQueue();
+        } 
+    } catch (e) {
+        Logger.log(e);
+
+        if (e == 'time up')
+        {
+            startTrigger('onPushYoutubePagesToWiki');
+            alert("Il reste des pages wiki à créer sur le wiki, le processus se continuera en tâche de fond.");
+            return;
+        }
+
+        throw(e);        
+    }
+
+    removeTrigger();
+    alert("Pages wiki créées");
 }

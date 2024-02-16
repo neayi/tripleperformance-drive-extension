@@ -2,16 +2,16 @@ class chartsBuilder {
     constructor() {
 
         this.charts = [
-            { type: 'Histogramme', name: 'Comptabilité', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/bilan.png'},
-            { type: 'Histogramme', name: 'Histogramme par année', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/histogramme.png'},
-            { type: 'Radar', name: 'Radar', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/radar.png'},
-            { type: 'Rotation', name: 'Rotation', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/rotation.png'},
-            { type: 'Carte proportionnelle', name: 'Assolement', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/assolement.png'},
+            { type: 'Histogramme', name: 'Comptabilité', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/bilan.png' },
+            { type: 'Histogramme', name: 'Histogramme par année', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/histogramme.png' },
+            { type: 'Radar', name: 'Radar', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/radar.png' },
+            { type: 'Rotation', name: 'Rotation', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/rotation.png' },
+            { type: 'Carte proportionnelle', name: 'Assolement', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/assolement.png' },
 
-            { type: 'Radar', name: 'Analyse environnementale', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/analyse-environnementale.png'},
-            { type: 'Radar', name: 'Analyse socio-économique', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/analyse-socio-eco.png'},
-            { type: 'Barres horizontales', name: 'Autonomie', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/autonomie.png'},
-            { type: 'Camembert', name: 'Commercialisation', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/commercialisation.png'}
+            { type: 'Radar', name: 'Analyse environnementale', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/analyse-environnementale.png' },
+            { type: 'Radar', name: 'Analyse socio-économique', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/analyse-socio-eco.png' },
+            { type: 'Barres horizontales', name: "Capacité d'autoproduction", image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/autonomie.png' },
+            { type: 'Camembert', name: 'Stratégie commerciale', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/commercialisation.png' }
         ];
     }
 
@@ -88,7 +88,7 @@ class chartsBuilder {
         const range = this.getRangeForChart(chartname);
 
         if (!range) {
-            SpreadsheetApp.getUi().alert("Impossible de trouver le chart complet pour " + chartname + ". " +
+            alert("Impossible de trouver le chart complet pour " + chartname + ". " +
                 "Il est possible qu'il ait été modifié dans sa structure, vérifiez en particulier qu'il y " +
                 "ait bien la ligne \"Graphique\" et la ligne \"Fin du graphique\"");
             return;
@@ -96,12 +96,12 @@ class chartsBuilder {
 
         const values = range.getValues();
 
-        const chartType = this.getChartValue("Graphique", values);
-        const chartTitle = this.getChartValue("Titre", values);
         let chartParserFunction = 'echart';
-        
+        let chartTemplate = '';
+        let chartArgs = new Map();
+
         let chart = {};
-        switch (chartType) {
+        switch (this.getChartValue("Graphique", values)) {
             case "Histogramme par année":
                 chart = this.getBarChartPerYear(range);
                 break;
@@ -122,10 +122,30 @@ class chartsBuilder {
                 chart = this.getComptabilite(range);
                 chartParserFunction = 'economic_charts';
                 break;
-    
+                
+            case "Analyse environnementale":
+                chartArgs = this.getAnalyseChart(range);
+                chartTemplate = 'EChart Radar environnemental MSV';
+                break;                
+
+            case "Analyse socio-économique":
+                chartArgs = this.getAnalyseChart(range);
+                chartTemplate = 'EChart Radar MSV';
+                break;
+                
+            case "Capacité d'autoproduction":
+                chartArgs = this.getAnalyseChart(range);
+                chartTemplate = "EChart Capacité d'autoproduction MSV";
+                break;                
+
+            case "Stratégie commerciale":
+                chartArgs = this.getStrategieCommerciale(range);
+                chartTemplate = "EChart Stratégie commerciale MSV";
+                break;                
+
             default:
-                SpreadsheetApp.getUi().alert("Le type de graphique de " + chartname +
-                    "n'a pas été reconnu et ne peut pas être traité.");
+                alert("Le type de graphique de " + chartname +
+                    " n'a pas été reconnu et ne peut pas être traité.");
                 break;
         }
 
@@ -147,13 +167,18 @@ class chartsBuilder {
             return;
 
         let wiki = new wikiPage();
-        let pageContent = wiki.replaceOrAddChart(chartParserFunction, chartTitle, chart, apiTools.getPageContent(wikiTitle));
+        let pageContent = apiTools.getPageContent(wikiTitle);
+
+        if (chartTemplate.length > 0)
+            pageContent = wiki.updateTemplate(chartTemplate, chartArgs, pageContent);
+        else {
+            const chartTitle = this.getChartValue("Titre", values);
+            pageContent = wiki.replaceOrAddChart(chartParserFunction, chartTitle, chart, pageContent);
+        }
 
         apiTools.updateWikiPage(wikiTitle, pageContent, "Ajout du graphique " + chartname);
 
-        Logger.log("Le nouveau graphique a été ajouté à la page " + wikiTitle);
-
-        SpreadsheetApp.getUi().alert("Le nouveau graphique a été ajouté à la page du wiki");
+        alert("Le nouveau graphique a été ajouté à la page du wiki");
     }
 
     getBarChartPerYear(range) {
@@ -497,8 +522,8 @@ class chartsBuilder {
                 rotate: 'tangential',
                 fontWeight: 'bold'
             },
-            emphasis: {disabled: true},      
-            tooltip: {show: false},
+            emphasis: { disabled: true },
+            tooltip: { show: false },
             itemStyle: {
                 color: '#FFFFFF',
                 borderWidth: 1
@@ -551,20 +576,20 @@ class chartsBuilder {
                             "value": [],
                             "name": "",
                             "emphasis": {
-                                "label": {"show": true}
+                                "label": { "show": true }
                             },
-                            "itemStyle": {"width": 3, "color": "#f1894c"},
-                            "lineStyle": {"width": 3, "color": "#f1894c"},
-                            "areaStyle": {"color": "#f1894c"}
+                            "itemStyle": { "width": 3, "color": "#f1894c" },
+                            "lineStyle": { "width": 3, "color": "#f1894c" },
+                            "areaStyle": { "color": "#f1894c" }
                         },
                         {
                             "value": [],
                             "name": "Moyenne",
                             "emphasis": {
-                                "title": {"show": true},
-                                "label": {"show": true}
+                                "title": { "show": true },
+                                "label": { "show": true }
                             },
-                            "lineStyle": {"width": 3}
+                            "lineStyle": { "width": 3 }
                         }
                     ]
                 }
@@ -576,8 +601,7 @@ class chartsBuilder {
         for (let rowIndex = 1; rowIndex < footerRow; rowIndex++) {
             let [nomAxe, value, average, max] = values[rowIndex];
 
-            if (average == "Moyenne")
-            {
+            if (average == "Moyenne") {
                 option.series[0].data[0].name = value;
                 continue;
             }
@@ -618,8 +642,7 @@ class chartsBuilder {
 
         let templateParametersPerYear = [];
 
-        for (let col = 2; col <= maxcols; col++)
-        {
+        for (let col = 2; col <= maxcols; col++) {
             let parameters = new Map();
 
             const annee = String(values[6][col]);
@@ -641,22 +664,19 @@ class chartsBuilder {
                     label.toLowerCase() == "total" ||
                     label.toLowerCase() == "valeur ajoutée" ||
                     label.toLowerCase() == "capacité d'autofinancement"))
-                    continue; 
+                    continue;
 
-                parameters.set(label + ' ' + annee, Number(value)); 
+                parameters.set(label + ' ' + annee, Number(value));
             }
 
-            if (parameters.size > 0)
-            {
+            if (parameters.size > 0) {
                 let pArray = [];
-                parameters.forEach( ( value, key ) => { pArray.push(key + ' = ' + value) } );
+                parameters.forEach((value, key) => { pArray.push(key + ' = ' + value) });
                 templateParametersPerYear.push(pArray.join("\n | "));
             }
-        }               
+        }
 
         let parserFunction = "{{#economic_charts:\n title=" + title + "\n | " + templateParametersPerYear.join("\n | ") + '}}';
-
-        Logger.log(parserFunction);
 
         return parserFunction;
     }
@@ -733,6 +753,8 @@ class chartsBuilder {
     }
 
     createChart(chartName) {
+        Logger.log(`Creating new chart ${chartName}`);
+
         if (!this.charts.find((element) => element.name == chartName))
             return false;
 
@@ -747,25 +769,37 @@ class chartsBuilder {
         }
         else if (chartName == "Rotation") {
             this.createRotation();
-        }        
+        }
         else if (chartName == "Radar") {
             this.createRadar();
         }
         else if (chartName == "Comptabilité") {
             this.createComptabilite();
         }
+        else if (chartName == "Analyse environnementale") {
+            this.createRadarEnvironnemental();
+        }
+        else if (chartName == "Analyse socio-économique") {
+            this.createRadarSocioEconomique();
+        }
+        else if (chartName == "Capacité d'autoproduction") {
+            this.createAutonomieChart();
+        }
+        else if (chartName == "Stratégie commerciale") {
+            this.createStrategieCommerciale();
+        }
         else {
-            SpreadsheetApp.getUi().alert("Ce graphique n'a pas encore été implémenté !");
+            alert("Ce graphique n'a pas encore été implémenté !");
             return;
         }
 
-        SpreadsheetApp.getUi().alert("Le graphique a été ajouté à la fin de la page.");
+        alert("Le graphique a été ajouté à la fin de la page.");
     }
 
     createBarChartPerYear() {
         let sheet = SpreadsheetApp.getActiveSheet();
 
-        const insertRow = this.createChartHeader("Histogramme par année", "Mon histogramme");
+        const insertRow = this.createChartHeader("Histogramme par année", "Mon histogramme", "Droite");
 
         const totalStartRow = insertRow + 1;
         const totalEndRow = insertRow + 3;
@@ -794,9 +828,9 @@ class chartsBuilder {
 
     createTreeMap() {
         let sheet = SpreadsheetApp.getActiveSheet();
-        const insertRow = this.createChartHeader("Assolement", "Mon assolement");
+        const insertRow = this.createChartHeader("Assolement", "Mon assolement", "Centrer");
 
-        let values = [        
+        let values = [
             ["Catégorie", "Assolement", "Surface"],
             ["Surface fourragère", "Prairie permanente", "25 ha"],
             ["", "Prairie temporaires", "20 ha"],
@@ -820,19 +854,19 @@ class chartsBuilder {
         // Devise personnalisée pour 50 ha
         sheet.getRange(insertRow + 1, 3, 7, 1).setNumberFormat("# \\h\\a");
         sheet.getRange(insertRow, 3, 8, 1).setHorizontalAlignment('right');
-        
+
         this.createChartFooter(
-            "Vous pouvez ajouter des lignes. Si les entêtes de ligne sont sur fond de couleur, alors cette couleur sera reprise dans le graphique."+
+            "Vous pouvez ajouter des lignes. Si les entêtes de ligne sont sur fond de couleur, alors cette couleur sera reprise dans le graphique." +
             "Il faut fusionner la première colonne des lignes dans une même catégorie.");
     }
 
     createRotation() {
 
         let sheet = SpreadsheetApp.getActiveSheet();
-        const insertRow = this.createChartHeader("Rotation", "Ma rotation", 
+        const insertRow = this.createChartHeader("Rotation", "Ma rotation", "Centrer",
             ["Date de démarrage", "15/03/2024", "Une date à partir de laquelle on démarre la rotation", ""]);
 
-        let values = [        
+        let values = [
             ["Cultures/couverts", "1 mois = 1 unité", "Actions menées (travail du sol, semis, couverts, mois ou sols nus)"],
             ["Colza", "3", ""],
             ["Blé dûr", "4", "Irrigation : 1500 m³/ha au total - arrosage tous les 10 jours"],
@@ -846,8 +880,8 @@ class chartsBuilder {
 
         sheet.getRange(insertRow, 1, 1, 4).setFontWeight("bold").setBackground(getLightGrayColor()); // Columns titles
         sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
-        
-        sheet.getRange(insertRow,     1, 6, 3).setVerticalAlignment("middle"); // values
+
+        sheet.getRange(insertRow, 1, 6, 3).setVerticalAlignment("middle"); // values
         sheet.getRange(insertRow + 1, 1, 1, 1).setBackground("#ffd966"); // colza
         sheet.getRange(insertRow + 2, 1, 1, 1).setBackground("#fff2cc"); // Blé dûr
         sheet.getRange(insertRow + 3, 1, 1, 1).setBackground("#d9ead3"); // Soja
@@ -877,40 +911,39 @@ class chartsBuilder {
             richTextBuilder = richTextBuilder.setTextStyle(start, end, bold);
             start += row.join(" : ").length + 1;
         });
-            
+
         sheet.getRange(insertRow + 1, 3).setRichTextValue(richTextBuilder.build());
 
         this.createChartFooter(
-            "Vous pouvez ajouter des lignes. Si les entêtes de ligne sont sur fond de couleur, alors cette couleur sera reprise dans le graphique."+
+            "Vous pouvez ajouter des lignes. Si les entêtes de ligne sont sur fond de couleur, alors cette couleur sera reprise dans le graphique." +
             "Vous pouvez mettre des retours chariot (ctrl-entrée), du gras et de l'italique dans la colonne Actions Menées.");
     }
 
     createRadar() {
         let sheet = SpreadsheetApp.getActiveSheet();
-        const insertRow = this.createChartHeader("Radar", "Mon radar");
+        const insertRow = this.createChartHeader("Radar", "Mon radar", "Droite");
 
         let values = [
             ["", "Une ferme", "Moyenne", "Max"],
-            ["Un axe",                      8, 6, 10],
-            ["Autre chose",                 7, 5, 10],
-            ["Un super indicateur",         9, 5, 10],
+            ["Un axe", 8, 6, 10],
+            ["Autre chose", 7, 5, 10],
+            ["Un super indicateur", 9, 5, 10],
             ["Quelque chose de pertinent", 10, 8, 10],
-            ["Un autre indicateur",         6, 4, 10]
+            ["Un autre indicateur", 6, 4, 10]
         ];
 
         sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
 
         sheet.getRange(insertRow, 1, 1, 4).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignment('right'); // Columns titles
         sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
-        
+
         this.createChartFooter(
             "Vous pouvez ajouter ou supprimer des lignes. Vous ne devez pas changer le titre de la colonne Moyenne et Max. La colonne Max doit être remplie !");
-
     }
 
     createComptabilite() {
         let sheet = SpreadsheetApp.getActiveSheet();
-        const insertRow = this.createChartHeader("Comptabilité", "Ma comptabilité", 6);
+        const insertRow = this.createChartHeader("Comptabilité", "Ma comptabilité", "Centrer", 6);
 
         const jsonString = HtmlService.createHtmlOutputFromFile("definitions/compta_defs_fr.html").getContent();
         const definitionsDesPostesCompta = JSON.parse(jsonString);
@@ -945,21 +978,20 @@ class chartsBuilder {
                 // Now add a row for the total
                 posteTotalRow = currentRow++;
 
-                if (compte != "Soldes de gestion")
-                {
+                if (compte != "Soldes de gestion") {
                     totauxRows.push(posteTotalRow);
-    
+
                     sheet.getRange(posteTotalRow, 1, 1, 2).setValues([
                         [postePrincipal, "Total"]
                     ]);
-    
+
                     sheet.getRange(posteTotalRow, 3, 1, 4).setFormulas([
                         [`=SUM(C${posteRowStart}:C${posteTotalRow - 1})`,
                         `=SUM(D${posteRowStart}:D${posteTotalRow - 1})`,
                         `=SUM(E${posteRowStart}:E${posteTotalRow - 1})`,
                         `=SUM(F${posteRowStart}:F${posteTotalRow - 1})`]
                     ]);
-    
+
                     sheet.getRange(posteTotalRow, 1, 1, 6)
                         .setFontWeight("bold")
                         .setFontSize(12)
@@ -967,8 +999,7 @@ class chartsBuilder {
 
                     totals.set(postePrincipal, posteTotalRow);
                 }
-                else 
-                {
+                else {
                     // Specific case for "Soldes de gestion"
                     Logger.log("Paramètres de auxiliaires :" + [...totals.entries()]);
 
@@ -983,7 +1014,7 @@ class chartsBuilder {
                     ['C', 'D', 'E', 'F'].forEach((c) => {
                         let produits = totals.get('Produits');
                         let charges = totals.get('Charges');
-                        sheet.getRange(posteTotalRow, cIndex++).setFormula(`=${c}${produits} - ${c}${charges}`);    
+                        sheet.getRange(posteTotalRow, cIndex++).setFormula(`=${c}${produits} - ${c}${charges}`);
                     });
                     posteTotalRow++;
 
@@ -993,7 +1024,7 @@ class chartsBuilder {
                         let produits = totals.get('Produits');
                         let charges = totals.get('Charges');
                         let personnel = totals.get('Charges de personnel');
-                        sheet.getRange(posteTotalRow, cIndex++).setFormula(`=${c}${produits} - ${c}${charges} + ${c}${personnel}`);    
+                        sheet.getRange(posteTotalRow, cIndex++).setFormula(`=${c}${produits} - ${c}${charges} + ${c}${personnel}`);
                     });
                     posteTotalRow++;
 
@@ -1005,7 +1036,7 @@ class chartsBuilder {
                         let personnel = totals.get('Charges de personnel');
                         let annuites = totals.get('Annuité de remboursement');
 
-                        sheet.getRange(posteTotalRow, cIndex++).setFormula(`=${c}${produits} - ${c}${charges} + ${c}${personnel} - ${c}${annuites}`);    
+                        sheet.getRange(posteTotalRow, cIndex++).setFormula(`=${c}${produits} - ${c}${charges} + ${c}${personnel} - ${c}${annuites}`);
                     });
 
                     // Style
@@ -1026,16 +1057,15 @@ class chartsBuilder {
                     .setWrap(true);
             }
 
-            if (compte != "Soldes de gestion")
-            {
+            if (compte != "Soldes de gestion") {
                 // Add a total row (totauxRows)
                 posteTotalRow += 2;
 
                 let cIndex = 3;
                 ['C', 'D', 'E', 'F'].forEach((c) => {
                     let sumItems = totauxRows.map((r) => `${c}${r}`);
-        
-                    sheet.getRange(posteTotalRow, cIndex++).setFormula("=" + sumItems.join('+'));    
+
+                    sheet.getRange(posteTotalRow, cIndex++).setFormula("=" + sumItems.join('+'));
                 });
 
                 sheet.getRange(posteTotalRow, 1).setValue("Total des " + compte.toLowerCase());
@@ -1052,9 +1082,195 @@ class chartsBuilder {
         }
 
         sheet.getRange(insertRow + 1, 3, posteTotalRow, 4)
-            .setNumberFormat("#,##0 €");     
-            
+            .setNumberFormat("#,##0 €");
+
         this.createChartFooter("Vous pouvez ajouter ou supprimer des lignes. Vous ne devez pas changer les nom des colonnes", 6);
+    }
+
+    createRadarEnvironnemental() {
+
+        let sheet = SpreadsheetApp.getActiveSheet();
+        const insertRow = this.createChartHeader("Analyse environnementale", "Analyse environnementale", "Droite", 3);
+
+        let values = [
+            ["", "Nom de la ferme", "Moyenne"],
+            ["Taux de MO", 3.6, 4.9],
+            ["Couverture de sol", 100, 97],
+            ["Biodiversité", 60, 52],
+            ["Non travail du sol", 100, 70],
+            ["Absence de chimie", 0, 0],
+            ["Nombre d'espèces cultivées", 30, 30]
+        ];
+
+        sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
+
+        sheet.getRange(insertRow, 1, 1, 3).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignment('right'); // Columns titles
+        sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
+
+        sheet.getRange(insertRow + 1, 2, 1, 2)
+            .setNumberFormat("0.0");
+        sheet.getRange(insertRow + 2, 2, 5, 2)
+            .setNumberFormat("0");
+
+        this.createChartFooter(
+            "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
+            +" N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
+    }
+
+    createRadarSocioEconomique() {
+
+        let sheet = SpreadsheetApp.getActiveSheet();
+        const insertRow = this.createChartHeader("Analyse socio-économique", "Analyse socio-économique", "Droite", 3);
+
+        let values = [
+            ["", "Nom de la ferme", "Moyenne"],
+            ["Satisfaction économique", 10, 7],
+            ["Satisfaction sociale", 10, 8],
+            ["Cadre de vie", 9, 8],
+            ["Coopération", 2, 0],
+            ["Efficacité temps de travail", 30, 12],
+            ["EBE/UTH", 24264, 13545],
+            ["Confort au travail", 8, 7]
+        ];
+
+        sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
+
+        sheet.getRange(insertRow, 1, 1, 3).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignment('right'); // Columns titles
+        sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
+
+        sheet.getRange(insertRow + 1, 2, 7, 2)
+            .setNumberFormat("0");
+
+        this.createChartFooter(
+            "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
+            +" N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
+    }
+    
+    createAutonomieChart() {
+
+        let sheet = SpreadsheetApp.getActiveSheet();
+        const insertRow = this.createChartHeader("Capacité d'autoproduction", "Capacité d'autoproduction", "Droite", 3);
+        // EChart Capacité d'autoproduction MSV
+        let values = [
+            ["", "Nom de la ferme", "Moyenne"],
+            ["Semences", 3, 7],
+            ["Plants", 90, 72],
+            ["Légumes", 100, 85],
+            ["MO", 10, 19]
+        ];
+
+        sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
+
+        sheet.getRange(insertRow, 1, 1, 3).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignment('right'); // Columns titles
+        sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
+
+        sheet.getRange(insertRow + 1, 2, 7, 2)
+            .setNumberFormat("0");
+
+        this.createChartFooter(
+            "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
+            +" N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
+    }
+    
+    getAnalyseChart(range) {
+        const values = range.getValues();
+
+        let args = new Map();
+
+        const footerRow = this.getChartRowIndex("Fin du graphique", values);
+        let columnsFound = false;
+
+        for (let rowIndex = 1; rowIndex < footerRow; rowIndex++) {
+            let [nomAxe, value, average] = values[rowIndex];
+
+            if (average == "Moyenne") {
+                args.set('Nom de la ferme', value);
+                columnsFound = true;
+                continue;
+            }
+
+            if (!columnsFound)
+                continue;
+
+            if (nomAxe.trim().length == 0 &&
+                value.trim().length == 0 &&
+                average.trim().length == 0)
+                break;
+
+            args.set(nomAxe, Number(value));
+            args.set(nomAxe + ' moyenne', Number(average));
+        }
+
+        return args;
+    }
+
+    // {{EChart Stratégie commerciale MSV
+    createStrategieCommerciale() {
+
+        let sheet = SpreadsheetApp.getActiveSheet();
+        const insertRow = this.createChartHeader("Stratégie commerciale", "Stratégie commerciale", "Droite", 3);
+
+        const totalStartRow = insertRow + 1;
+        const totalEndRow = insertRow + 9;
+
+        let values = [
+            ["", "Nom de la ferme"],
+            ["AMAP", 0.3],
+            ["Marché", 0],
+            ["Vente à la ferme", 0.23],
+            ["Magasin", 0],
+            ["Restaurants et Cantines", 0],
+            ["Grossiste", 0],
+            ["Paniers", 0],
+            ["Revendeurs", 0],
+            ["GMS", 0],
+            ["Autres", `=1 - sum(B${totalStartRow}:B${totalEndRow})`],
+        ];
+
+        sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
+
+        sheet.getRange(insertRow, 1, 1, 3).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignment('right'); // Columns titles
+        sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
+
+        sheet.getRange(insertRow + 1, 2, 10, 1)
+            .setNumberFormat("0 \%");
+
+        this.createChartFooter(
+            "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
+            +" N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
+    }    
+
+    getStrategieCommerciale(range) {
+        const values = range.getValues();
+
+        let args = new Map();
+
+        const footerRow = this.getChartRowIndex("Fin du graphique", values);
+        let columnsFound = false;
+
+        for (let rowIndex = 1; rowIndex < footerRow; rowIndex++) {
+            let [nomAxe, value] = values[rowIndex];
+
+            if (!columnsFound &&
+                nomAxe.trim().length == 0 &&
+                value.trim().length > 0) 
+            {
+                args.set('Nom de la ferme', value);
+                columnsFound = true;
+                continue;
+            }
+
+            if (!columnsFound)
+                continue;
+
+            if (nomAxe.trim().length == 0 &&
+                value.trim().length == 0)
+                break;
+
+            args.set(nomAxe, Number(value) * 100);
+        }
+
+        return args;
     }
 
     /**
@@ -1062,7 +1278,7 @@ class chartsBuilder {
      * @param {*} insertRow 
      * @returns 
      */
-    createChartHeader(chartType, chartExampleName, cols = 4, additionalData = []) {
+    createChartHeader(chartType, chartExampleName, defaultAlign, cols = 4, additionalData = []) {
         let sheet = SpreadsheetApp.getActiveSheet();
 
         // Create the new charts after the last non empty row
@@ -1071,17 +1287,17 @@ class chartsBuilder {
         let values = [
             ["Graphique", chartType, "", ""],
             ["Titre", chartExampleName, "", ""],
-            ["Alignement", "Centrer", "Centrer / Droite / Gauche", ""],
+            ["Alignement", defaultAlign, "Centrer / Droite / Gauche", ""],
             ["Largeur", "", "Par défaut : 500px", ""],
-            ["Hauteur", "", "Par défaut : 400px", ""]            
+            ["Hauteur", "", "Par défaut : 400px", ""]
         ];
 
         if (additionalData.length > 0)
             values.push(additionalData);
-        
+
         values.push(["", "", "", ""]);
 
-        sheet.getRange(insertRow, 1, values.length, 4).setValues(values);
+        sheet.setActiveRange(sheet.getRange(insertRow, 1, values.length, 4).setValues(values));
 
         sheet.getRange(insertRow, 1, 1, cols).setFontWeight("bold").setBackground(getLightGrayColor()); // Header
         sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col

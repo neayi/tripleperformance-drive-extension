@@ -203,6 +203,58 @@ class api_tools {
     }
   }
 
+  /**
+   * Invoque with: getPagesWithForSemanticQuery("[[A un mot-clé::Pâturage]]")
+   * Values must be an array
+   * 
+   * Returns an array of arrays. The first item of each array is the page title, then the values
+   */
+  getSemanticValuesWithForSemanticQuery(semanticQuery, values) {
+    try {
+
+      values = values.map((v) => {return '?' + v}).join('|');
+
+      const ask = `${semanticQuery}|?=Page|${values}|limit=5000`;
+
+      const parameters = {
+        action: 'ask',
+        api_version: '3',
+        query: ask,
+        format: 'json'
+      };
+
+      const queryString = this.objectToQueryParams(parameters);
+      const url = `${this.wikiURL}/api.php?${queryString}`;
+
+      let options = {
+        'method': 'get',
+      };
+
+      const response = UrlFetchApp.fetch(url, options);
+
+      let unparsedJson = response.getContentText();
+      const result = JSON.parse(unparsedJson);
+
+      if (!result.query || !result.query.results) {
+        return [];
+      }
+
+      return result.query.results.map(arg => {
+        let pagename = Object.keys(arg)[0];
+
+        let entries = [];
+        for (const [key, value] of Object.entries(arg)) {
+          if (value.printouts)
+            entries = Object.entries(value.printouts).map((k, v) => k[1][0] ?? '');
+        }
+
+        return [pagename, ...entries];
+      });
+    } catch (error) {
+      console.error(error.message);
+      return [];
+    }
+  }
 
   /**
    * Returns a list of pages (key) with their date of last modification (value)

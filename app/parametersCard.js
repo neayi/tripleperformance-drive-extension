@@ -17,7 +17,7 @@ function parameters_save(e)
 
     parameters.storeSecrets(secrets);
 
-    SpreadsheetApp.getUi().alert("Les paramètres ont été enregistrés.");
+    alert("Les paramètres ont été enregistrés.");
 }
 
 function parametersbuildCard() {
@@ -38,14 +38,14 @@ function parametersbuildCard() {
         .setType(CardService.SelectionInputType.DROPDOWN);
 
     availableURLs.forEach((url) => {
-        cardSection1SelectionInput1.addItem(url, url, url == parameters.secrets.wikiURL);
+        cardSection1SelectionInput1.addItem(url, url, url == parameters.secrets().wikiURL);
     });
 
     let cardSection1TextInput1 = CardService.newTextInput()
         .setFieldName('username')
         .setTitle('Nom d\'utilisateur :')
         .setHint('Utilisateur@Triple_Performance_Robot')
-        .setValue(parameters.secrets.username)
+        .setValue(parameters.secrets().username)
         .setMultiline(false);
 
     let cardSection1TextInput2 = CardService.newTextInput()

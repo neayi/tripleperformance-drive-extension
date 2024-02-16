@@ -57,13 +57,13 @@ function fetchVideosDetailsFromYouTubeChannel() {
 function pushVideosToTriplePerformance() {
     Logger.log("pushVideosToTriplePerformance")
     let youTube = new YoutubeModel();
-    youTube.syncYoutubeToWiki();
+    youTube.pushYoutubePagesToWiki();
 }
 
 function pushThumbnailsToTriplePerformance() {
     Logger.log("pushThumbnailsToTriplePerformance")
     let youTube = new YoutubeModel();
-    youTube.addThumbnailsToWiki();
+    youTube.pushThumbnailsToWiki();
 }
 
 function updateYoutubeSpeakersList() {
@@ -75,7 +75,7 @@ function updateYoutubeSpeakersList() {
 function pushSpeakersToTriplePerformance() {
     Logger.log("pushSpeakersToTriplePerformance")
     let speakers = new speakersModel();
-    speakers.syncSpeakersToWiki();
+    speakers.pushSpeakersToWiki();
 }
 
 function showImportCard() {
@@ -96,19 +96,19 @@ function testConnection() {
     let parameters = new tp_parameters();
     parameters.loadSecrets();
     if (!parameters.checkSecrets()) {
-        SpreadsheetApp.getUi().alert("Les paramètres n'ont pas été saisis...!");
+        alert("Les paramètres n'ont pas été saisis...!");
         return;
     }
 
-    let api = new MediawikiAPI(parameters.secrets.wikiURL + "/api.php", parameters.secrets.username, parameters.secrets.password);
+    let api = new MediawikiAPI(parameters.secrets().wikiURL + "/api.php", parameters.secrets().username, parameters.secrets().password);
 
     let logindata = api.login();
     if (!logindata.login.result || logindata.login.result != 'Success') {
-        SpreadsheetApp.getUi().alert("La connexion n'a pas fonctionné...\n " + JSON.stringify(logindata, null, 3));
+        alert("La connexion n'a pas fonctionné...\n " + JSON.stringify(logindata, null, 3));
         return;
     }
 
-    SpreadsheetApp.getUi().alert("La connexion fonctionne correctement.");
+    alert("La connexion fonctionne correctement.");
 }
 
 function createNewTabs(e) {

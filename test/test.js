@@ -24,27 +24,26 @@ Et encore un peu de texte...`;
     else
         console.log("La template inéxistante n'est bien pas dans la page.");
 
-    const newPageContent = wiki.addValueToTemplate(pageContent, "Template de test", "test", "ok", true);
+    const newPageContent = wiki.addValueToTemplate(pageContent, "Ma template", "test", "ok", true);
     console.log("Added the test parameter: " + newPageContent);
 
     // if (newPageContent)
     //   apiTools.updateWikiPage(newPageContent, "Ajout d'un paramètre à la template Template de test"); 
 
-    const newerPageContent = wiki.addValueToTemplate(newPageContent, "Template de test", "test", false, true);
+    const newerPageContent = wiki.addValueToTemplate(newPageContent, "Ma template", "test", false, true);
     console.log("Removed the test parameter: " + newerPageContent);
 
-    const withANewTemplate = wiki.replaceTemplate('Template de test', 'Test template', ['test1 = 23', 'test2 = top'], newerPageContent);
+    const withANewTemplate = wiki.replaceTemplate('Ma template', 'Auxiliaire', ['test1 = 23', 'test2 = top'], newerPageContent);
     console.log("With the template fully replaced: " + withANewTemplate);
 
-    const withoutANewTemplate = wiki.removeTemplate('Test template', withANewTemplate);
-    console.log("With the template fully removed: " + withoutANewTemplate);
+    const withoutANewTemplate = wiki.removeTemplate('Ma template', newerPageContent);
+    console.log("With the template 'Ma template' fully removed: " + withoutANewTemplate);
 
-    pageContent = wiki.getPageContent("Abeille");
-    var withNewKeyword = wiki.insertKeywordInPage(pageContent, 'emberlificoter');
+    var withNewKeyword = wiki.insertKeywordInPage(withANewTemplate, 'emberlificoter');
     withNewKeyword = wiki.insertKeywordInPage(withNewKeyword, 'turlupiner');
     console.log("With keyword emberlificoter added: " + withNewKeyword);
 
-    let templateParams = wiki.getTemplateParams(pageContent, 'Auxiliaire');
+    let templateParams = wiki.getTemplateParams(withNewKeyword, 'Auxiliaire');
     console.log("Paramètres de auxiliaires :" + [...templateParams.entries()]);
 
     let params = new Map();
@@ -58,8 +57,12 @@ Et encore un peu de texte...`;
 function testAPITools() {
     var apiTools = new api_tools('https://wiki.tripleperformance.fr', 'Bertrand Gorge@Triple_Performance_Robot', 'oggbeitecs3dgqtep18cbm3o5qhpakf2');
 
+    let testValues = apiTools.getSemanticValuesWithForSemanticQuery("[[A un type de page::Personne]]", ['A un nom', 'Biographie', 'A une photo']);
+    Logger.log(testValues);
+
     var pageContent = apiTools.getPageContent("Sandbox");
-    
+    console.log("Sandbox : " + pageContent);
+
     let pages = apiTools.getPagesForCategory("Category:Pollinisateurs");
     console.log("Pages dans la catégorie Pollinisateurs : " + pages);
 

@@ -1,16 +1,18 @@
-
+var cachedSecret = {
+    wikiURL: "",
+    username: "",
+    password: ""
+};
 
 class tp_parameters {
     constructor() {
-        this.parameterSheetName = 'Paramètres';
 
-        this.secrets = {
-            wikiURL: "",
-            username: "",
-            password: ""
-        };
     }
-   
+
+    secrets() {
+        return cachedSecret;
+    }
+
     storeSecrets(secrets) {
         this.storeOneSecret('Wiki URL', secrets.wikiURL);
         this.storeOneSecret('Triple Performance Username', secrets.username);
@@ -20,10 +22,13 @@ class tp_parameters {
 
         // Force reload the secrets
         this.loadSecrets(true);
-        
+
         return true;
     }
 
+    /**
+     * Private
+     */
     storeOneSecret(key, value) {
         const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
         let metaData = spreadsheet.createDeveloperMetadataFinder().withKey(key).find();
@@ -33,17 +38,22 @@ class tp_parameters {
             spreadsheet.addDeveloperMetadata(key, value, SpreadsheetApp.DeveloperMetadataVisibility.PROJECT);
     }
 
+    /**
+     * Note : this call is pretty heavy (at least one sec) - do not mess with the bForce param !
+     * @param {*} bForce 
+     * @returns 
+     */
     loadSecrets(bForce = false) {
-        if (bForce == false && this.secrets.wikiURL.length > 0)
+        if (bForce == false && cachedSecret.wikiURL.length > 0)
             return; // secrets are already loaded
 
-        this.secrets.wikiURL = this.loadOneSecret('Wiki URL');
+        cachedSecret.wikiURL = this.loadOneSecret('Wiki URL');
 
-        if (this.secrets.wikiURL.length == 0)
-            this.secrets.wikiURL = "https://wiki.tripleperformance.fr/";
+        if (cachedSecret.wikiURL.length == 0)
+            cachedSecret.wikiURL = "https://wiki.tripleperformance.fr/";
 
-        this.secrets.username = this.loadOneSecret('Triple Performance Username');
-        this.secrets.password = this.loadOneSecret('Triple Performance Password');
+        cachedSecret.username = this.loadOneSecret('Triple Performance Username');
+        cachedSecret.password = this.loadOneSecret('Triple Performance Password');
 
         return;
     }
@@ -53,17 +63,20 @@ class tp_parameters {
      */
     checkSecrets() {
         
-        if (this.secrets.wikiURL.length == 0 ||
-            this.secrets.username.length == 0 ||
-            this.secrets.password.length == 0)
+        if (cachedSecret.wikiURL.length == 0 ||
+            cachedSecret.username.length == 0 ||
+            cachedSecret.password.length == 0)
         {
-            SpreadsheetApp.getUi().alert("Veuillez saisir les paramètres de l'add-on (identifiants et mots de passe du wiki)");
+            alert("Veuillez saisir les paramètres de l'add-on (identifiants et mots de passe du wiki)");
             return false;
         }
 
         return true;
     }
 
+    /**
+     * Private
+     */
     loadOneSecret(key) {
         const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
         let metaData = spreadsheet.createDeveloperMetadataFinder().withKey(key).find();

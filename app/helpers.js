@@ -140,17 +140,24 @@ function getApiTools() {
     if (!parameters.checkSecrets())
         return null;
 
-    return new api_tools(parameters.secrets.wikiURL, parameters.secrets.username, parameters.secrets.password);
+    return new api_tools(parameters.secrets().wikiURL, parameters.secrets().username, parameters.secrets().password);
 }
+
+var triplePerformanceURL = "";
 
 function getTriplePerformanceURL()
 {
+    if (triplePerformanceURL.length > 0)
+        return triplePerformanceURL;
+
     let parameters = new tp_parameters();
     parameters.loadSecrets();
     if (!parameters.checkSecrets())
         return;
+        
+    triplePerformanceURL = parameters.secrets().wikiURL;
 
-    return parameters.secrets.wikiURL;
+    return triplePerformanceURL;
 }
 
 function alert(message) {
@@ -160,4 +167,33 @@ function alert(message) {
     } catch (error) {
         
     }
+}
+
+function startTrigger(callbackFunction) {
+    Logger.log("startTrigger for " + callbackFunction);
+
+    if (ScriptApp.getProjectTriggers().length > 0)
+    {
+        Logger.log("Trigger alredy added");
+        return;
+    }
+
+    ScriptApp.newTrigger(callbackFunction)
+        .timeBased()
+        .everyHours(1)
+        .create();
+
+    Logger.log("New trigger added");
+}
+
+function removeTrigger()
+{
+    Logger.log("Removing existing triggers");
+
+    const documentProperties = PropertiesService.getDocumentProperties();
+    ScriptApp.getProjectTriggers().forEach((trigger) => {
+        ScriptApp.deleteTrigger(trigger);
+    });
+
+    documentProperties.deleteProperty('queuedTabsForTrigger');        
 }

@@ -62,7 +62,7 @@ class FarmModel {
         let wikiTitle = String(this.getGeneraliteValue("Nom de la page Triple Performance"));
 
         if (wikiTitle.length == 0) {
-            SpreadsheetApp.getUi().alert("Le nom de la page Triple Performance est vide. Veuillez créer puis reporter le nom de la page dans l'onglet Ferme !");
+            alert("Le nom de la page Triple Performance est vide. Veuillez créer puis reporter le nom de la page dans l'onglet Ferme !");
             return false;
         }
         
@@ -85,7 +85,7 @@ class FarmModel {
         let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ferme");
 
         if (!sheet) {
-            SpreadsheetApp.getUi().alert("Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");
+            alert("Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");
             return null;
         }
 

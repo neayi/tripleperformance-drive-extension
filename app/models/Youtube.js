@@ -3,7 +3,6 @@ class YoutubeModel {
     constructor() {
 
         this.startTime = new Date();
-        this.triggerFunctionName = "";
 
         this.rowIndexForYoutubeId = new Map();
 
@@ -11,7 +10,7 @@ class YoutubeModel {
             "ID", "URL", "ThumbnailURL", "Vignette", "Titre", "Description", "Producteur", "Date de mise en ligne", 
             "Durée", "Sous-titres", "Vues", "Commentaires",
             "Titre corrigé", "Description courte", "Production", "Intervenants", "Mots clés", "ok pour wiki",
-            "thumbnail", "wiki"
+            "thumbnail", "wiki", "Date de création de la page"
         ];
 
         this.tabs = ["Vidéos d'une chaîne", "Vidéos d'une playlist", "Intervenants"];
@@ -85,8 +84,7 @@ class YoutubeModel {
         Logger.log('fetchNewVideos');
 
         // Remove any existing trigger first
-        this.removeTrigger();
-
+        removeTrigger();
         this.getYouTubeTabsNames();
 
         // Proceed !
@@ -98,11 +96,34 @@ class YoutubeModel {
         Logger.log('fetchVideoDetails');
 
         // Remove any existing trigger first
-        this.removeTrigger();
-
+        removeTrigger();
         this.getYouTubeTabsNames();
 
         onFetchVideosDetails();
+    }
+    
+    /**
+     * Go through all the videos of the current sheet,
+     * check that the col 
+     */
+    pushThumbnailsToWiki() {
+        Logger.log('pushThumbnailsToWiki');
+
+        // Remove any existing trigger first
+        removeTrigger();
+        this.getYouTubeTabsNames();
+
+        onPushThumbnailsToWiki();
+    }
+
+    pushYoutubePagesToWiki() {
+        Logger.log('pushYoutubePagesToWiki');
+
+        // Remove any existing trigger first
+        removeTrigger();
+        this.getYouTubeTabsNames();
+
+        onPushYoutubePagesToWiki();
     }
 
     getNextTabInQueue()
@@ -114,7 +135,7 @@ class YoutubeModel {
         if (tabNames.length == 0)
         {
             // We are done, kill the trigger and exit
-            this.removeTrigger();
+            removeTrigger();
             return false;
         }
 
@@ -160,35 +181,6 @@ class YoutubeModel {
         });
 
         PropertiesService.getDocumentProperties().setProperty('queuedTabsForTrigger', tabNames.join('|'));
-    }
-
-    startTrigger(callbackFunction) {
-        Logger.log("startTrigger for " + callbackFunction);
-
-        if (ScriptApp.getProjectTriggers().length > 0)
-        {
-            Logger.log("Trigger alredy added");
-            return;
-        }
-
-        ScriptApp.newTrigger(callbackFunction)
-            .timeBased()
-            .everyHours(1)
-            .create();
-
-        Logger.log("New trigger added");
-    }
-
-    removeTrigger()
-    {
-        Logger.log("Removing existing triggers");
-
-        const documentProperties = PropertiesService.getDocumentProperties();
-        ScriptApp.getProjectTriggers().forEach((trigger) => {
-            ScriptApp.deleteTrigger(trigger);
-        });
-
-        documentProperties.deleteProperty('queuedTabsForTrigger');        
     }
 
     checkTime() {
@@ -312,22 +304,7 @@ class YoutubeModel {
                 .setValues([videoDetail]);
     }
 
-    /**
-     * Go through all the videos of the current sheet,
-     * check that the col 
-     */
-    addThumbnailsToWiki() {
-        Logger.log('fetchVideoDetails');
-
-        // Remove any existing trigger first
-        this.removeTrigger();
-
-        this.getYouTubeTabsNames();
-
-        onAddThumbnailsToWiki();
-    }
-
-    addThumbnailsToWikiForSheet(sheet) {
+    pushThumbnailsToWikiForSheet(sheet) {
 
         let data = sheet.getDataRange();
         let startRow = data.getRow();
@@ -361,41 +338,33 @@ class YoutubeModel {
             let ret = apiTools.uploadImage(video.thumbnailURL, destName, comment);
 
             let content = getHyperlinkedTitle(getTriplePerformanceURL(), 'File:' + destName, destName);
-            sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
+            sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
             SpreadsheetApp.flush();
         });
     }
 
-    syncYoutubeToWiki() {
-        let sheet = SpreadsheetApp.getActiveSheet();
-
+    pushYoutubePagesToWikiForSheet(sheet) {
         let data = sheet.getDataRange();
         let startRow = data.getRow();
 
-        let idFound = false;
         const wikiCol = this.getColNumber("wiki");
 
-        data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == this.columns[0])
-            {
-                idFound = true;
-                return;
-            }
+        const self = this;
 
-            if (!idFound)
-                return;
+        data.getValues().forEach((row, rowIndex) => {
+            self.checkTime();
 
             let video = this.getVideoFromRow(row);
    
             if (video.videoID.length != 11)
-                return;
+                return; // Not a video
             
             if (video.okForWiki !== "o")
-                return;
+                return; // Not ok to push
 
             // if the video page is set (col in the excel), just skip (don't update)
             if (video.wiki.length > 0)
-                return;
+                return; // Already on the wiki
 
             let apiTools = getApiTools();
 
@@ -408,13 +377,13 @@ class YoutubeModel {
                 // if found, just set the page in the col and go the the next row
                 let content = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
 
-                sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
+                sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
                 return;
             }
 
+            self.checkTime();
+
             // if not found, create it
-
-
             let params = new Map();
             params.set('Titre',         "Titre = " + video.fixedTitle);
             params.set('Producteur',    "Producteur = " + video.channelTitle);
@@ -446,48 +415,49 @@ class YoutubeModel {
             apiTools.createWikiPage(pageTitle, pageContent, "Création de la page");
 
             let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
-            sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(cellcontent);
+            sheet.getRange(rowIndex + startRow, wikiCol, 1, 2).setValues([[cellcontent, new Date()]]);
         });
     }
 
     buildSpeakersList() {
-        let sheet = SpreadsheetApp.getActiveSheet();
-        let idFound = false;
+        const self = this;
         let speakers = [];
 
-        sheet.getDataRange().getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == this.columns[0])
-            {
-                idFound = true;
-                return;
-            }
-
-            if (!idFound)
-                return;
-
-            let video = this.getVideoFromRow(row);
-   
-            if (video.videoID.length != 11)
-                return;
+        let sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+        sheets.forEach((sheet) => {
             
-            if (video.okForWiki !== "o")
-                return;
+            let channelId = self.getSheetsChannelID(sheet);
+            let playlistId = self.getSheetsPlaylistID(sheet);
 
-            video.speakers.split(',').forEach((intervenant, i) => {
-                intervenant = intervenant.trim();
-                if (intervenant.length == 0)
-                    return;
+            if (!channelId && !playlistId)
+                return; // Not a youtube Sheet
 
-                speakers.push(intervenant);
+            sheet.getDataRange().getValues().forEach((row, rowIndex) => {
+    
+                let video = this.getVideoFromRow(row);
+       
+                if (video.videoID.length != 11)
+                    return; // Not a video
+                
+                if (video.okForWiki !== "o")
+                    return; // Not marked for import
+    
+                video.speakers.split(',').forEach((intervenant, i) => {
+                    intervenant = intervenant.trim();
+                    if (intervenant.length == 0)
+                        return;
+    
+                    speakers.push(intervenant);
+                });
             });
         });
 
         let speakersManager = new speakersModel();
+        speakersManager.getAllSpeakersFromWiki();
         let newSpeakers = speakersManager.addSpeakers(speakers);
 
         alert(`Terminé - ${newSpeakers} intervenants ajoutés (veuillez compléter leur bio)`);
     }
-
 
     syncSpeakersToTriplePerformance() {
         // To do

@@ -129,7 +129,7 @@ class wikiPage {
                 new_args.set(key, paramName + " = " + paramValue);
             });
 
-            return pageContent + "\n\n" + this.buildTemplateFromMap(templateName, newParams);
+            return pageContent + "\n\n" + this.buildTemplateFromMap(templateName, new_args);
         }
         else {
             // Update the existing array of parameters
@@ -347,9 +347,6 @@ class wikiPage {
         let originalChart = '';
 
         if (matches) {
-
-            Logger.log(`${matches.length} charts found`);
-            Logger.log(matches);
 
             matches.forEach((chart) => {
                 if (originalChart != "")

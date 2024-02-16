@@ -51,6 +51,7 @@ class TrainingCourseModel {
         const wikiCol = this.getColNumber("Image");
 
         let imagesAdded = 0;
+        const tripleperformanceURL = getTriplePerformanceURL();
 
         data.getValues().forEach((row, rowIndex) => {
             if (!idFound && row[0] == this.columns[0])
@@ -79,19 +80,19 @@ class TrainingCourseModel {
             Logger.log("Getting thumbnail for " + course.courseCode + " " + course.courseImageURL + " " + destName);
             let ret = apiTools.uploadImage(course.courseImageURL, destName, comment);
 
-            let content = getHyperlinkedTitle(getTriplePerformanceURL(), 'File:' + destName, destName);
-            sheet.getRange(rowIndex + startRow, wikiCol, 1, 1).setValue(content);
+            let content = getHyperlinkedTitle(tripleperformanceURL, 'File:' + destName, destName);
+            sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
 
             imagesAdded++;
         });
 
-        SpreadsheetApp.getUi().alert(imagesAdded + " vignettes ajoutées !");
+        alert(imagesAdded + " vignettes ajoutées !");
     }
 
     syncTrainings() {
         let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Liste des formations");
         if (sheet == null) {
-            SpreadsheetApp.getUi().alert("Impossible de trouver l'onglet Liste des formations !");
+            alert("Impossible de trouver l'onglet Liste des formations !");
             return;
         }
 
@@ -103,6 +104,7 @@ class TrainingCourseModel {
         let untouchedCourses = 0;
 
         const dateCol = this.getColNumber("Date de mise à jour");
+        const tripleperformanceURL = getTriplePerformanceURL();
 
         // Ignore the first row for the column names
         for (let rowId = 2; rowId <= sheet.getLastRow(); rowId++) {
@@ -162,14 +164,14 @@ class TrainingCourseModel {
             }
 
             let maintenant = new Date();
-            let content = getHyperlinkedTitle(getTriplePerformanceURL(), wikiTitle, wikiTitle);
+            let content = getHyperlinkedTitle(tripleperformanceURL, wikiTitle, wikiTitle);
 
             sheet.getRange(rowId, dateCol, 1, 2).setValues([
                 [content, Utilities.formatDate(maintenant, 'Europe/Paris', 'dd-MMM HH-mm')]
             ]);
         }
 
-        SpreadsheetApp.getUi().alert(`${newCourses} nouvelles formations, ${updatedCourses} formations mises à jour (${untouchedCourses} n'ont pas été modifiées)`);
+        alert(`${newCourses} nouvelles formations, ${updatedCourses} formations mises à jour (${untouchedCourses} n'ont pas été modifiées)`);
     }
 
     findPageForTraining(Code, Structure) {
@@ -253,7 +255,7 @@ class TrainingCourseModel {
         let speakersManager = new speakersModel();
         let newSpeakers = speakersManager.addSpeakers(speakers);
 
-        SpreadsheetApp.getUi().alert(`Terminé - ${newSpeakers} intervenants ajoutés (veuillez compléter leur bio)`);
+        alert(`Terminé - ${newSpeakers} intervenants ajoutés (veuillez compléter leur bio)`);
     }
 
     getTabs()
