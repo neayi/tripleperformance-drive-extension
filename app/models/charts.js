@@ -863,7 +863,7 @@ class chartsBuilder {
     createRotation() {
 
         let sheet = SpreadsheetApp.getActiveSheet();
-        const insertRow = this.createChartHeader("Rotation", "Ma rotation", "Centrer",
+        const insertRow = this.createChartHeader("Rotation", "Ma rotation", "Centrer", 4,
             ["Date de démarrage", "15/03/2024", "Une date à partir de laquelle on démarre la rotation", ""]);
 
         let values = [
@@ -1324,5 +1324,7 @@ class chartsBuilder {
         sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
         sheet.getRange(insertRow + 2, 1, 1, cols).merge().setFontStyle("italic").setFontWeight("normal").setWrap(true); // doc
         sheet.getRange(insertRow + 4, 1, 1, cols).setFontWeight("bold").setBackground(getLightGrayColor()); // End
+
+        SpreadsheetApp.flush();
     }
 }
