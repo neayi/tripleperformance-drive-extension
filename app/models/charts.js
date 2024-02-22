@@ -288,6 +288,7 @@ class chartsBuilder {
             series: [
                 {
                     type: 'treemap',
+                    roam: false,
                     itemStyle: {
                         borderWidth: 0,
                         gapWidth: 2
