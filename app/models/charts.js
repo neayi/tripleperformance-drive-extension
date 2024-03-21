@@ -368,13 +368,13 @@ class chartsBuilder {
 
         // Hack because JSON.Stringify would remove our formater function from the tooltip
         parserFunction = parserFunction.replace('"tooltip": {},', `tooltip: {
-            formatter: (info) => {
+            "formatter": (info) => {
                 var value = info.value;
                 var name = info.name;
                 let percent =
                     '(' + Math.round((100 * value) / info.treeAncestors[0].value) + '%)';
                 return name + ' : ' + value + 'ha ' + percent;
-            }
+            }, "confine": true
         },`);
 
         return parserFunction;
@@ -475,18 +475,18 @@ class chartsBuilder {
         };
 
         const monthsColorScale = [
-            '#9CC2E4', // winter
-            '#9CC2E4',
-            '#97D258', // spring
-            '#97D258',
-            '#97D258',
-            '#FFFF00', // summer
-            '#FFFF00',
-            '#FFFF00',
-            '#FF9A35', // automn
-            '#FF9A35',
-            '#FF9A35',
-            '#9CC2E4'
+            '#c7d2e3', // winter
+            '#c7d2e3',
+            '#bdd8c0', // spring
+            '#bdd8c0',
+            '#bdd8c0',
+            '#ecebb3', // summer
+            '#ecebb3',
+            '#ecebb3',
+            '#f8e0c5', // automn
+            '#f8e0c5',
+            '#f8e0c5',
+            '#c7d2e3'
         ];
 
         let monthsPerYear = new Map();
@@ -545,14 +545,14 @@ class chartsBuilder {
 
         // Hack because JSON.Stringify would remove our formater function from the tooltip
         parserFunction = parserFunction.replace('"tooltip":{},', `tooltip: {
-            formatter: (item) => {
+            "formatter": (item) => {
               return item.marker + "&lt;b&gt;" + item.name + "&lt;/b&gt;&lt;br&gt;" +
                  item.data.description
                     .replaceAll('¤amp;' , '&amp;')
                     .replaceAll('¤lt;'  , '&lt;')
                     .replaceAll('¤gt;'  , '&gt;')
                     .replaceAll('¤quot;', '&quot;');
-            }
+            }, "confine": true
           },`);
 
         return parserFunction;
@@ -1085,7 +1085,7 @@ class chartsBuilder {
         sheet.getRange(insertRow + 1, 3, posteTotalRow, 4)
             .setNumberFormat("#,##0 €");
 
-        this.createChartFooter("Vous pouvez ajouter ou supprimer des lignes. Vous ne devez pas changer les nom des colonnes", 6);
+        this.createChartFooter("Vous pouvez ajouter ou supprimer des lignes, et ajouter de nouvelles colonnes pour chaque année.", 6);
     }
 
     createRadarEnvironnemental() {

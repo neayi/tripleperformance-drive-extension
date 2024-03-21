@@ -270,7 +270,7 @@ class YoutubeModel {
 
             let thumbnailURL = v.snippet?.thumbnails?.maxres?.url;
             if (!thumbnailURL)
-                thumbnailURL = v.snippet.thumbnails.standard.url;
+                thumbnailURL = v.snippet?.thumbnails?.standard?.url;
             
             let detail = [
                 "https://www.youtube.com/watch?v=" + v.id,
