@@ -4,7 +4,7 @@ class FarmModel {
     {
         this.defGeneralites = {};
 
-        this.tabs = ["Ferme"];
+        this.tabs = ["Données générales"];
     }
 
     getTabs()
@@ -14,7 +14,7 @@ class FarmModel {
 
     /** Make sure the farm Tab exists */
     createFermeTab() {
-        const tabName = "Ferme";
+        const tabName = "Données générales";
         let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
         let currentSheet = SpreadsheetApp.getActiveSheet();
@@ -82,10 +82,10 @@ class FarmModel {
 
     getGeneraliteValue(fieldname)
     {
-        let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ferme");
+        let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Données générales");
         
         if (!sheet) {
-            sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Données générales");
+            sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ferme");
         }
 
         if (!sheet) {
