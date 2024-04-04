@@ -36,7 +36,7 @@ class YoutubeModel {
         {
             let sr = YouTube.Search.list("id", { 
                 channelId: channelId,
-                maxResults: 1000,
+                maxResults: 50,
                 order: 'date' });
 
             let vids = sr.items.filter(function (res) { return res.id.kind === "youtube#video" });
@@ -46,7 +46,8 @@ class YoutubeModel {
         else if (playlistId) 
         {
             let sr = YouTube.PlaylistItems.list("id,contentDetails,status", {
-                    playlistId: playlistId
+                    playlistId: playlistId,
+                    maxResults: 50
                 });
 
             let vids = sr.items.filter(function (res) {

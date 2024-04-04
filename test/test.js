@@ -55,7 +55,7 @@ Et encore un peu de texte...`;
 }
 
 function testAPITools() {
-    var apiTools = new api_tools('https://wiki.tripleperformance.fr', 'Bertrand Gorge@Triple_Performance_Robot', 'oggbeitecs3dgqtep18cbm3o5qhpakf2');
+    var apiTools = new api_tools('https://wiki.tripleperformance.fr', 'redacted', 'redacted');
 
     let testValues = apiTools.getSemanticValuesWithForSemanticQuery("[[A un type de page::Personne]]", ['A un nom', 'Biographie', 'A une photo']);
     Logger.log(testValues);

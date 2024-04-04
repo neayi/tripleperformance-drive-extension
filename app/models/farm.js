@@ -83,6 +83,10 @@ class FarmModel {
     getGeneraliteValue(fieldname)
     {
         let sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Ferme");
+        
+        if (!sheet) {
+            sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Données générales");
+        }
 
         if (!sheet) {
             alert("Impossible de trouver l'onglet Ferme. Veuillez le créer et le remplir avant de démarrer une synchronisation !");
