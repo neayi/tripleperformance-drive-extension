@@ -168,6 +168,11 @@ class chartsBuilder {
 
         let wiki = new wikiPage();
         let pageContent = apiTools.getPageContent(wikiTitle);
+        if (pageContent === false)
+        {
+            alert("La page \""+ wikiTitle +"\" n'existe pas encore dans le wiki. Veuillez la créer de façon à pouvoir y insérer des graphiques !");
+            return;
+        }
 
         if (chartTemplate.length > 0)
             pageContent = wiki.updateTemplate(chartTemplate, chartArgs, pageContent);

@@ -2,7 +2,8 @@
 function card_onHomepage(event) {
     var ui = SpreadsheetApp.getUi();
 
-    ui.createAddonMenu()
+    try {
+        ui.createAddonMenu()
         .addSubMenu(ui.createMenu('Formations')
             .addItem('Synchroniser les formations', 'syncTrainingCourses')
             .addItem('Synchroniser les vignettes', 'pushTrainingCoursesThumbnailsToTriplePerformance')
@@ -17,8 +18,11 @@ function card_onHomepage(event) {
             .addItem("Mettre à jour la liste des intervenants", 'updateYoutubeSpeakersList')
             .addItem("Pousser les intervenants vers Triple Performance", 'pushSpeakersToTriplePerformance')
         )
-        .addToUi();
-
+        .addToUi();        
+    } catch (error) {
+        Logger.log(error); 
+    }
+    
     return card_buildHomepageCard();
 }
 
