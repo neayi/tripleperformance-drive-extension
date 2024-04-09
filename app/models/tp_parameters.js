@@ -14,29 +14,35 @@ class tp_parameters {
     }
 
     storeSecrets(secrets) {
-        this.storeOneSecret('Wiki URL', secrets.wikiURL);
-        this.storeOneSecret('Triple Performance Username', secrets.username);
-        
-        if (secrets.password.length > 0)
-            this.storeOneSecret('Triple Performance Password', secrets.password);
 
+        try {
+            let userProperties = PropertiesService.getUserProperties();
+
+            let newProperties = {
+                'Triple Performance Wiki URL': cachedSecret.wikiURL,
+                'Triple Performance Username': cachedSecret.username
+            };
+
+            if (secrets.password.length > 0)
+            {
+                newProperties = {
+                    'Triple Performance Wiki URL': cachedSecret.wikiURL,
+                    'Triple Performance Username': cachedSecret.username,
+                    'Triple Performance Password': cachedSecret.password,
+                };
+            }
+
+            userProperties.setProperties(newProperties);
+        } catch (error) {
+            Logger.log(error);
+        }
+        
         // Force reload the secrets
         this.loadSecrets(true);
 
         return true;
     }
 
-    /**
-     * Private
-     */
-    storeOneSecret(key, value) {
-        const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-        let metaData = spreadsheet.createDeveloperMetadataFinder().withKey(key).find();
-        if (metaData.length > 0)
-            metaData[0].setValue(value);
-        else
-            spreadsheet.addDeveloperMetadata(key, value, SpreadsheetApp.DeveloperMetadataVisibility.PROJECT);
-    }
 
     /**
      * Note : this call is pretty heavy (at least one sec) - do not mess with the bForce param !
@@ -47,13 +53,24 @@ class tp_parameters {
         if (bForce == false && cachedSecret.wikiURL.length > 0)
             return; // secrets are already loaded
 
-        cachedSecret.wikiURL = this.loadOneSecret('Wiki URL');
+        try
+        {
+            const userProperties = PropertiesService.getUserProperties();
+            cachedSecret.wikiURL = userProperties.getProperty('Triple Performance Wiki URL');
+            cachedSecret.username = userProperties.getProperty('Triple Performance Username');
+            cachedSecret.password = userProperties.getProperty('Triple Performance Password');
+
+            if (cachedSecret.username == null)
+            {
+                this.getSecretsFromMetadata();
+            }
+            
+        } catch (err) {
+            Logger.log('Failed with error %s', err.message);
+        }
 
         if (cachedSecret.wikiURL.length == 0)
             cachedSecret.wikiURL = "https://wiki.tripleperformance.fr/";
-
-        cachedSecret.username = this.loadOneSecret('Triple Performance Username');
-        cachedSecret.password = this.loadOneSecret('Triple Performance Password');
 
         return;
     }
@@ -72,6 +89,38 @@ class tp_parameters {
         }
 
         return true;
+    }
+
+    /**
+     * Private
+     * 
+     * Try to retrieve the properties from the DeveloperMetadata store, and 
+     * store them in the UserProperties
+     */
+    getSecretsFromMetadata() {
+        
+        cachedSecret.wikiURL = this.loadOneSecret('Wiki URL');
+        cachedSecret.username = this.loadOneSecret('Triple Performance Username');
+        cachedSecret.password = this.loadOneSecret('Triple Performance Password');
+
+        if (cachedSecret.wikiURL.length > 0 ||
+            cachedSecret.username.length > 0 ||
+            cachedSecret.password.length > 0)
+        {
+            try {
+                let userProperties = PropertiesService.getUserProperties();
+                let newProperties = {
+                    'Triple Performance Wiki URL': cachedSecret.wikiURL,
+                    'Triple Performance Username': cachedSecret.username,
+                    'Triple Performance Password': cachedSecret.password,
+                };
+    
+                userProperties.setProperties(newProperties);
+            } catch (error) {
+                Logger.log(error);
+            }
+
+        }
     }
 
     /**

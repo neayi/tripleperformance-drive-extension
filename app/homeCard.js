@@ -115,27 +115,16 @@ function testConnection() {
     alert("La connexion fonctionne correctement.");
 }
 
-function createNewTabs(e) {
+function goToSpecialTabs(e) {
     switch (e.parameters.tab) {
-        case "Portraits de ferme":
-            let farm = new FarmModel();
-            return onCreateNewTabsCard("Portraits de ferme", farm.getTabs());
-
-        case "Liste des formations":
-            let tcModel = new TrainingCourseModel();
-            return onCreateNewTabsCard("Liste des formations", tcModel.getTabs());
+        case "Liste de formations":
+            return card_buildTrainingCourseCard();
 
         case "Import YouTube":
             return card_buildYoutubeCard();
 
-            // let ytModel = new YoutubeModel();
-            // return onCreateNewTabsCard("Chaîne youtube", ytModel.getTabs());
-
-        case "Graphiques":
-            let chartModel = new chartsBuilder();
-            return onCreateNewTabsCard("Graphiques", chartModel.getCharts(), "Créer des graphiques");
-
         default:
+            Logger.log("Unknown special tab " + e.parameters.tab);
             break;
     }
 }
@@ -230,7 +219,7 @@ function card_buildHomepageCard() {
             .setText(tab)
             .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
             .setOnClickAction(CardService.newAction()
-                .setFunctionName('createNewTabs')
+                .setFunctionName('goToSpecialTabs')
                 .setParameters({ "tab": tab })));
     });
     cardSectionOthePages.addWidget(buttonSet);

@@ -8,7 +8,7 @@ class MediawikiAPI {
 
     this.noParameterNeeded = ['login', 'logout', 'rsd'];
   }
-
+  
   /** Dynamic method server
    *
    * This builds dynamic api calls based on the protected apiMethods var.
@@ -37,6 +37,10 @@ class MediawikiAPI {
     return this.__call('upload', args);
   }
   
+  move(args) {
+    return this.__call('move', args);
+  }
+
   /**
    * Return edit token - if none is available try to get one from the api
    *

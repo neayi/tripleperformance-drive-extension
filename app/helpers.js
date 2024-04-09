@@ -22,6 +22,17 @@ function renameAndCreateTab(tabName) {
     return spreadsheet.insertSheet(tabName);
 }
 
+function getOrCreateTab(tabName) {
+    let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
+    let sheet = spreadsheet.getSheetByName(tabName);
+    if (sheet != null) {
+        return sheet;
+    }
+
+    return spreadsheet.insertSheet(tabName);
+}
+
 function setSheetVersion(sheet, version, documentation) {
     sheet.getRange(1, 1, 2, 3).setValues([
         ["Version", version, "Ne pas changer ce numéro !"],

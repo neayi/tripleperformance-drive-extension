@@ -413,4 +413,37 @@ class api_tools {
     return Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, inputString, Utilities.Charset.UTF_8)
       .reduce((output, byte) => output + (byte & 255).toString(16).padStart(2, '0'), '');
   }
+
+  /**
+   * Rename a page
+   * @see https://www.mediawiki.org/wiki/API:Move
+
+   * @param {String} fromPage 
+   * @param {String} toPage 
+   */
+  move(fromPage, toPage, reason)
+  {
+    const edittoken = this.api.getEditToken();
+
+    if (edittoken === null) {
+      throw new Error("Unable to acquire an edit token");
+    }
+
+    const moveData = {
+      from: fromPage,
+      to: toPage,
+      reason: reason,
+      token: edittoken
+    };
+
+    const r = this.api.move(moveData);
+
+    if (r.error) {
+      throw new Error("Could not move the page: " + JSON.stringify(r));
+    }
+
+    Logger.log("Moved page " + fromPage + " to " + toPage);
+
+    return true;
+  }
 }

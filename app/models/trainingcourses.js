@@ -10,37 +10,6 @@ class TrainingCourseModel {
         this.tabs = ["Structure de formation", "Liste des formations", "Intervenants"];
     }
 
-    getCourseFromRow(row)
-    {
-        let course = {};
-        let [courseCode, courseURL, courseImageURL, imageInSpreadsheet, courseTitle, durationInHours, cost, modality, speaker, 
-             provider, production, financingCapability, presentation, objectives, target, department, 
-             structure, structureURL, tripleperformanceTitle, tripleperformanceImage, updateDate, ...others] = row;
-
-        course.courseCode = courseCode;
-        course.courseURL = courseURL;
-        course.courseImageURL = courseImageURL;
-        course.courseTitle = courseTitle;
-        course.durationInHours = durationInHours;
-        course.cost = cost;
-        course.modality = modality;
-        course.speaker = speaker;
-        course.provider = provider;
-        course.production = production;
-        course.financingCapability = financingCapability;
-        course.presentation = presentation;
-        course.objectives = objectives;
-        course.target = target;
-        course.department = department;
-        course.structure = structure;
-        course.structureURL = structureURL;
-        course.tripleperformanceTitle = tripleperformanceTitle;
-        course.tripleperformanceImage = tripleperformanceImage;
-        course.updateDate = updateDate;
-        
-        return course;
-    }
-
     syncThumbnails() {
         let sheet = SpreadsheetApp.getActiveSheet();
 
@@ -133,7 +102,7 @@ class TrainingCourseModel {
             }            
             else {
                 // Create a new page
-                wikiTitle = trainingParams.get("Titre") + " (formation)";
+                wikiTitle = 'Formation:' . trainingParams.get("Titre");
                 let pageContent = apiTools.getPageContent(wikiTitle);
 
                 // Check if a page doesn't exist with the same title already, if yes, ask to change the course title
@@ -219,6 +188,37 @@ class TrainingCourseModel {
         return training;
     }
 
+    getCourseFromRow(row)
+    {
+        let course = {};
+        let [courseCode, courseURL, courseImageURL, imageInSpreadsheet, courseTitle, durationInHours, cost, modality, speaker, 
+             provider, production, financingCapability, presentation, objectives, target, department, 
+             structure, structureURL, tripleperformanceTitle, tripleperformanceImage, updateDate, ...others] = row;
+
+        course.courseCode = courseCode;
+        course.courseURL = courseURL;
+        course.courseImageURL = courseImageURL;
+        course.courseTitle = courseTitle;
+        course.durationInHours = durationInHours;
+        course.cost = cost;
+        course.modality = modality;
+        course.speaker = speaker;
+        course.provider = provider;
+        course.production = production;
+        course.financingCapability = financingCapability;
+        course.presentation = presentation;
+        course.objectives = objectives;
+        course.target = target;
+        course.department = department;
+        course.structure = structure;
+        course.structureURL = structureURL;
+        course.tripleperformanceTitle = tripleperformanceTitle;
+        course.tripleperformanceImage = tripleperformanceImage;
+        course.updateDate = updateDate;
+        
+        return course;
+    }
+
     getColNumber(colname) {
         return this.columns.indexOf(colname) + 1;
     }
@@ -263,36 +263,72 @@ class TrainingCourseModel {
         return this.tabs;
     }
 
-    createTab(tabName)
+    createTrainingTab()
     {
-        if (!this.tabs.includes(tabName))
-            return false;
+        let sheet = getOrCreateTab("Structure de formation");
+        setSheetVersion(sheet, 1, "Une fois les formations créées, vous pourrez modifier les valeurs " 
+                    + " dans la feuille excel - seul le contenu de la template sera modifié, le reste" 
+                    + " de la page de la formation sera laissé intact");
 
-        let sheet = renameAndCreateTab(tabName);
+        sheet.getRange(4, 1, 2, 1).setValues([["Structure"], ["URL Structure"]])
+            .setFontWeight("bold");
 
-        if (tabName == "Liste des formations")
-        {
-            sheet.getRange(1, 1, 1, this.columns.length)
-                .setValues([this.columns])
-                .setFontWeight("bold")
-                .setBackground(getLightGrayColor());
-            sheet.setFrozenRows(1);
-        }
-        else if (tabName == "Structure de formation")
-        {
-            setSheetVersion(sheet, 1, "Une fois les formations créées, vous pourrez modifier les valeurs " 
-                        + " dans la feuille excel - seul le contenu de la template sera modifié, le reste" 
-                        + " de la page de la formation sera laissé intact");
-
-            sheet.getRange(4, 1, 2, 1).setValues([["Structure"], ["URL Structure"]])
-                .setFontWeight("bold");
-        }
-        else if (tabName == "Intervenants")
-        {
-            let speakM = new speakersModel();
-            sheet = speakM.createTab(tabName);
-        }
+        sheet = getOrCreateTab("Liste des formations");
+        sheet.getRange(1, 1, 1, this.columns.length)
+            .setValues([this.columns])
+            .setFontWeight("bold")
+            .setBackground(getLightGrayColor());
+        sheet.setFrozenRows(1);
+        
+        let speakM = new speakersModel();
+        speakM.createTab("Intervenants");
 
         return sheet;
+    }
+
+    moveTrainingCourses() {
+
+        let sheet = SpreadsheetApp.getActiveSheet();
+        let idFound = false;
+        const tripleperformanceURL = getTriplePerformanceURL();
+        const wikiCol = this.getColNumber("Page TriplePerformance");
+
+        let data = sheet.getDataRange();
+        let startRow = data.getRow();
+        data.getValues().forEach((row, rowIndex) => {
+            if (!idFound && row[0] == this.columns[0])
+            {
+                idFound = true;
+                return;
+            }
+
+            if (!idFound)
+                return;
+
+            let course = this.getCourseFromRow(row);
+              
+            if (course.tripleperformanceTitle.length == 0)
+                return;
+
+            let title = course.tripleperformanceTitle;
+
+            Logger.log(title);
+
+            if (title.includes(" (formation)"))
+            {
+                let newTitle = 'Formation:' + title.replace(" (formation)", "");
+                let apiTools = getApiTools();
+
+                let pages = apiTools.move(title, newTitle, "Changement du namespace pour les formations");
+                
+                let content = getHyperlinkedTitle(tripleperformanceURL, newTitle, newTitle);
+
+                sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
+                SpreadsheetApp.flush();
+            }
+            
+        });
+
+        alert(`Terminé - Les formations ont été déplacées`);
     }
 }
