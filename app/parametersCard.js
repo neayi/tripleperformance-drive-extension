@@ -32,7 +32,7 @@ function parametersbuildCard() {
         .setText('<b>Paramètres</b>');
 
     let cardSection1TextParagraphDescription = CardService.newTextParagraph()
-        .setText(`Vous pouvez créer un identifiant en vous rendant à cette adresse : <a href="${parameters.secrets().wikiURL}wiki/Special:BotPasswords">Création d'un identifiant pour l'add-on</a>`);
+        .setText(`Si vous n'avez pas d'identifiants, <a href="https://neayi.com/contact/">Contactez-nous !</a>`);
     
     let cardSection1SelectionInput1 = CardService.newSelectionInput()
         .setFieldName('URL')
