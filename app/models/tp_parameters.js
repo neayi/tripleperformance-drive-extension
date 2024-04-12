@@ -19,16 +19,16 @@ class tp_parameters {
             let userProperties = PropertiesService.getUserProperties();
 
             let newProperties = {
-                'Triple Performance Wiki URL': cachedSecret.wikiURL,
-                'Triple Performance Username': cachedSecret.username
+                'Triple Performance Wiki URL': secrets.wikiURL,
+                'Triple Performance Username': secrets.username.trim()
             };
 
             if (secrets.password.length > 0)
             {
                 newProperties = {
-                    'Triple Performance Wiki URL': cachedSecret.wikiURL,
-                    'Triple Performance Username': cachedSecret.username,
-                    'Triple Performance Password': cachedSecret.password,
+                    'Triple Performance Wiki URL': secrets.wikiURL,
+                    'Triple Performance Username': secrets.username.trim(),
+                    'Triple Performance Password': secrets.password.trim(),
                 };
             }
 

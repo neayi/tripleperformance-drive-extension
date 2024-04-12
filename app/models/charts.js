@@ -83,8 +83,13 @@ class chartsBuilder {
      * https://echarts.apache.org/examples/en/editor.html?c=bar-simple&code=PYBwLglsB2AEC8sDeBYAULTsBEZjABtIRsAuZAXwBp0scCBTAcwegBMzla6cAjYMHgC2nAIwBWbpmpSckMI06oMPTLgYAPMJ2wBhYAG-wsAGbAArgCdLAQxaXYAelgBlAGIAFbDRWr1WgEECCCZoHQBjVjAGS29ZOmxGE21ybHEABgBSON8eXFAxdNkZXOwNAI0IAGcleKxcAE8QBgibaKZgSwac1TUbSqqAGRteBgJa3L8zaDAAdQYQgAsUvkIOH17YEs3sNjabTgBtOr8AJnTRAE4ezfrz85vbnHvRR54AXWKN-oaK6omdmAmi1UgA3GwEcwtb5-frVYajcbkZRPNRmSxCNrRWKpJDgyEMCiwQA1BNgTlsvrJsFUYhAGDVyMdJlgUajGs0dLwbLEYbdsBBokIXEDFMjyTtwoROjoAMQ2ExsdKXcRk5mqbZsggjMYA1EJKqLYAAd04YEsUN5euwIGAVQFUDCqQg0DtbGh4t62HRmMEMR0SHCRNJHukls9DCEIEWNjtDK4ar5ZnC5jj1Np9NVeo1T2w0BsQhBOAAsjYAPc1MN-KpgGzhADWOkxzuFtYblbyexrRxDPFZer8-KhnAAzEUE5ts_2-_2EoPC8PJOPepO9dOZ2o55wACxj9cUpeYT4JlcsnvswvYLk8s8CiPChqi-N77CSgjS1IygDsp0uJnCJkzVETz8LVEV1GdqUNE1yDNC0ewSG07UgGAdGdV13QPPJvSxP1cUDElAKeYC8gjKMY3-MVMISJMUx0GlLDpGoe2IhI8wLHQiwAS-iCBxnbfUa3rRsbGbQS2zPTsDkZeDTyoz1N3ICQZNDZSnz3eoFNgc5VJY3o13XbBNKUuTpB7I8J3bfS_CBDlUivN4dlvIURULKy-Vfd8cBlNxTgADkuAA2dJCNuXS1FAnVKOfA1jVNc0GH4z1EPtFCnRdCA3QctlsN9HEcADIMQoss9SOjWNwP7L1gGTVN6MYorl0StQ2IvDxbAgBiGFgZoMRsaAogwq1q1bYTRJGpqcEk7sTLU9ScCM3d1zC3tVNnCEh3IXydImug3KtIzTh0szyQoWQjwoABuIA
      */
     syncCharts(chartname) {
-        Logger.log("Synchronisation du graphique " + chartname);
+        let farm = new FarmModel()
+        let wikiTitle = farm.getFarmPageTitle();
 
+        if (!wikiTitle)
+            return;
+
+        Logger.log("Synchronisation du graphique " + chartname);
         const range = this.getRangeForChart(chartname);
 
         if (!range) {
@@ -100,22 +105,23 @@ class chartsBuilder {
         let chartTemplate = '';
         let chartArgs = new Map();
 
-        let chart = {};
+        let chart = ""; // Will be {{#echart: ...}}
+
         switch (this.getChartValue("Graphique", values)) {
             case "Histogramme par année":
-                chart = this.getBarChartPerYear(range);
+                chart = this.getBarChartPerYear(range, wikiTitle);
                 break;
 
             case "Assolement":
-                chart = this.getTreeMap(range);
+                chart = this.getTreeMap(range, wikiTitle);
                 break;
 
             case "Rotation":
-                chart = this.getRotation(range);
+                chart = this.getRotation(range, wikiTitle);
                 break;
 
             case "Radar":
-                chart = this.getRadar(range);
+                chart = this.getRadar(range, wikiTitle);
                 break;
 
             case "Comptabilité":
@@ -153,14 +159,6 @@ class chartsBuilder {
             return;
         }
 
-        Logger.log("syncComptabiliteToWiki");
-
-        let farm = new FarmModel()
-        let wikiTitle = farm.getFarmPageTitle();
-
-        if (!wikiTitle)
-            return;
-
         let apiTools = getApiTools();
 
         if (!apiTools)
@@ -186,17 +184,19 @@ class chartsBuilder {
         alert("Le nouveau graphique a été ajouté à la page du wiki");
     }
 
-    getBarChartPerYear(range) {
+    getBarChartPerYear(range, wikiTitle) {
         const values = range.getValues();
         var bgColors = range.getBackgrounds();
 
         let option = {
             "tooltip": {},
+            "title": {
+                "left": 'center',
+                "text": ''
+              },            
             "legend": {
-                "bottom": 15
-            },
-            "grid": {
-                "left": 70
+                "bottom": 10,
+                "type": 'scroll'                
             },
             "xAxis": {
                 "type": "category",
@@ -207,13 +207,6 @@ class chartsBuilder {
             },
             "yAxis": {
                 "type": "value",
-                "name": "",
-                "nameLocation": "middle",
-                "nameGap": 50,
-                "nameTextStyle": {
-                    "fontWeight": "bold",
-                    "fontSize": 18
-                },
                 "axisLabel": {
                     "formatter": "{value} €"
                 }
@@ -230,7 +223,7 @@ class chartsBuilder {
         else
             numCols = option.xAxis.data.length;
 
-        option.yAxis.name = this.getChartValue("Titre", values);
+        option.title.text = this.getChartValue("Titre", values);
 
         const headerRow = this.getChartRowIndex("Colonnes ➜", values);
         const footerRow = this.getChartRowIndex("Total", values);
@@ -239,6 +232,7 @@ class chartsBuilder {
         for (let rowIndex = headerRow + 1; rowIndex < footerRow; rowIndex++) {
             let series = {
                 "type": "bar",
+                "barMaxWidth": "150px",
                 "label": {
                     "show": true,
                     "position": "inside",
@@ -267,43 +261,37 @@ class chartsBuilder {
             option.series.push(series);
         }
 
-        return this.buildParserFunction(option,
+        return this.buildParserFunction(wikiTitle, option,
             this.getChartValue("Titre", values),
             this.getChartValue("Largeur", values),
             this.getChartValue("Hauteur", values),
             this.getChartValue("Alignement", values));
     }
 
-    getTreeMap(range) {
+    getTreeMap(range, wikiTitle) {
         const values = range.getValues();
         const bgColors = range.getBackgrounds();
         const fgColors = range.getFontColorObjects();
         const title = this.getChartValue("Titre", values);
 
         let option = {
-            tooltip: {
-                formatter: (info) => {
-                    var value = info.value;
-                    var name = info.name;
-                    let percent =
-                        '(' + Math.round((100 * value) / info.treeAncestors[0].value) + '%)';
-                    return name + ' : ' + value + 'ha ' + percent;
-                }
+            "tooltip": {
+                "formatter": "assolement",
+                "confine": true
             },
-            series: [
+            "series": [
                 {
-                    type: 'treemap',
-                    roam: false,
-                    itemStyle: {
-                        borderWidth: 0,
-                        gapWidth: 2
+                    "type": 'treemap',
+                    "roam": false,
+                    "itemStyle": {
+                        "borderWidth": 0,
+                        "gapWidth": 2
                     },
-                    name: title,
-                    data: []
+                    "name": title,
+                    "data": []
                 }
             ]
         };
-
 
         const headerRow = this.getChartRowIndex("Catégorie", values);
         const footerRow = this.getChartRowIndex("Fin du graphique", values);
@@ -365,27 +353,16 @@ class chartsBuilder {
             option.series[0].data.push(currentCategoryJSON);
         }
 
-        let parserFunction = this.buildParserFunction(option,
+        let parserFunction = this.buildParserFunction(wikiTitle, option,
             this.getChartValue("Titre", values),
             this.getChartValue("Largeur", values),
             this.getChartValue("Hauteur", values),
             this.getChartValue("Alignement", values));
 
-        // Hack because JSON.Stringify would remove our formater function from the tooltip
-        parserFunction = parserFunction.replace('"tooltip": {},', `tooltip: {
-            "formatter": (info) => {
-                var value = info.value;
-                var name = info.name;
-                let percent =
-                    '(' + Math.round((100 * value) / info.treeAncestors[0].value) + '%)';
-                return name + ' : ' + value + 'ha ' + percent;
-            }, "confine": true
-        },`);
-
         return parserFunction;
     }
 
-    getRotation(range) {
+    getRotation(range, wikiTitle) {
         const values = range.getValues();
         const bgColors = range.getBackgrounds();
         const richTextValues = range.getRichTextValues();
@@ -393,16 +370,15 @@ class chartsBuilder {
         const title = this.getChartValue("Titre", values);
 
         let option = {
-            title: {
-                text: title,
-                left: 'center'
+            "title": {
+                "text": title,
+                "left": 'center'
             },
-            tooltip: {
-                formatter: (item) => {
-                    return item.data?.description ?? '';
-                }
+            "tooltip": {
+                "formatter": "rotation",
+                "confine"  : true
             },
-            series: []
+            "series": []
         };
 
         const headerRow = this.getChartRowIndex("Cultures/couverts", values);
@@ -433,12 +409,6 @@ class chartsBuilder {
                 break; // We are at the end of our table
 
             let description = htmlEncodeRichText(richTextValues[rowIndex][2])
-
-            // escape HTML because our extension tends to lose them
-            description = description.replace(/&/g, "¤amp;")
-                .replace(/</g, "¤lt;")
-                .replace(/>/g, "¤gt;")
-                .replace(/"/g, "¤quot;");
 
             let item = {
                 'name': culture,
@@ -542,23 +512,11 @@ class chartsBuilder {
         });
         option.series.push(years);
 
-        let parserFunction = this.buildParserFunction(option,
+        let parserFunction = this.buildParserFunction(wikiTitle, option,
             this.getChartValue("Titre", values),
             this.getChartValue("Largeur", values),
             this.getChartValue("Hauteur", values),
             this.getChartValue("Alignement", values));
-
-        // Hack because JSON.Stringify would remove our formater function from the tooltip
-        parserFunction = parserFunction.replace('"tooltip":{},', `tooltip: {
-            "formatter": (item) => {
-              return item.marker + "&lt;b&gt;" + item.name + "&lt;/b&gt;&lt;br&gt;" +
-                 item.data.description
-                    .replaceAll('¤amp;' , '&amp;')
-                    .replaceAll('¤lt;'  , '&lt;')
-                    .replaceAll('¤gt;'  , '&gt;')
-                    .replaceAll('¤quot;', '&quot;');
-            }, "confine": true
-          },`);
 
         return parserFunction;
     }
@@ -631,14 +589,14 @@ class chartsBuilder {
         if (!hasMoyenne)
             option.series[0].data.pop();
 
-        return this.buildParserFunction(option,
+        return this.buildParserFunction(wikiTitle, option,
             this.getChartValue("Titre", values),
             this.getChartValue("Largeur", values),
             this.getChartValue("Hauteur", values),
             this.getChartValue("Alignement", values));
     }
 
-    getComptabilite(range) {
+    getComptabilite(range, wikiTitle) {
 
         const values = range.getValues();
         const title = this.getChartValue("Titre", values);
@@ -687,7 +645,20 @@ class chartsBuilder {
         return parserFunction;
     }
 
-    buildParserFunction(option, title, width, height, align) {
+    buildParserFunction(wikiTitle, option, title, width, height, align) {
+
+        // Push the content to its own JSON page
+        
+        let apiTools = getApiTools();
+
+        if (!apiTools)
+            return;
+
+        let JsonPageTitle = wikiTitle.trim() + '/' + title.trim() + '.json';
+
+        apiTools.createOrUpdateJsonPage(JsonPageTitle, option, "Mise à jour via l'add-on pour Google Spreadsheet™");
+
+        // Now returns a parser function wikicode to place into the page
 
         let bFloat = false;
 
@@ -695,13 +666,13 @@ class chartsBuilder {
             case 'droite':
             case 'right':
                 bFloat = true;
-                align = "\n| align=right";
+                align = "| align=right";
                 break;
 
             case 'gauche':
             case 'left':
                 bFloat = true;
-                align = "\n| align=left";
+                align = "| align=left";
                 break;
 
             default:
@@ -715,15 +686,8 @@ class chartsBuilder {
         if (String(height).trim().length == 0)
             height = "400px";
 
-        let content = `{{#echarts:
-  title=${title}
-| width=${width}
-| height=${height}${align}
-| option = ${JSON.stringify(option).replaceAll('}}', '} }').replaceAll('{{', '{ {')};
-}}`;
-        if (bFloat)
-            content += "\nVous pouvez ajouter le texte qui accompagne le graphique ici.\n\n{{Clear}}\n";
-
+        let content = `{{#echarts: title=${title} | width=${width} | height=${height} ${align} | json = ${JsonPageTitle} }}`;
+        
         return content;
     }
 

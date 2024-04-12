@@ -50,5 +50,4 @@ function card_buildTrainingCourseCard() {
     builder.addSection(cardSectionYoutube);
 
     return builder.build();
-
 }

@@ -103,6 +103,37 @@ class api_tools {
     console.log("Created");
   }
 
+  createOrUpdateJsonPage(pageTitle, Json, reason) {
+    const edittoken = this.api.getEditToken();
+
+    if (edittoken === null) {
+      throw new Error("Unable to acquire an edit token");
+    }
+
+    console.log("Creating JSON page " + pageTitle);
+
+    let JsonString = JSON.stringify(Json);
+
+    const editdata = {
+      title: pageTitle,
+      text: JsonString,
+      summary: reason,
+      contentformat: 'application/json',
+      contentmodel: 'json',
+      bot: true,
+      md5: this.md5(JsonString),
+      token: edittoken
+    };
+
+    const r = this.api.edit(editdata);
+
+    if (r.error || !r.edit || !r.edit.result || r.edit.result !== 'Success') {
+      throw new Error("Could not create page: " + JSON.stringify(r) + JSON.stringify(editdata));
+    }
+
+    console.log("Created");
+  }
+
   /**
    * pagesWithTemplate = apiToolsInstance.getPagesForTemplate("Template:Pages liées");
    */

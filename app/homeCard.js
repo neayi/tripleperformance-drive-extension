@@ -199,9 +199,8 @@ function card_buildHomepageCard() {
     let chartModel = new chartsBuilder();
     chartModel.getCharts().forEach((chart) => {
         chartsGrid.addItem(CardService.newGridItem()
-            .setTitle(chart.type)
-            .setIdentifier(chart.name)
             .setSubtitle(chart.name)
+            .setIdentifier(chart.name)
             .setTextAlignment(CardService.HorizontalAlignment.START)
             .setLayout(CardService.GridItemLayout.TEXT_BELOW)
             .setImage(CardService.newImageComponent().setImageUrl(chart.image)));
@@ -228,23 +227,23 @@ function card_buildHomepageCard() {
     // Add the parameters section
     let cardSectionParams = CardService.newCardSection();
     cardSectionParams.addWidget(CardService.newTextParagraph().setText('<b>Paramètres</b>'));
-    cardSectionParams.addWidget(CardService.newDecoratedText()
-        .setText('Paramètres')
-        .setBottomLabel('Paramètres de connexion')
-        .setButton(CardService.newImageButton()
-            .setIcon(CardService.Icon.VIDEO_PLAY)
-            .setAltText('Voir les paramètres de connexion')
-            .setOnClickAction(CardService.newAction()
-                .setFunctionName('showParametersCard'))));
 
-    cardSectionParams.addWidget(CardService.newDecoratedText()
-        .setText('Tester la connexion')
-        .setBottomLabel('Tester les identifiants')
-        .setButton(CardService.newImageButton()
-            .setIcon(CardService.Icon.VIDEO_PLAY)
-            .setAltText('Tester la connexion avec Triple Performance')
-            .setOnClickAction(CardService.newAction()
-                .setFunctionName('testConnection'))));
+    let actions = [
+        {title: "Paramètres de connexion", subtitle: "Paramètres", function: 'showParametersCard'},
+        {title: "Tester les identifiants", subtitle: "Tester la connexion", function: 'testConnection'}
+    ];
+
+    actions.forEach((action) => {
+        let cardaction = CardService.newAction().setFunctionName(action.function);
+
+        cardSectionParams.addWidget(CardService.newDecoratedText()
+            .setText(action.subtitle)
+            .setBottomLabel(action.title)
+            .setOnClickAction(cardaction)
+            .setButton(CardService.newImageButton()
+                .setIcon(CardService.Icon.VIDEO_PLAY)
+                .setOnClickAction(cardaction)));
+    });
 
     builder.addSection(cardSectionParams);
 

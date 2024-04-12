@@ -28,10 +28,12 @@ function parametersbuildCard() {
         'https://wiki.tripleperformance.fr/', 
         'https://en.tripleperformance.ag/'
     ];
-
-    let cardSection1TextParagraph1 = CardService.newTextParagraph()
+    let cardSection1TextParagraphTitle = CardService.newTextParagraph()
         .setText('<b>Paramètres</b>');
 
+    let cardSection1TextParagraphDescription = CardService.newTextParagraph()
+        .setText(`Vous pouvez créer un identifiant en vous rendant à cette adresse : <a href="${parameters.secrets().wikiURL}wiki/Special:BotPasswords">Création d'un identifiant pour l'add-on</a>`);
+    
     let cardSection1SelectionInput1 = CardService.newSelectionInput()
         .setFieldName('URL')
         .setTitle('Site Triple Performance')
@@ -65,7 +67,8 @@ function parametersbuildCard() {
         .addButton(cardSection1ButtonList1Button1);
 
     let cardSection1 = CardService.newCardSection()
-        .addWidget(cardSection1TextParagraph1)
+        .addWidget(cardSection1TextParagraphTitle)
+        .addWidget(cardSection1TextParagraphDescription)
         .addWidget(cardSection1SelectionInput1)
         .addWidget(cardSection1TextInput1)
         .addWidget(cardSection1TextInput2)
