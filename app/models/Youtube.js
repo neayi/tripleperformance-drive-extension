@@ -202,6 +202,7 @@ class YoutubeModel {
 
         let idFound = false;
         let ids = [];
+        let idCount = 0;
 
         data.getValues().forEach((row, rowIndex) => {
             if (!idFound && row[0] == this.columns[0])
@@ -211,6 +212,9 @@ class YoutubeModel {
             }
 
             if (!idFound)
+                return;
+
+            if (idCount >= 50)
                 return;
 
             let video = this.getVideoFromRow(row);
@@ -224,6 +228,8 @@ class YoutubeModel {
             ids.push(video.videoID);
 
             self.rowIndexForYoutubeId.set(sheetName + video.videoID, rowIndex + startRow);
+
+            idCount++;
         });
 
         Logger.log("Fetching the following videos:");
@@ -236,7 +242,7 @@ class YoutubeModel {
     {
         let sheet = SpreadsheetApp.getActiveSheet();
         this.fetchVideosDetailsForTab(sheet);
-        alert(`Détail des vidéos récupéré pour les vidéos`);
+        alert(`Détail des vidéos récupéré (relancer la commande si plus de 50 vidéos)`);
     }
     
     /**
