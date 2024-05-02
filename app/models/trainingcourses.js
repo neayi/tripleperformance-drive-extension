@@ -1,13 +1,36 @@
 class TrainingCourseModel {
     constructor() {
-        this.columns = [
-            "Code formation", "URL", "URL Image", "Rendu de l'image", "Titre de la formation", "Durée (heures)", 
-            "Coût", "Modalité", "Intervenant", "Fournisseur", "Filière", "Finançable VIVEA, OPCO", "Présentation", 
-            "Objectifs", "Public visé et prérequis", "Département", "Structure", "URL Structure", 
-            "Page TriplePerformance", "Image", "Date de mise à jour"
+
+        // title, width, wrap, alignment
+        this.colDefs = [
+            ["Titre de la formation", "262", "left"],
+            ["Code formation", "100", "left"],
+            ["URL", "100", "left"],
+            ["URL Image", "100", "left"],
+            ["Rendu de l'image", "100", "left"],
+            ["Durée (heures)", "68", "center"],
+            ["Durée (jours)", "60", "center"],
+            ["Coût", "60", "center"],
+            ["Modalité", "143", "center"],
+            ["Intervenant", "180", "left"],
+            ["Filière", "191", "left"],
+            ["Mots clés", "191", "left"],
+            ["Finançable VIVEA, OPCO", "100", "center"],
+            ["Finançable CPF", "100", "center"],
+            ["Finançable France Travail", "100", "center"],
+            ["Présentation rapide", "250", "left"],
+            ["Départements", "100", "left"],
+            ["Structure", "100", "left"],
+            ["Page TriplePerformance", "190", "left"],
+            ["Image", "100", "left"],
+            ["Date de mise à jour", "100", "center"],
+            ["Objectifs", "100", "left"],
+            ["Public visé et prérequis", "100", "left"],
+            ["Contenu", "130", "left"],
+            ["Mettre à jour le contenu éditorial", "130", "center"]
         ];
 
-        this.tabs = ["Structure de formation", "Liste des formations", "Intervenants"];
+        this.columns = this.colDefs.map(col => col[0]);
     }
 
     syncThumbnails() {
@@ -66,28 +89,51 @@ class TrainingCourseModel {
         }
 
         let wiki = new wikiPage();
-        let apiTools = getApiTools();
 
         let newCourses = 0;
         let updatedCourses = 0;
         let untouchedCourses = 0;
 
         const dateCol = this.getColNumber("Date de mise à jour");
+        const pageCol = this.getColNumber("Page TriplePerformance");
+
         const tripleperformanceURL = getTriplePerformanceURL();
 
+        let rows = sheet.getDataRange().getValues();
+
+        let existingPages = new Map();
+
         // Ignore the first row for the column names
-        for (let rowId = 2; rowId <= sheet.getLastRow(); rowId++) {
+        for (let rowId = 1; rowId < rows.length; rowId++) {
+            const values = rows[rowId];
 
-            const trainingParams = this.getTrainingDataFromSpreadsheet(sheet, rowId);
+            if (values[0].trim() == "")
+                continue;
 
-            let wikiTitle = this.findPageForTraining(trainingParams.get('Code'), trainingParams.get('Structure'));
+            let course = this.getCourseFromRow(values);
+            Logger.log(course.courseTitle);
 
-            if (wikiTitle) {
+            if (course.updateDate.length > 0)
+                continue;
+
+            const trainingParams = this.getTemplateForTrainingCourse(course);
+            
+            if (existingPages.size == 0)
+                existingPages = this.findCoursePagesForStructure(course.structure);
+
+            let wikiTitle = '';
+            if (existingPages.has(course.courseCode))
+                wikiTitle = existingPages.get(course.courseCode);
+
+            Logger.log(course.courseCode + " - " + wikiTitle +" - " + typeof wikiTitle +  " - " + wikiTitle.length);
+            let apiTools = getApiTools();
+
+            if (wikiTitle.length > 0) {
                 // Update the page
                 let pageContent = apiTools.getPageContent(wikiTitle);
 
                 if (!wiki.hasTemplate(pageContent, "Formation")) {
-                    throw new Error("La page " + wikiTitle + " a été trouvée pour la formation " + trainingParams.get("Titre") + " mais elle ne contient pas la template formation!");
+                    throw new Error("La page " + wikiTitle + " a été trouvée pour la formation " + course.courseTitle + " mais elle ne contient pas la template formation!");
                 }
 
                 let newPageContent = wiki.updateTemplate("Formation", trainingParams, pageContent);
@@ -102,7 +148,7 @@ class TrainingCourseModel {
             }            
             else {
                 // Create a new page
-                wikiTitle = 'Formation:' . trainingParams.get("Titre");
+                wikiTitle = 'Formation:' + course.courseTitle;
                 let pageContent = apiTools.getPageContent(wikiTitle);
 
                 // Check if a page doesn't exist with the same title already, if yes, ask to change the course title
@@ -110,12 +156,9 @@ class TrainingCourseModel {
                     throw new Error("Une page " + wikiTitle + " existe déjà. Merci de vérifier si elle correspond à la formation " + trainingParams.get("Titre") + " (et dans ce cas modifier le code de la formation dans la page avant de recommancer), et sinon de changer le titre de la formation pour éviter le doublon");
                 }
 
-                let presentation = trainingParams.get("Présentation").trim(); 
-                trainingParams.unset("Présentation"); 
-                let objectives = trainingParams.get("Objectifs").trim(); 
-                trainingParams.unset("Objectifs"); 
-                let target = trainingParams.get("Public visé et prérequis").trim(); 
-                trainingParams.unset("Public visé et prérequis"); 
+                let presentation = course.shortPresentation.trim(); 
+                let objectives = course.objectives.trim(); 
+                let target = course.target.trim(); 
 
                 pageContent = wiki.updateTemplate("Formation", trainingParams, pageContent);
                 
@@ -132,12 +175,9 @@ class TrainingCourseModel {
                 newCourses++;
             }
 
-            let maintenant = new Date();
-            let content = getHyperlinkedTitle(tripleperformanceURL, wikiTitle, wikiTitle);
-
-            sheet.getRange(rowId, dateCol, 1, 2).setValues([
-                [content, Utilities.formatDate(maintenant, 'Europe/Paris', 'dd-MMM HH-mm')]
-            ]);
+            sheet.getRange(rowId + 1, pageCol).setValue(getHyperlinkedTitle(tripleperformanceURL, wikiTitle, wikiTitle));
+            sheet.getRange(rowId + 1, dateCol).setValue(Utilities.formatDate(new Date(), 'Europe/Paris', 'dd/MM/yyyy HH:mm'));
+            SpreadsheetApp.flush();
         }
 
         alert(`${newCourses} nouvelles formations, ${updatedCourses} formations mises à jour (${untouchedCourses} n'ont pas été modifiées)`);
@@ -153,37 +193,46 @@ class TrainingCourseModel {
         return null;
     }
 
-    getTrainingDataFromSpreadsheet(sheet, rowId) {
-        // getRange(row, column, numRows, numColumns)
-        const values = sheet.getRange(rowId, 1, 1, this.columns.length).getValues();
+    findCoursePagesForStructure(Structure) {
+        let apiTools = getApiTools();
 
-        if (values[0][0].trim() == "")
-            return null;
+        let pages = apiTools.getSemanticValuesWithForSemanticQuery("[[A un type de page::Formation]][[Est produit par::" + Structure + "]]", ['A un code de formation']);
+        
+        let ret = new Map();
 
-        let course = this.getCourseFromRow(values[0]);
+        pages.forEach((row) => { ret.set(row[1], row[0]); });
+
+        return ret;
+    }
+
+    getTemplateForTrainingCourse(course) {
 
         let training = new Map();
 
-        training.set("Code",	course.courseCode);
+        training.set("Code", course.courseCode);
         training.set("URL",	course.courseURL);
 
-        if (course.courseURL.length > 0)
+        if (course.tripleperformanceImage.length > 0)
             training.set("Image",	`Illustration Formation ${course.courseCode}.jpg`);
 
         training.set("Titre",	course.courseTitle);
-        training.set("Durée",	course.durationInHours);
+
+        if (course.durationInHours > 0)
+            training.set("Durée",	course.durationInHours + " h");
+        else if (course.durationInDays > 0)
+            training.set("Durée",	course.durationInDays + " j");
+
         training.set("Coût",	course.cost);
         training.set("Modalité",	course.modality);
         training.set("Intervenant",	course.speaker);
-        training.set("Fournisseur",	course.provider);
         training.set("Filière",	course.production);
-        training.set("Finançable",	course.financingCapability);
-        training.set("Présentation",	course.presentation);
-        training.set("Objectifs",	course.objectives);
-        training.set("Public visé et prérequis",	course.target);
-        training.set("Département",	course.department);
+        training.set("Mots clés",	course.tags);
+        training.set("Finançable Vivea",	course.financeableVivea);
+        training.set("Finançable CPF",	course.financeableCPF);
+        training.set("Finançable France Travail",	course.financeableFranceTravail);
+        training.set("Présentation",	course.shortPresentation);
+        training.set("Départements",	course.departments);
         training.set("Structure",	course.structure);
-        training.set("URL Structure",	course.structureURL);
 
         return training;
     }
@@ -191,36 +240,43 @@ class TrainingCourseModel {
     getCourseFromRow(row)
     {
         let course = {};
-        let [courseCode, courseURL, courseImageURL, imageInSpreadsheet, courseTitle, durationInHours, cost, modality, speaker, 
-             provider, production, financingCapability, presentation, objectives, target, department, 
-             structure, structureURL, tripleperformanceTitle, tripleperformanceImage, updateDate, ...others] = row;
+        let [courseTitle, courseCode, courseURL, courseImageURL, imageInSpreadsheet, durationInHours, durationInDays, cost, modality, speaker, 
+             production, tags, financeableVivea, financeableCPF, financeableFranceTravail, shortPresentation, departments, structure, 
+             tripleperformanceTitle, tripleperformanceImage, updateDate, objectives, target, forceUpdatePage, ...others] = row;
 
+        course.courseTitle = courseTitle;
         course.courseCode = courseCode;
         course.courseURL = courseURL;
         course.courseImageURL = courseImageURL;
-        course.courseTitle = courseTitle;
         course.durationInHours = durationInHours;
+        course.durationInDays = durationInDays;
         course.cost = cost;
         course.modality = modality;
         course.speaker = speaker;
-        course.provider = provider;
         course.production = production;
-        course.financingCapability = financingCapability;
-        course.presentation = presentation;
-        course.objectives = objectives;
-        course.target = target;
-        course.department = department;
+        course.tags = tags;
+        course.financeableVivea = financeableVivea;
+        course.financeableCPF = financeableCPF;
+        course.financeableFranceTravail = financeableFranceTravail;
+        course.shortPresentation = shortPresentation;
+        course.departments = departments;
         course.structure = structure;
-        course.structureURL = structureURL;
         course.tripleperformanceTitle = tripleperformanceTitle;
         course.tripleperformanceImage = tripleperformanceImage;
         course.updateDate = updateDate;
-        
+        course.objectives = objectives;
+        course.target = target;
+        course.forceUpdatePage = forceUpdatePage;
+
         return course;
     }
 
     getColNumber(colname) {
-        return this.columns.indexOf(colname) + 1;
+        const col = this.columns.indexOf(colname);
+        if (col == -1)
+            throw new Error("La colonne " + colname + " n'a pas été trouvée dans l'onglet courrant. Veuillez recliquer sur \"Créer les onglets\".");
+
+        return col + 1;
     }
     
     buildSpeakersList() {
@@ -258,77 +314,70 @@ class TrainingCourseModel {
         alert(`Terminé - ${newSpeakers} intervenants ajoutés (veuillez compléter leur bio)`);
     }
 
-    getTabs()
-    {
-        return this.tabs;
-    }
-
     createTrainingTab()
     {
-        let sheet = getOrCreateTab("Structure de formation");
-        setSheetVersion(sheet, 1, "Une fois les formations créées, vous pourrez modifier les valeurs " 
-                    + " dans la feuille excel - seul le contenu de la template sera modifié, le reste" 
-                    + " de la page de la formation sera laissé intact");
-
-        sheet.getRange(4, 1, 2, 1).setValues([["Structure"], ["URL Structure"]])
-            .setFontWeight("bold");
-
-        sheet = getOrCreateTab("Liste des formations");
+        let sheet = getOrCreateTab("Liste des formations");
         sheet.getRange(1, 1, 1, this.columns.length)
             .setValues([this.columns])
             .setFontWeight("bold")
             .setBackground(getLightGrayColor());
         sheet.setFrozenRows(1);
-        
+        sheet.setFrozenColumns(1);
+
+        this.colDefs.forEach((col, colNumber) => {
+            sheet.setColumnWidth(colNumber + 1, col[1]);
+            sheet.getRange(1, colNumber + 1, 900, 1)
+                .setHorizontalAlignment(col[2]);
+        });
+
+        sheet.getRange(1, 1, 900, sheet.getMaxColumns())
+            .setVerticalAlignment("middle")
+            .setWrap(true);
+        sheet.setRowHeightsForced(1, 900, 70);
+
+        sheet.getRange(2, this.getColNumber("URL"), 900, 1).setWrap(false);
+        sheet.getRange(2, this.getColNumber("URL Image"), 900, 1).setWrap(false);
+
+        sheet.getRange(2, this.getColNumber("Coût"), 900, 1)
+            .setNumberFormat("#,##0 €");
+
+        var modalite = sheet.getRange(2, this.getColNumber("Modalité"), 900, 1);
+        var rule = SpreadsheetApp.newDataValidation()
+            .requireValueInList(
+                ["Présentiel",
+                 "Terrain",
+                 "Distanciel (e-learning)",
+                 "Distanciel (classe virtuelle)",
+                 "Présentiel + Distanciel",
+                 "Terrain + Distanciel",
+                 "Présentiel + Terrain",
+                 "Présentiel + Terrain + Distanciel"], true)
+            .build();
+        modalite.setDataValidation(rule);
+
+        var fundableCells = sheet.getRange(2, this.getColNumber("Finançable VIVEA, OPCO"), 900, 3);
+        var fundableCellsRule = SpreadsheetApp.newConditionalFormatRule()
+          .whenTextEqualTo("x")
+          .setBackground("#B7E1CD")
+          .setRanges([fundableCells])
+          .build();  
+
+        var forceUpdateRange = sheet.getRange(2, this.getColNumber("Mettre à jour le contenu éditorial"), 900, 1);
+        var ruleforceUpdate = SpreadsheetApp.newConditionalFormatRule()
+          .whenTextEqualTo("o")
+          .setBackground("#B7E1CD")
+          .setRanges([forceUpdateRange])
+          .build();
+
+        var rules = sheet.getConditionalFormatRules();
+        rules.push(fundableCellsRule);
+        rules.push(ruleforceUpdate);
+        sheet.setConditionalFormatRules(rules);
+
         let speakM = new speakersModel();
         speakM.createTab("Intervenants");
 
         return sheet;
     }
 
-    moveTrainingCourses() {
-
-        let sheet = SpreadsheetApp.getActiveSheet();
-        let idFound = false;
-        const tripleperformanceURL = getTriplePerformanceURL();
-        const wikiCol = this.getColNumber("Page TriplePerformance");
-
-        let data = sheet.getDataRange();
-        let startRow = data.getRow();
-        data.getValues().forEach((row, rowIndex) => {
-            if (!idFound && row[0] == this.columns[0])
-            {
-                idFound = true;
-                return;
-            }
-
-            if (!idFound)
-                return;
-
-            let course = this.getCourseFromRow(row);
-              
-            if (course.tripleperformanceTitle.length == 0)
-                return;
-
-            let title = course.tripleperformanceTitle;
-
-            Logger.log(title);
-
-            if (title.includes(" (formation)"))
-            {
-                let newTitle = 'Formation:' + title.replace(" (formation)", "");
-                let apiTools = getApiTools();
-
-                let pages = apiTools.move(title, newTitle, "Changement du namespace pour les formations");
-                
-                let content = getHyperlinkedTitle(tripleperformanceURL, newTitle, newTitle);
-
-                sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
-                SpreadsheetApp.flush();
-            }
-            
-        });
-
-        alert(`Terminé - Les formations ont été déplacées`);
-    }
 }

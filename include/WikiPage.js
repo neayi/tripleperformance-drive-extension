@@ -112,10 +112,11 @@ class wikiPage {
      * @param {*} templateName the name of the template to look for
      * @param {*} newParams the new params to update. Expects a map of key value pairs
      * @param {*} pageContent the original page content
+     * @param {*} keepExistingValues if false, the template will be emptied before being filled again
      * 
      * @returns String the new page content
      */
-    updateTemplate(templateName, newParams, pageContent) {
+    updateTemplate(templateName, newParams, pageContent, keepExistingValues = true) {
 
         const re = new RegExp('{{' + templateName + '(\s*\|[^}]*)}}|{{' + templateName + '\s*}}', 'i');
 
@@ -132,25 +133,28 @@ class wikiPage {
             return pageContent + "\n\n" + this.buildTemplateFromMap(templateName, new_args);
         }
         else {
-            // Update the existing array of parameters
-            let existing_args = [];
-            if (matches[1] != "")
-                existing_args = matches[1].split('|').map((x) => x.trim());
-
             let new_args = new Map();
+            
+            if (keepExistingValues)
+            {
+                // Update the existing array of parameters
+                let existing_args = [];
+                if (matches[1] != "")
+                    existing_args = matches[1].split('|').map((x) => x.trim());
 
-            existing_args.shift(); // Remove the template name
+                existing_args.shift(); // Remove the template name
 
-            existing_args.forEach(function (anArg) {
-                let parts = anArg.split('=');
+                existing_args.forEach(function (anArg) {
+                    let parts = anArg.split('=');
 
-                if (parts.length == 1)
-                    throw new Error("This template has unnamed parameters - cannot update");
+                    if (parts.length == 1)
+                        throw new Error("This template has unnamed parameters - cannot update");
 
-                let field = parts[0].trim();
-                let value = parts[1].trim();
-                new_args.set(field.toLowerCase(), field + " = " + value);
-            });
+                    let field = parts[0].trim();
+                    let value = parts[1].trim();
+                    new_args.set(field.toLowerCase(), field + " = " + value);
+                });
+            }
 
             newParams.forEach((paramValue, paramName) => {
                 let key = paramName.toLowerCase();

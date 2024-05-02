@@ -117,7 +117,7 @@ function testConnection() {
 
 function goToSpecialTabs(e) {
     switch (e.parameters.tab) {
-        case "Liste de formations":
+        case "Gestion de formations":
             return card_buildTrainingCourseCard();
 
         case "Import YouTube":
@@ -213,7 +213,7 @@ function card_buildHomepageCard() {
     let cardSectionOthePages = CardService.newCardSection();
     cardSectionOthePages.addWidget(CardService.newTextParagraph().setText("<b>Gérer d'autres types de données</b>"));
     let buttonSet = CardService.newButtonSet();
-    ['Liste de formations', 'Import YouTube'].forEach((tab) => {
+    ['Gestion de formations', 'Import YouTube'].forEach((tab) => {
         buttonSet.addButton(CardService.newTextButton()
             .setText(tab)
             .setTextButtonStyle(CardService.TextButtonStyle.TEXT)

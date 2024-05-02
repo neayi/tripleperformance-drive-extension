@@ -25,7 +25,7 @@ function card_buildTrainingCourseCard() {
 
     // Add the parameters section
     let cardSectionYoutube = CardService.newCardSection();
-    cardSectionYoutube.addWidget(CardService.newTextParagraph().setText('<b>Gérer des imports Youtube</b>'));
+    cardSectionYoutube.addWidget(CardService.newTextParagraph().setText('<b>Gérer des formations</b>'));
 
     let actions = [
         {title: "Créer les onglets pour les formations", subtitle: "Créer les onglets", function: 'addTrainingTab'},

@@ -235,7 +235,7 @@ class api_tools {
   }
 
   /**
-   * Invoque with: getPagesWithForSemanticQuery("[[A un mot-clé::Pâturage]]")
+   * Invoque with: getPagesWithForSemanticQuery("[[A un mot-clé::Pâturage]]", ["A un mot-clé"])
    * Values must be an array
    * 
    * Returns an array of arrays. The first item of each array is the page title, then the values
