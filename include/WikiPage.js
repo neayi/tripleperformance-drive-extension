@@ -117,10 +117,16 @@ class wikiPage {
      * @returns String the new page content
      */
     updateTemplate(templateName, newParams, pageContent, keepExistingValues = true) {
+        let matches = [];
+        
+        if (pageContent && pageContent.length > 0)
+        {
+            const re = new RegExp('{{' + templateName + '(\s*\|[^}]*)}}|{{' + templateName + '\s*}}', 'i');
+            matches = pageContent.match(re);
+        }
+        else 
+            pageContent = '';
 
-        const re = new RegExp('{{' + templateName + '(\s*\|[^}]*)}}|{{' + templateName + '\s*}}', 'i');
-
-        let matches = pageContent.match(re);
         if (!matches || matches.length == 0) {
             // The template was not in the page yet
             let new_args = new Map();
