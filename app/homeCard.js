@@ -98,21 +98,8 @@ function testConnection() {
     Logger.log('testConnection');
 
     let parameters = new tp_parameters();
-    parameters.loadSecrets();
-    if (!parameters.checkSecrets()) {
-        alert("Les paramètres n'ont pas été saisis...!");
-        return;
-    }
-
-    let api = new MediawikiAPI(parameters.secrets().wikiURL + "/api.php", parameters.secrets().username, parameters.secrets().password);
-
-    let logindata = api.login();
-    if (!logindata.login.result || logindata.login.result != 'Success') {
-        alert("La connexion n'a pas fonctionné...\n " + JSON.stringify(logindata, null, 3));
-        return;
-    }
-
-    alert("La connexion fonctionne correctement.");
+    if (parameters.testConnection())
+        alert("La connexion fonctionne correctement.");
 }
 
 function goToSpecialTabs(e) {

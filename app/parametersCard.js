@@ -17,7 +17,11 @@ function parameters_save(e)
 
     parameters.storeSecrets(secrets);
 
-    alert("Les paramètres ont été enregistrés.");
+    if (parameters.testConnection())
+    {
+        alert("Les paramètres ont été enregistrés.");
+        return card_buildHomepageCard();
+    }
 }
 
 function parametersbuildCard() {

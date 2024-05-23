@@ -155,10 +155,6 @@ class chartsBuilder {
                 break;
         }
 
-        if (!chart) {
-            return;
-        }
-
         let apiTools = getApiTools();
 
         if (!apiTools)
@@ -521,7 +517,7 @@ class chartsBuilder {
         return parserFunction;
     }
 
-    getRadar(range) {
+    getRadar(range, wikiTitle) {
         const values = range.getValues();
         const title = this.getChartValue("Titre", values);
 
@@ -596,7 +592,7 @@ class chartsBuilder {
             this.getChartValue("Alignement", values));
     }
 
-    getComptabilite(range, wikiTitle) {
+    getComptabilite(range) {
 
         const values = range.getValues();
         const title = this.getChartValue("Titre", values);

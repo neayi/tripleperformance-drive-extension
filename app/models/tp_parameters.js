@@ -134,5 +134,23 @@ class tp_parameters {
 
         return '';
     }
+
+    testConnection() {
+        this.loadSecrets();
+        if (!this.checkSecrets()) {
+            alert("Les paramètres n'ont pas été saisis...!");
+            return false;
+        }
+    
+        let api = new MediawikiAPI(this.secrets().wikiURL + "/api.php", this.secrets().username, this.secrets().password);
+    
+        let logindata = api.login();
+        if (!logindata.login.result || logindata.login.result != 'Success') {
+            alert("La connexion n'a pas fonctionné...\n " + JSON.stringify(logindata, null, 3));
+            return false;
+        }
+
+        return true;    
+    }
 }
 
