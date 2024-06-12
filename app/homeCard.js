@@ -203,7 +203,6 @@ function card_buildHomepageCard() {
     ['Gestion de formations', 'Import YouTube'].forEach((tab) => {
         buttonSet.addButton(CardService.newTextButton()
             .setText(tab)
-            .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
             .setOnClickAction(CardService.newAction()
                 .setFunctionName('goToSpecialTabs')
                 .setParameters({ "tab": tab })));

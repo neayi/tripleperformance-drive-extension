@@ -44,7 +44,6 @@ function onCreateNewTabsCard(title, tabs, actionName = 'Créer les onglets') {
 
     let cardSection1ButtonList1Button1 = CardService.newTextButton()
         .setText(actionName)
-        .setTextButtonStyle(CardService.TextButtonStyle.TEXT)
         .setOnClickAction(cardSection1ButtonList1Button1Action1);
 
     let cardSection1ButtonList1 = CardService.newButtonSet()
