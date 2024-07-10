@@ -385,7 +385,7 @@ class wikiPage {
             });
         }
         else
-            Logger.log(`Chart ${chartName} not found`);
+            Logger.log(`Chart ${chartName} not found - adding chart at the end of the page...`);
             
 
         if (originalChart != "")

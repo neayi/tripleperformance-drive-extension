@@ -591,7 +591,7 @@ class chartsBuilder {
             this.getChartValue("Hauteur", values),
             this.getChartValue("Alignement", values));
     }
-
+    
     getComptabilite(range) {
 
         const values = range.getValues();
@@ -606,10 +606,19 @@ class chartsBuilder {
             let parameters = new Map();
 
             const annee = String(values[6][col]);
-            if (!annee.match(/^[0-9]{4}$/))
+            if (!annee.match(/^[0-9]{4}$/) &&
+                !annee.match(/^[0-9]{4}-[0-9]{4}$/))
                 continue;
+            
+            let currentCategory = "";
 
             for (let rowIndex = 7; rowIndex < footerRow; rowIndex++) {
+
+                let category = values[rowIndex][0];
+                if (category.length > 0)
+                    currentCategory = category;
+                else
+                    category = currentCategory;
 
                 const label = values[rowIndex][1];
                 const value = values[rowIndex][col];
@@ -626,7 +635,7 @@ class chartsBuilder {
                     label.toLowerCase() == "capacité d'autofinancement"))
                     continue;
 
-                parameters.set(label + ' ' + annee, Number(value));
+                parameters.set(category + '/' + label + ' ' + annee, Number(value));
             }
 
             if (parameters.size > 0) {
