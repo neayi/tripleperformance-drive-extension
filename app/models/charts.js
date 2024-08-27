@@ -11,7 +11,9 @@ class chartsBuilder {
             { type: 'Radar', name: 'Analyse environnementale', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/analyse-environnementale.png' },
             { type: 'Radar', name: 'Analyse socio-économique', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/analyse-socio-eco.png' },
             { type: 'Barres horizontales', name: "Capacité d'autoproduction", image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/autonomie.png' },
-            { type: 'Camembert', name: 'Stratégie commerciale', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/commercialisation.png' }
+            { type: 'Camembert', name: 'Stratégie commerciale', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/commercialisation.png' },
+
+            { type: 'Histogramme', name: 'Diagramme ombrothermique', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/ombrothermique.png' }
         ];
     }
 
@@ -128,26 +130,30 @@ class chartsBuilder {
                 chart = this.getComptabilite(range);
                 chartParserFunction = 'economic_charts';
                 break;
-                
+
             case "Analyse environnementale":
                 chartArgs = this.getAnalyseChart(range);
                 chartTemplate = 'EChart Radar environnemental MSV';
-                break;                
+                break;
 
             case "Analyse socio-économique":
                 chartArgs = this.getAnalyseChart(range);
                 chartTemplate = 'EChart Radar MSV';
                 break;
-                
+
             case "Capacité d'autoproduction":
                 chartArgs = this.getAnalyseChart(range);
                 chartTemplate = "EChart Capacité d'autoproduction MSV";
-                break;                
+                break;
 
             case "Stratégie commerciale":
                 chartArgs = this.getStrategieCommerciale(range);
                 chartTemplate = "EChart Stratégie commerciale MSV";
-                break;                
+                break;
+
+            case "Diagramme ombrothermique":
+                chart = this.getClimateGraph(range, wikiTitle);
+                break;
 
             default:
                 alert("Le type de graphique de " + chartname +
@@ -162,9 +168,8 @@ class chartsBuilder {
 
         let wiki = new wikiPage();
         let pageContent = apiTools.getPageContent(wikiTitle);
-        if (pageContent === false)
-        {
-            alert("La page \""+ wikiTitle +"\" n'existe pas encore dans le wiki. Veuillez la créer de façon à pouvoir y insérer des graphiques !");
+        if (pageContent === false) {
+            alert("La page \"" + wikiTitle + "\" n'existe pas encore dans le wiki. Veuillez la créer de façon à pouvoir y insérer des graphiques !");
             return;
         }
 
@@ -189,10 +194,10 @@ class chartsBuilder {
             "title": {
                 "left": 'center',
                 "text": ''
-              },            
+            },
             "legend": {
                 "bottom": 10,
-                "type": 'scroll'                
+                "type": 'scroll'
             },
             "xAxis": {
                 "type": "category",
@@ -372,7 +377,7 @@ class chartsBuilder {
             },
             "tooltip": {
                 "formatter": "rotation",
-                "confine"  : true
+                "confine": true
             },
             "series": []
         };
@@ -519,7 +524,6 @@ class chartsBuilder {
 
     getRadar(range, wikiTitle) {
         const values = range.getValues();
-        const title = this.getChartValue("Titre", values);
 
         let option = {
             "legend": {},
@@ -591,7 +595,7 @@ class chartsBuilder {
             this.getChartValue("Hauteur", values),
             this.getChartValue("Alignement", values));
     }
-    
+
     getComptabilite(range) {
 
         const values = range.getValues();
@@ -609,7 +613,7 @@ class chartsBuilder {
             if (!annee.match(/^[0-9]{4}$/) &&
                 !annee.match(/^[0-9]{4}-[0-9]{4}$/))
                 continue;
-            
+
             let currentCategory = "";
 
             for (let rowIndex = 7; rowIndex < footerRow; rowIndex++) {
@@ -650,10 +654,185 @@ class chartsBuilder {
         return parserFunction;
     }
 
+    getClimateGraph(range, wikiTitle) {
+
+        const values = range.getValues();
+
+        // https://echarts.apache.org/examples/en/editor.html?c=mix-line-bar&code=PYBwLglsB2AEC8sDeAoWszGAG0iAXMmuhgE4QDmFApqYQOQCGAHhAM70A0x6L7ACsAjQwtQqhIkwATxDUGAY1LA2HbpPRKVbAMozs8ohpIKcwOrHoBiAJx36PEgF9HL9E_WwK5ACbjHBgBmYIQADJ7o5BQAFiGwAKwRsABGwGCYALZhSaYijMIAMozJ1NiEYKQArtTEHsQGNNB-RiQ-jGCMhADa9AAq1BlypO2VpNRclvxjChAgEB2QMPQAurWezACCrGzdjhIaMnKK7dQU5tJcjuhtHd30AFIT9ABiTwCyTxvvT4-clr-WL5_eg6J4AeSeADkngARFZJXjbQTCUQWfbGQ6GehsaKMHzAADuDmMbmcxGWnmkW3Yu0k6KksixADdGNhqpdjNBGBksVNqDM5gsoNAORoQCp5sKGFFYqLJBlhNkrrAMixCAAmULhZWsyjQXoQBQAax2ZGqCNgfDYRRKZRaxkC5lV6TEliQLLZ1CcKoyxI0pPcSXp6ExDA97ItXJ5DH6g1oIzGcpI4rYkpgDCCYCT6AV0CVxlVzEIABZtcZdRR9YaTeUqtQLVabaV_MZ0I7SM7UQx3azqt6AA0AYT9kgDsFJFOIbFoEGopq6e2VUaxb2E2YwjIzwnGFqp2wAkk1qEXYABGC03TqwLqngB0iVgAFoHwBmP7Fv4PgAcf1PP7PD6ngAbL-4RnmBL6TsY2Dbno0gGC2ragIwMwyGEyp1MYbAdMaDC5oWj7JIwTTrmw0gZKkdr0NAMA7sqmA4Hg4g4oShCBKy06Yc4QZLtyK4sOuoaWDB0B0cYe7sIePjHoQ57Kpe3QPg-IGwG-CSfqBv6Adpv7qqBUEaCJ1BwQh9oaMhqHSOhJINmMjAmYYwYmGYFjWD47kjtx9FYLgszMdErGwOx2CcRa2EoUaeHCARREkWF5GUQwNGiZ5XHoE5y4xgMQwJmJBybsJ27rhJbBSTJZ4WkZDniASEA-GA0SwIQL5pSQ3mMX5ZmSOG1DPE67RdkFlTQAoixwAAFD1ACUXUaGMYCjHAPWwAA1JYsBDvQADcyruBhFrzAM1WzZIpjYOYhAAESkBQRHjeqp5gfESmAVNl37fJ7RXl06q3mBj6_Xpqm3mpxb3n8QEg6Bt5A5qUOwOqL63h-CNI2BwHg2ev1gZD6qrKOPGcnxDB8gK8ztMKgkFfQRGkOutMAOp1Q1DCPaEACkxXUqVR4nmWGi0wA4owBCwPzkgMb5otOegPV9R2A2uoEw2jcKsCTb21AzTLJDzYtsDLWt9A-ttu3jh9xiHRkx065oLlXTdd3PaB_5_ueZ5vRakipKQ0mkIO9uWFYzwh55gafbc15m79KnxLeNh_DYf1_OqkMo-qX63gA7H8WehNnv5Z3HKl_oD76ZznZ6Z_-kNgb9L7KvjZLoKsThbUAA
+        let option = {
+            "tooltip": {
+                "trigger": 'axis',
+                "axisPointer": {
+                    "type": 'cross',
+                    "crossStyle": {
+                        "color": '#999'
+                    }
+                }
+            },
+            "grid": {
+                "left": 0,
+                "right": 5,
+                "bottom": 0,
+                "containLabel": true
+            },
+            "legend": {
+                "data": ['Température', 'Précipitation']
+            },
+            "xAxis": [
+                {
+                    "type": 'category',
+                    "data": ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'],
+                    "axisPointer": {
+                        "type": 'shadow'
+                    }
+                }
+            ],
+            "yAxis": [
+                {
+                    "type": 'value',
+                    "name": 'Précipitation',
+                    "position": 'right',
+                    "min": 0,
+                    "max": 200,
+                    "alignTicks": true,
+                    "axisLabel": {
+                        "formatter": '{value} mm'
+                    }
+                },
+                {
+                    "type": 'value',
+                    "name": 'Température',
+                    "position": 'left',
+                    "min": 0,
+                    "max": 40,
+                    "alignTicks": true,
+                    "axisLabel": {
+                        "formatter": '{value} °C'
+                    }
+                }
+            ],
+            "series": [
+                {
+                    "name": 'Min',
+                    "type": 'line',
+                    "yAxisIndex": 1,
+                    "data": [],
+                    "lineStyle": {
+                        "opacity": 0
+                    },
+                    "stack": 'minmax-band',
+                    "symbol": 'none',
+                    "tooltip": { "show": false },
+                },
+                {
+                    "name": 'Max',
+                    "type": 'line',
+                    "yAxisIndex": 1,
+                    "data": [],
+                    "lineStyle": {
+                        "opacity": 0
+                    },
+                    "areaStyle": {
+                        "color": '#ddd'
+                    },
+                    "tooltip": { "show": false },
+                    "stack": 'minmax-band',
+                    "symbol": 'none'
+                },
+                {
+                    "name": 'Température',
+                    "type": 'line',
+                    "yAxisIndex": 1,
+                    "lineStyle": { "width": 3 },
+
+                    "tooltip": {
+                        "valueFormatter": function (value) {
+                            return value + ' °C';
+                        }
+                    },
+                    "itemStyle": {
+                        "color": "rgba(210, 55, 55, 1)"
+                    },
+                    "data": []
+                },
+                {
+                    "name": 'Précipitation',
+                    "type": 'bar',
+                    "barWidth": '100%',
+                    "yAxisIndex": 0,
+                    "barGap": 0,
+                    "tooltip": {
+                        "valueFormatter": function (value) {
+                            return value + ' mm';
+                        }
+                    },
+                    "itemStyle": {
+                        "color": "rgba(55, 108, 181, 1)",
+                        "borderColor": '#FFF'
+                    },
+                    "data": []
+                }
+            ]
+        };
+
+        const footerRow = this.getChartRowIndex("Fin du graphique", values);
+        let minTemp = 0;
+
+        for (let rowIndex = 1; rowIndex < footerRow; rowIndex++) {
+
+            let seriesIndex = -1;
+            switch (values[rowIndex][0]) {
+                case "Température min": seriesIndex = 0; break;            
+                case "Température max": seriesIndex = 1; break;            
+                case "Température moyenne": seriesIndex = 2; break;            
+                case "Pluviométrie": seriesIndex = 3; break;
+
+                default:
+                    ;
+            }
+
+            if (seriesIndex < 0)
+                continue;
+        
+            for (let colIndex = 1; colIndex <= 12; colIndex++) {
+                option.series[seriesIndex].data.push(values[rowIndex][colIndex]);
+
+                if (seriesIndex < 3) // temp
+                    minTemp = Math.min(minTemp, values[rowIndex][colIndex]);
+            }
+        }
+
+        if (option.series[0].data.length == 12 && 
+            option.series[1].data.length == 12) {
+
+            // Since the min-max is a sort of stacked area line, we need to account for the cumulated temp in the max line:
+            for (let colIndex = 0; colIndex < 12; colIndex++) {
+                option.series[1].data[colIndex] = option.series[1].data[colIndex] - option.series[0].data[colIndex];
+            }
+        }
+        else {
+            // Remove the min-max stack:
+            option.series.shift();
+            option.series.shift();
+        }
+
+        if (minTemp < 0) {
+            // Adjust axes for negative temperatures
+            option.yAxis[0].min = -50; // mm
+            option.yAxis[0].min = -10; // °C
+        }
+
+        return this.buildParserFunction(wikiTitle, option,
+            this.getChartValue("Titre", values),
+            this.getChartValue("Largeur", values),
+            this.getChartValue("Hauteur", values),
+            this.getChartValue("Alignement", values));        
+    }
+
     buildParserFunction(wikiTitle, option, title, width, height, align) {
 
         // Push the content to its own JSON page
-        
+
         let apiTools = getApiTools();
 
         if (!apiTools)
@@ -692,7 +871,7 @@ class chartsBuilder {
             height = "400px";
 
         let content = `{{#echarts: title=${title} | width=${width} | height=${height} ${align} | json = ${JsonPageTitle} }}`;
-        
+
         return content;
     }
 
@@ -763,6 +942,9 @@ class chartsBuilder {
         else if (chartName == "Stratégie commerciale") {
             this.createStrategieCommerciale();
         }
+        else if (chartName == "Diagramme ombrothermique") {
+            this.createClimateGraph();
+        }        
         else {
             alert("Ce graphique n'a pas encore été implémenté !");
             return;
@@ -1089,7 +1271,7 @@ class chartsBuilder {
 
         this.createChartFooter(
             "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
-            +" N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
+            + " N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
     }
 
     createRadarSocioEconomique() {
@@ -1118,9 +1300,9 @@ class chartsBuilder {
 
         this.createChartFooter(
             "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
-            +" N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
+            + " N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
     }
-    
+
     createAutonomieChart() {
 
         let sheet = SpreadsheetApp.getActiveSheet();
@@ -1144,9 +1326,9 @@ class chartsBuilder {
 
         this.createChartFooter(
             "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
-            +" N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
+            + " N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
     }
-    
+
     getAnalyseChart(range) {
         const values = range.getValues();
 
@@ -1212,8 +1394,36 @@ class chartsBuilder {
 
         this.createChartFooter(
             "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
-            +" N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
-    }    
+            + " N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
+    }
+
+    createClimateGraph() {
+
+        let sheet = SpreadsheetApp.getActiveSheet();
+        const insertRow = this.createChartHeader("Diagramme ombrothermique", "Diagramme ombrothermique", "Droite", 13);
+
+        const totalStartRow = insertRow + 1;
+        const totalEndRow = insertRow + 9;
+
+        let values = [
+            ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
+            ["Pluviométrie", "73", "67", "70", "96", "82", "63", "39", "44", "91", "128", "143", "86"],
+            ["Température moyenne", "4,5", "4,7", "7,5", "10,5", "14,6", "19", "21,5", "21,4", "17,6", "13,9", "8,9", "5,5"],
+            ["Température max", "8,6", "9,1", "12,2", "14,9", "18,6", "22,8", "25,4", "25,4", "21,4", "17,4", "12,5", "9,6"],
+            ["Température min", "0,9", "0,3", "2,7", "5,6", "9,7", "14,2", "16,8", "17", "13,8", "10,4", "5,4", "2"]
+        ];
+
+        sheet.getRange(insertRow, 1, values.length, values[0].length).setValues(values);
+
+        sheet.getRange(insertRow, 1, 1, 13).setFontWeight("bold").setBackground(getLightGrayColor()).setHorizontalAlignment('right'); // Columns titles
+        sheet.getRange(insertRow, 1, values.length, 1).setFontWeight("bold"); // First col
+
+        sheet.getRange(insertRow + 1, 2, 1, 12).setNumberFormat("0 \\m\\m");
+        sheet.getRange(insertRow + 2, 2, 3, 12).setNumberFormat("0.0 °C");
+
+        this.createChartFooter(
+            "Ne modifiez pas les lignes et les entêtes. Vous pouvez laisser les lignes vides si vous n'avez pas les valeurs", 13);
+    }
 
     getStrategieCommerciale(range) {
         const values = range.getValues();
@@ -1228,8 +1438,7 @@ class chartsBuilder {
 
             if (!columnsFound &&
                 nomAxe.trim().length == 0 &&
-                value.trim().length > 0) 
-            {
+                value.trim().length > 0) {
                 args.set('Nom de la ferme', value);
                 columnsFound = true;
                 continue;
