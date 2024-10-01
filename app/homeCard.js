@@ -13,6 +13,7 @@ function card_onHomepage(event) {
         .addSubMenu(ui.createMenu('YouTube')
             .addItem("Charger les nouvelles vidéos de la chaîne", 'fetchVideosFromYouTubeChannel')
             .addItem("Charger le détail des vidéos", 'fetchVideosDetailsFromYouTubeChannel')
+            .addItem("Vérifier les pages Triple Performance", 'checkVideosFromTriplePerformance')
             .addItem("Pousser les vignettes vers Triple Performance", 'pushThumbnailsToTriplePerformance')
             .addItem("Pousser les vidéos vers Triple Performance", 'pushVideosToTriplePerformance')
             .addItem("Mettre à jour la liste des intervenants", 'updateYoutubeSpeakersList')
@@ -54,8 +55,13 @@ function fetchVideosFromYouTubeChannel() {
 function fetchVideosDetailsFromYouTubeChannel() {
     Logger.log("fetchVideosDetailsFromYouTubeChannel")
     let youTube = new YoutubeModel();
-    //youTube.fetchDetailsFromYoutube();
-    youTube.fetchVideoDetails();
+    youTube.fetchDetailsFromYoutube();
+}
+
+function checkVideosFromTriplePerformance() {
+    Logger.log("checkVideosFromTriplePerformance")
+    let youTube = new YoutubeModel();
+    youTube.checkVideosFromTriplePerformance();
 }
 
 function pushVideosToTriplePerformance() {

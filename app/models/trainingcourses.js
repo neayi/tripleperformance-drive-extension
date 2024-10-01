@@ -160,7 +160,7 @@ class TrainingCourseModel {
                 let objectives = course.objectives.trim(); 
                 let target = course.target.trim(); 
 
-                pageContent = wiki.updateTemplate("Formation", trainingParams, pageContent);
+                pageContent = wiki.updateTemplate("Formation", trainingParams, pageContent).trim();
                 
                 if (presentation.length > 0)
                     pageContent += "\n" + presentation;
@@ -170,6 +170,8 @@ class TrainingCourseModel {
 
                 if (target.length > 0)
                     pageContent += "\n\n== Public visé et prérequis ==\n" + target;
+    
+                pageContent += "\n\n{{Pages liées}}";
     
                 apiTools.createWikiPage(wikiTitle, pageContent, "Création de la page");
                 newCourses++;

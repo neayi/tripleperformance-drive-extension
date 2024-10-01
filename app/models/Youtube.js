@@ -92,6 +92,9 @@ class YoutubeModel {
         onFetchNewVideos();
     }
     
+    /**
+     * Fetch video details for all tabs, using triggers
+     */
     fetchVideoDetails() {
 
         Logger.log('fetchVideoDetails');
@@ -103,6 +106,84 @@ class YoutubeModel {
         onFetchVideosDetails();
     }
     
+    /**
+     * Get all pages that have a video on Triple Performance 
+     * and check that the videos in the page are already there or not
+     */
+    checkVideosFromTriplePerformance() {
+        Logger.log('checkVideosFromTriplePerformance');
+
+        // Get all videos from triple performance
+        let apiTools = getApiTools();
+
+        let pagesWithVideos = apiTools.getSemanticValuesWithForSemanticQuery(
+            "[[A une URL de vidéo::+]]", 
+            ['A une URL de vidéo']);
+            
+        // Build a map with id --> page
+        let wikiPages = new Map(pagesWithVideos.map(page => {
+            let pageTitle = page[0];
+            let url = page[1];
+            let id = '';
+
+            var match = url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+            var match2 = url.match(/^http:\/\/([^#\&\?]*).*/);
+
+            if (match && match[2].length == 11) {
+                id = match[2];
+            }
+            else if (match2 && match2[1].length == 11) {
+                id = match2[1];
+            }
+            else {
+                Logger.log("Unrocognized URL : " + url);
+            }
+
+            return [id, pageTitle];
+        }));
+
+        // Check all the videos were the page name is empty and fill it if the map exists
+        let sheet = SpreadsheetApp.getActiveSheet();
+
+        let data = sheet.getDataRange();
+        let startRow = data.getRow();
+
+        let idFound = false;
+
+        const wikiCol = this.getColNumber("ok pour wiki");
+
+        data.getValues().forEach((row, rowIndex) => {
+            if (!idFound && row[0] == this.columns[0])
+            {
+                idFound = true;
+                return;
+            }
+
+            if (!idFound)
+                return;
+
+            let video = this.getVideoFromRow(row);
+   
+            if (video.videoID.length != 11)
+                return;
+
+            if (video.wiki.length > 0)
+                return;
+
+            let pageTitle = wikiPages.get(video.videoID);
+
+            Logger.log(video.videoID + " " + pageTitle);
+
+            if (pageTitle != undefined)
+            {
+                let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
+                sheet.getRange(rowIndex + startRow, wikiCol, 1, 3).setValues([['o', '', cellcontent]]);    
+            }
+        });
+
+        alert("Terminé");
+    }
+
     /**
      * Go through all the videos of the current sheet,
      * check that the col 
@@ -304,7 +385,7 @@ class YoutubeModel {
 
     setValuesForVideo(videoId, videoDetail, sheet)
     {
-        let videoRow = this.rowIndexForYoutubeId.get(sheet.getName() + videoId)
+        let videoRow = this.rowIndexForYoutubeId.get(sheet.getName() + videoId);
 
         if (videoRow)
             sheet.getRange(videoRow, 2, 1, videoDetail.length)
@@ -417,6 +498,7 @@ class YoutubeModel {
             const wikipage = new wikiPage();
             let pageContent = wikipage.buildTemplateFromMap('vidéo', params);
             pageContent += "\n\n" + video.fixedDescription;
+            pageContent += "\n\n{{Pages liées}}";
 
             let pageTitle = video.fixedTitle;
             apiTools.createWikiPage(pageTitle, pageContent, "Création de la page");
