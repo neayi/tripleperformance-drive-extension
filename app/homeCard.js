@@ -19,6 +19,11 @@ function card_onHomepage(event) {
             .addItem("Mettre à jour la liste des intervenants", 'updateYoutubeSpeakersList')
             .addItem("Pousser les intervenants vers Triple Performance", 'pushSpeakersToTriplePerformance')
         )
+        .addSubMenu(ui.createMenu('Traitements en lots')
+            .addItem("Créer des pages avec une template", 'createPagesWithTemplate')
+            .addItem("Ajouter des mots-clés aux pages", 'addKeywordsToPages')
+            .addItem("Ajouter du code en bas des pages", 'addCodeToPages')
+        )
         .addToUi();        
     } catch (error) {
         Logger.log(error); 
@@ -116,6 +121,9 @@ function goToSpecialTabs(e) {
         case "Import YouTube":
             return card_buildYoutubeCard();
 
+        case "Traitements en lots":
+            return card_buildBatchProcessingCard();
+
         default:
             Logger.log("Unknown special tab " + e.parameters.tab);
             break;
@@ -206,7 +214,11 @@ function card_buildHomepageCard() {
     let cardSectionOthePages = CardService.newCardSection();
     cardSectionOthePages.addWidget(CardService.newTextParagraph().setText("<b>Gérer d'autres types de données</b>"));
     let buttonSet = CardService.newButtonSet();
-    ['Gestion de formations', 'Import YouTube'].forEach((tab) => {
+    [
+     'Gestion de formations',
+     'Import YouTube',
+     'Traitements en lots'
+    ].forEach((tab) => {
         buttonSet.addButton(CardService.newTextButton()
             .setText(tab)
             .setOnClickAction(CardService.newAction()

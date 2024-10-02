@@ -262,6 +262,8 @@ class wikiPage {
     }
 
     insertKeywordInPage(pageContent, keyword) {
+        Logger.log("insertKeywordInPage : " + keyword);
+
         const lcKeyword = keyword.toLowerCase();
 
         const regex = /\|\s*Tag\s+([0-9]+)\s*=\s*([^|}]+)/gi;
@@ -279,27 +281,33 @@ class wikiPage {
             newTagNumber = Math.max(...tagNumbers) + 1;
 
             if (keywords.includes(lcKeyword)) {
-                return false;
+                Logger.log("Keyword already in page : " + keyword);
+                return pageContent;
             }
         }
 
         const templates = [
-            '{{Exemple de mise en œuvre',
-            '{{Exemple de mise en oeuvre',
-            '{{Pratique',
-            '{{Vidéo',
-            '{{Portrait de ferme',
-            '{{Auxiliaire'
+            "{{Auxiliaire",
+            "{{Bioagresseur",
+            "{{Exemple de mise en oeuvre",
+            "{{Exemple de mise en œuvre",
+            "{{Formation",
+            "{{Livre",
+            "{{Matériel",
+            "{{Outil d'aide",
+            "{{Portrait de ferme",
+            "{{Pratique",
+            "{{Programme",
+            "{{Présentation",
+            "{{Vidéo"
         ];
 
         const templateRegex = new RegExp(templates.join('|'), 'i');
 
         if (!templateRegex.test(pageContent)) {
             const matches = pageContent.match(/{{\s*[^|}]+/g);
-            console.log(matches);
-            console.log(pageContent);
-
-            throw new Error("Template not found.");
+            Logger.log("Compatible template not found.");
+            return pageContent;
         }
 
         for (const template of templates) {

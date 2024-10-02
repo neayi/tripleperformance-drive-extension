@@ -208,3 +208,33 @@ function removeTrigger()
 
     documentProperties.deleteProperty('queuedTabsForTrigger');        
 }
+
+/**
+ * Adds a conditional formating rule thats shows green or red for 
+ * value o or n in the range
+ * @param {*} range 
+ */
+function setConditionalFormatingYN(range) {
+
+    let conditions = [
+        ['o', "#B7E1CD"],
+        ['x', "#B7E1CD"],
+        ['n', "#F4C7C3"],
+        ['a', "#fce8b2"]
+    ];
+
+    let sheet = range.getSheet();
+    var rules = sheet.getConditionalFormatRules();
+
+    conditions.forEach((condition) => {
+        let rule = SpreadsheetApp.newConditionalFormatRule()
+            .whenTextEqualTo(condition[0])
+            .setBackground(condition[1])
+            .setRanges([range])
+            .build();
+
+        rules.push(rule);
+    });
+
+    sheet.setConditionalFormatRules(rules);
+}

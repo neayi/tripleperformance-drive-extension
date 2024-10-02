@@ -334,7 +334,7 @@ class chartsBuilder {
 
             // in some cases, getValues picks up the unit as well, so remove all non numeric features:
             if (typeof value == 'string')
-                value = Number.parseFloat(value);
+                value = Number.parseFloat(value.replace(',', '.'));
 
             let childData = {
                 name: item,

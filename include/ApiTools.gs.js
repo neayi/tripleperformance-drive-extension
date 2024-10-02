@@ -238,12 +238,12 @@ class api_tools {
    * Invoque with: getPagesWithForSemanticQuery("[[A un mot-clé::Pâturage]]", ["A un mot-clé"])
    * Values must be an array
    * 
-   * Returns an array of arrays. The first item of each array is the page title, then the values
+   * Returns an array of arrays. The first item of each array is the page title, then the values. The values might be arrays !
    */
   getSemanticValuesWithForSemanticQuery(semanticQuery, values) {
     try {
 
-      values = values.map((v) => {return '?' + v}).join('|');
+      values = values.map((v) => { return '?' + v }).join('|');
 
       const ask = `${semanticQuery}|?=Page|${values}|limit=5000`;
 
@@ -276,7 +276,20 @@ class api_tools {
         let entries = [];
         for (const [key, value] of Object.entries(arg)) {
           if (value.printouts)
-            entries = Object.entries(value.printouts).map((k, v) => k[1][0] ?? '');
+            entries = Object.entries(value.printouts).map((k, v) => {
+              if (k[1].length >= 1) {
+                let fulltextValues = k[1].map((vv) => {
+                  return vv.fulltext ?? vv;
+                });
+
+                if (fulltextValues.length == 1)
+                  return fulltextValues[0];
+                else
+                  return fulltextValues;
+              }
+              else // no entry for this attribute
+                return '';
+            });
         }
 
         return [pagename, ...entries];
@@ -452,8 +465,7 @@ class api_tools {
    * @param {String} fromPage 
    * @param {String} toPage 
    */
-  move(fromPage, toPage, reason)
-  {
+  move(fromPage, toPage, reason) {
     const edittoken = this.api.getEditToken();
 
     if (edittoken === null) {
@@ -477,4 +489,39 @@ class api_tools {
 
     return true;
   }
+
+  /**
+   * Performs a full search on the wiki
+   * 
+   * @param {String} term 
+   * @returns Array of page titles
+   */
+  search(term) {
+    try {
+      const parameters = {
+        action: 'query',
+        list: 'search',
+        srlimit: '500',
+        srwhat: 'text',
+        srnamespace: '*',
+        format: 'json',
+        srsearch: term
+      };
+
+      const results = this.api.query(parameters);
+
+      const ret = [];
+
+      results.query.search.forEach(result => {
+        ret.push(result.title);
+      });
+
+      return ret;
+    } catch (error) {
+      console.error(error.message);
+    }
+
+    return [];
+  }
+
 }

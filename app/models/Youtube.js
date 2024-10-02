@@ -664,26 +664,12 @@ class YoutubeModel {
         sheet.setColumnWidth(this.getColNumber("Intervenants"), 300);
 
         var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), 900, 1).setHorizontalAlignment("center");
-        var ruleImportRow = SpreadsheetApp.newConditionalFormatRule()
-          .whenTextEqualTo("o")
-          .setBackground("#B7E1CD")
-          .setRanges([range])
-          .build();    
-        var ruleDoNotImportRow = SpreadsheetApp.newConditionalFormatRule()
-          .whenTextEqualTo("n")
-          .setBackground("#F4C7C3")
-          .setRanges([range])
-          .build();    
-        var rules = sheet.getConditionalFormatRules();
-        rules.push(ruleImportRow);
-        rules.push(ruleDoNotImportRow);
-        sheet.setConditionalFormatRules(rules);
-
+        setConditionalFormatingYN(range);
+        
         return sheet;
     }
 
     /**
-     * Deprecated
      * @param {*} tabName 
      * @returns 
      */
@@ -732,20 +718,7 @@ class YoutubeModel {
         sheet.setColumnWidth(this.getColNumber("Intervenants"), 300);
 
         var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), 900, 1).setHorizontalAlignment("center");
-        var ruleImportRow = SpreadsheetApp.newConditionalFormatRule()
-          .whenTextEqualTo("o")
-          .setBackground("#B7E1CD")
-          .setRanges([range])
-          .build();    
-        var ruleDoNotImportRow = SpreadsheetApp.newConditionalFormatRule()
-          .whenTextEqualTo("n")
-          .setBackground("#F4C7C3")
-          .setRanges([range])
-          .build();    
-        var rules = sheet.getConditionalFormatRules();
-        rules.push(ruleImportRow);
-        rules.push(ruleDoNotImportRow);
-        sheet.setConditionalFormatRules(rules);
+        setConditionalFormatingYN(range);
 
         return sheet;
     }

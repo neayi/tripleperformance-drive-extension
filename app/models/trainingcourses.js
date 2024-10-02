@@ -358,23 +358,10 @@ class TrainingCourseModel {
         modalite.setDataValidation(rule);
 
         var fundableCells = sheet.getRange(2, this.getColNumber("Finançable VIVEA, OPCO"), 900, 3);
-        var fundableCellsRule = SpreadsheetApp.newConditionalFormatRule()
-          .whenTextEqualTo("x")
-          .setBackground("#B7E1CD")
-          .setRanges([fundableCells])
-          .build();  
+        setConditionalFormatingYN(fundableCells);
 
         var forceUpdateRange = sheet.getRange(2, this.getColNumber("Mettre à jour le contenu éditorial"), 900, 1);
-        var ruleforceUpdate = SpreadsheetApp.newConditionalFormatRule()
-          .whenTextEqualTo("o")
-          .setBackground("#B7E1CD")
-          .setRanges([forceUpdateRange])
-          .build();
-
-        var rules = sheet.getConditionalFormatRules();
-        rules.push(fundableCellsRule);
-        rules.push(ruleforceUpdate);
-        sheet.setConditionalFormatRules(rules);
+        setConditionalFormatingYN(forceUpdateRange);
 
         let speakM = new speakersModel();
         speakM.createTab("Intervenants");
