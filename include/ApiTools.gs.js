@@ -392,7 +392,7 @@ class api_tools {
    * @param {*} comment 
    * @returns 
    */
-  uploadImage(imageURL, desFilename, comment) {
+  uploadImage(imageURL, desFilename, comment, text = "") {
     const edittoken = this.api.getEditToken();
 
     if (edittoken === null) {
@@ -403,6 +403,7 @@ class api_tools {
       url: imageURL,
       filename: desFilename,
       comment: comment,
+      text: text,
       token: edittoken
     };
 

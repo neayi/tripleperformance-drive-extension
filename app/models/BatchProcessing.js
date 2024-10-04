@@ -4,15 +4,16 @@ class BatchProcessingytModel {
 
         // title, width, alignment, wrap, bold
         this.columnsCreatePagesDefinitions = [
-            ["Titre",                   "262", "left", true,  true],
-            ["Template",                "100", "left", true,  false],
-            ["URL Image",               "100", "left", false, false],
-            ["Rendu de l'image",        "100", "left", false, false],
-            ["Image TriplePerformance", "100", "left", true,  false],
-            ["Page TriplePerformance",  "190", "left", true,  false],
-            ["Param 1",                 "191", "left", true,  false],
-            ["Param 2",                 "191", "left", true,  false],
-            ["Param 3",                 "191", "left", true,  false]
+            ["Titre",                   "262", "left",   true,  true],
+            ["Template",                "100", "left",   true,  false],
+            ["URL Image",               "100", "left",   false, false],
+            ["Rendu de l'image",        "100", "left",   false, false],
+            ["Image TriplePerformance", "100", "left",   true,  false],
+            ["Page TriplePerformance",  "190", "left",   true,  false],
+            ["Statut (a/u/x)",          "100", "center", false, false],
+            ["Param 1",                 "191", "left",   true,  false],
+            ["Param 2",                 "191", "left",   true,  false],
+            ["Param 3",                 "191", "left",   true,  false]
         ];
 
         this.columnsCreatePages = this.columnsCreatePagesDefinitions.map(col => col[0]);
@@ -59,7 +60,123 @@ class BatchProcessingytModel {
     }
     
     createPagesWithTemplate() {
+        Logger.log('createPagesWithTemplate');
 
+        // For each row in the current sheet, first check the value of col "Statut (a/u/x)": 
+        // a --> Add the page to Triple Performance (do nothing if the page already exists)
+        // u --> Update the page on Triple Performance (only the template, do not touch the rest of the page)
+        // x --> The page is already up to date, do not touch
+        // n --> Do not import the page
+
+        // Note : if "u", only the keywords in the sheet will be added/removed - all keywords that are already
+        // in the template but not in the sheet will be left untouched
+
+        // Note : the image will not be modified once uploaded
+
+
+        // First get the list of keywords we are interested in:
+        let sheet = SpreadsheetApp.getActiveSheet();
+
+        let data = sheet.getDataRange();
+        let values = data.getValues();
+
+        const templateParameters = values.shift().slice(7);
+        
+        let startRow = data.getRow();
+
+        const statusCol = this.getColNumberCreatePages("Statut (a/u/x)");
+        const imageURLCol = this.getColNumberCreatePages("URL Image");
+        const imageRenduCol = this.getColNumberCreatePages("Rendu de l'image");
+        const imageTPCol = this.getColNumberCreatePages("Image TriplePerformance");
+        const pageTPCol = this.getColNumberCreatePages("Page TriplePerformance");
+        const templateNameCol = this.getColNumberCreatePages("Template");
+
+        const tripleperformanceURL = getTriplePerformanceURL();
+
+        values.forEach((row, rowIndex) => {
+
+            const title = fixTitle(row[0]);
+            
+            const status = row[statusCol - 1];
+            const imageURL = row[imageURLCol - 1];
+            const imageTP = row[imageTPCol - 1];
+            const templateName = row[templateNameCol - 1];
+           
+            let imageFileName = '';
+
+            if (status != 'a' && status != 'u')
+                return;
+            let params = new Map();
+            
+            if (imageURL.length > 0 && imageTP.length == 0) {
+                // Upload the image
+
+                let apiTools = getApiTools();
+
+                // Find the URL for this thumbnail
+                const imageFileName = `Illustration ${title}.jpg`;
+                let comment = `Image accompagnant la page [[${title}]]`;
+                let text = `Image originale : ${imageURL}`;
+    
+                Logger.log("Uploading thumbnail for " + title + " from " + imageURL + " to File:" + imageFileName);
+                apiTools.uploadImage(imageURL, imageFileName, comment, text);
+                
+                // Add the parameter to the template
+                params.set('Image', imageFileName);
+                
+                // Update the spreadsheet
+                let content = getHyperlinkedTitle(tripleperformanceURL, 'File:' + imageFileName, imageFileName);
+                sheet.getRange(rowIndex + startRow + 1, imageRenduCol, 1, 2).setValues([["=IMAGE(\""+imageURL+"\")", content]]);
+            }
+
+            templateParameters.forEach((paramName, colIndex) => {
+                const paramValue = String(row[colIndex + statusCol]).trim();
+                
+                if (paramValue.length == 0)
+                    return;
+
+                params.set(paramName, paramValue);
+            });
+            
+            const wikipage = new wikiPage();
+            const apiTools = getApiTools();
+            let pageContent = apiTools.getPageContent(title);
+
+            if (status == 'a') {
+                // Create the page
+ 
+                // Check if a page doesn't exist with the same title already, if yes, ask to change the course title
+                if (pageContent) {
+                    // the page already exists. Abord and set the status to Error
+                    let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), title);
+
+                    sheet.getRange(rowIndex + startRow + 1, pageTPCol, 1, 2).setValues([[cellcontent, 'La page existe déjà !']]);
+                    return;
+                }
+
+                pageContent = wikipage.updateTemplate(templateName, params, pageContent);
+
+                pageContent += "\n\n\n\n{{Pages liées}}";
+
+                apiTools.createWikiPage(title, pageContent, "Création de la page (Spreadsheet Add-On)");
+
+                let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), title);
+                sheet.getRange(rowIndex + startRow + 1, pageTPCol, 1, 2).setValues([[cellcontent, 'x']]);
+
+            } else if (status == 'u') {
+
+                // Update the template
+                pageContent = wikipage.updateTemplate(templateName, params, pageContent);
+
+                apiTools.createWikiPage(title, pageContent, "Mise à jour des valeurs de la page (Spreadsheet Add-On)");
+
+                let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), title);
+                sheet.getRange(rowIndex + startRow + 1, statusCol).setValue('x');
+            }
+            
+        });
+
+        alert("Terminé");        
     }
     
     addKeywordsToPages() {
@@ -267,6 +384,11 @@ class BatchProcessingytModel {
             if (col[4])
                 sheet.getRange(2, colNumber + 1, 900, 1).setFontWeight("bold");
         });
+
+        const statusCol = this.getColNumberCreatePages("Statut (a/u/x)");
+
+        var range = sheet.getRange(2, statusCol, 900, 1);
+        setConditionalFormatingYN(range);
 
         return sheet;
     }

@@ -53,8 +53,7 @@ function updateTrainingCoursesSpeakersList() {
 function fetchVideosFromYouTubeChannel() {
     Logger.log("fetchVideosFromYouTubeChannel")
     let youTube = new YoutubeModel();
-    //youTube.fetchVideosFromYouTube();
-    youTube.fetchNewVideos();
+    youTube.fetchVideosFromYouTube();
 }
 
 function fetchVideosDetailsFromYouTubeChannel() {

@@ -136,7 +136,7 @@ class wikiPage {
                 new_args.set(key, paramName + " = " + paramValue);
             });
 
-            return pageContent + "\n\n" + this.buildTemplateFromMap(templateName, new_args);
+            return pageContent + this.buildTemplateFromMap(templateName, new_args);
         }
         else {
             let new_args = new Map();
@@ -162,12 +162,13 @@ class wikiPage {
                 });
             }
 
+            // If one of the new params is a Tag, then clear all 
+            // the existing tags to override with the new ones only
             newParams.forEach((paramValue, paramName) => {
                 let key = paramName.toLowerCase();
 
                 if (key.match(/tag [0-9]+/)) {
                     // Remove all existing tags
-                    //map1.delete('bar')
                     new_args.forEach((param, existingkey) => {
                         if (existingkey.match(/tag [0-9]+/))
                             new_args.delete(existingkey);
@@ -175,6 +176,7 @@ class wikiPage {
                 }
             });
 
+            // Now add or replace the params with the new values
             newParams.forEach((paramValue, paramName) => {
                 let key = paramName.toLowerCase();
                 new_args.set(key, paramName + " = " + paramValue);

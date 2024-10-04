@@ -217,10 +217,11 @@ function removeTrigger()
 function setConditionalFormatingYN(range) {
 
     let conditions = [
-        ['o', "#B7E1CD"],
-        ['x', "#B7E1CD"],
-        ['n', "#F4C7C3"],
-        ['a', "#fce8b2"]
+        ['o', "#B7E1CD"], // Ok
+        ['x', "#B7E1CD"], // Imported, don't do nothing
+        ['n', "#F4C7C3"], // Do not import, ever
+        ['a', "#fce8b2"], // Add to wiki (will fail if already there)
+        ['u', "#fce8b2"], // Force Update (yellow)
     ];
 
     let sheet = range.getSheet();
@@ -237,4 +238,34 @@ function setConditionalFormatingYN(range) {
     });
 
     sheet.setConditionalFormatRules(rules);
+}
+
+
+function fixTitle(title)
+{
+  // Remove cariage returns from the title:
+  title = title.replace(/[\r\n]/m, '');
+
+  // Fix the title in order to move the episode number to the end:
+  let matches = title.match(/^([0-9]+\/[0-9]+)[ -]+(.*)/);
+  if (matches)
+      title = matches[2].replace(/^[ -]+/, '') + ' - ' + matches[1];
+
+  // Remove any parts at the begining between parenthesis
+  title = title.replace(/^\([^\)]+\)/, '');
+  title = title.replace(/^\[[^\]]+\]/, '');
+  title = title.replace(/^[ -#]+/, '');
+  title = title.replace(/[ -#]+$/, '');
+
+  title = title.replace('’', "'");
+  title = title.replace('…', "...");
+  title = title.replace('é', "é");
+  title = title.replace('è', "è");
+  title = title.replace('à', "à");
+  title = title.replace('à', "à");
+  title = title.replace('É', "É");
+  title = title.replace('–', "-");
+  title = title.replace('@', " - ");
+
+  return title;
 }

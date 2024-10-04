@@ -2,8 +2,6 @@
 class YoutubeModel {
     constructor() {
 
-        this.startTime = new Date();
-
         this.rowIndexForYoutubeId = new Map();
 
         this.columns = [
@@ -81,31 +79,6 @@ class YoutubeModel {
         Logger.log(newVideosIds.length + " nouvelles videos trouvées");
     }
     
-    fetchNewVideos() {
-        Logger.log('fetchNewVideos');
-
-        // Remove any existing trigger first
-        removeTrigger();
-        this.getYouTubeTabsNames();
-
-        // Proceed !
-        onFetchNewVideos();
-    }
-    
-    /**
-     * Fetch video details for all tabs, using triggers
-     */
-    fetchVideoDetails() {
-
-        Logger.log('fetchVideoDetails');
-
-        // Remove any existing trigger first
-        removeTrigger();
-        this.getYouTubeTabsNames();
-
-        onFetchVideosDetails();
-    }
-    
     /**
      * Get all pages that have a video on Triple Performance 
      * and check that the videos in the page are already there or not
@@ -123,7 +96,7 @@ class YoutubeModel {
         // Build a map with id --> page
         let wikiPages = new Map(pagesWithVideos.map(page => {
             let pageTitle = page[0];
-            let url = page[1];
+            let url = String(page[1]);
             let id = '';
 
             var match = url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
@@ -191,86 +164,26 @@ class YoutubeModel {
     pushThumbnailsToWiki() {
         Logger.log('pushThumbnailsToWiki');
 
-        // Remove any existing trigger first
-        removeTrigger();
-        this.getYouTubeTabsNames();
+        let sheet = SpreadsheetApp.getActiveSheet();
 
-        onPushThumbnailsToWiki();
+        this.pushThumbnailsToWikiForSheet(sheet);
     }
 
     pushYoutubePagesToWiki() {
         Logger.log('pushYoutubePagesToWiki');
 
-        // Remove any existing trigger first
-        removeTrigger();
-        this.getYouTubeTabsNames();
+        let sheet = SpreadsheetApp.getActiveSheet();
 
-        onPushYoutubePagesToWiki();
+        this.pushYoutubePagesToWikiForSheet(sheet);
     }
 
-    getNextTabInQueue()
+    fetchDetailsFromYoutube()
     {
-        const documentProperties = PropertiesService.getDocumentProperties();
-        const tabs = documentProperties.getProperty('queuedTabsForTrigger');
-        let tabNames = tabs.split('|');
-    
-        if (tabNames.length == 0)
-        {
-            // We are done, kill the trigger and exit
-            removeTrigger();
-            return false;
-        }
-
-        Logger.log("Get next tab in queue : " + tabNames[0]);
-
-        return tabNames[0];
+        let sheet = SpreadsheetApp.getActiveSheet();
+        this.fetchVideosDetailsForTab(sheet);
+        alert(`Détail des vidéos récupéré (relancer la commande si plus de 50 vidéos)`);
     }
-
-    shiftQueue()
-    {
-        const documentProperties = PropertiesService.getDocumentProperties();
-        const tabs = documentProperties.getProperty('queuedTabsForTrigger');
-        let tabNames = tabs.split('|');
-    
-        if (tabNames.length == 0)
-            return false;
-
-        tabNames.shift();
-        documentProperties.setProperty('queuedTabsForTrigger', tabNames.join('|'));
-        Logger.log("shifting queue. New queue is : " + tabNames.join(', '));
-
-        if (tabNames.length == 0)
-            return false;
-        
-        return tabNames[0];
-    }
-
-    getYouTubeTabsNames() {
-        const self = this;
-
-        let tabNames = [];
-
-        var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
-        sheets.forEach((sheet) => {
-            
-            let channelId = self.getSheetsChannelID(sheet);
-            let playlistId = self.getSheetsPlaylistID(sheet);
-
-            if (!channelId && !playlistId)
-                return;
-
-            tabNames.push(sheet.getName());
-        });
-
-        PropertiesService.getDocumentProperties().setProperty('queuedTabsForTrigger', tabNames.join('|'));
-    }
-
-    checkTime() {
-        Logger.log("checkTime " + this.startTime + new Date());
-        if (new Date().getTime() - this.startTime.getTime() > 43000) // 45 seconds from start of the script
-            throw("time up");
-    }
-    
+       
     fetchVideosDetailsForTab(sheet) {
 
         Logger.log("fetchVideosDetailsForTab");
@@ -319,13 +232,6 @@ class YoutubeModel {
         this.fetchDetailsForVideoIDs(ids, sheet);
     }
 
-    fetchDetailsFromYoutube()
-    {
-        let sheet = SpreadsheetApp.getActiveSheet();
-        this.fetchVideosDetailsForTab(sheet);
-        alert(`Détail des vidéos récupéré (relancer la commande si plus de 50 vidéos)`);
-    }
-    
     /**
      * From an array of ids, returns details for each video in a map
      * @param {*} ids 
@@ -342,8 +248,6 @@ class YoutubeModel {
         let self = this;
         
         vids.forEach((v) => { 
-
-            self.checkTime();
 
             let duration = v.contentDetails.duration; // PT5M45S
             let minutes = 0;
@@ -372,7 +276,7 @@ class YoutubeModel {
                 v.contentDetails.caption,
                 v.statistics.viewCount,
                 v.statistics.commentCount,
-                self.fixTitle(v.snippet.title),
+                fixTitle(v.snippet.title),
                 self.getRelevantDescription(v.snippet.description),
                 self.getProductionFromTitle(v.snippet.title),
                 self.getIntervenantFromTitle(v.snippet.title).join(', ')
@@ -402,8 +306,6 @@ class YoutubeModel {
         const self = this;
 
         data.getValues().forEach((row, rowIndex) => {
-
-            self.checkTime();
 
             let video = this.getVideoFromRow(row);
    
@@ -440,8 +342,6 @@ class YoutubeModel {
         const self = this;
 
         data.getValues().forEach((row, rowIndex) => {
-            self.checkTime();
-
             let video = this.getVideoFromRow(row);
    
             if (video.videoID.length != 11)
@@ -468,8 +368,6 @@ class YoutubeModel {
                 sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
                 return;
             }
-
-            self.checkTime();
 
             // if not found, create it
             let params = new Map();
@@ -758,35 +656,6 @@ class YoutubeModel {
         return description;
     }
 
-    fixTitle(title)
-    {
-      // Remove cariage returns from the title:
-      title = title.replace(/[\r\n]/m, '');
-    
-      // Fix the title in order to move the episode number to the end:
-      let matches = title.match(/^([0-9]+\/[0-9]+)[ -]+(.*)/);
-      if (matches)
-          title = matches[2].replace(/^[ -]+/, '') + ' - ' + matches[1];
-    
-      // Remove any parts at the begining between parenthesis
-      title = title.replace(/^\([^\)]+\)/, '');
-      title = title.replace(/^\[[^\]]+\]/, '');
-      title = title.replace(/^[ -#]+/, '');
-      title = title.replace(/[ -#]+$/, '');
-    
-      title = title.replace('’', "'");
-      title = title.replace('…', "...");
-      title = title.replace('é', "é");
-      title = title.replace('è', "è");
-      title = title.replace('à', "à");
-      title = title.replace('à', "à");
-      title = title.replace('É', "É");
-      title = title.replace('–', "-");
-      title = title.replace('@', " - ");
-
-      return title;
-    }
-
     getProductionFromTitle(title)
     {
         if (title.match(/[ée]levage/i))
@@ -845,17 +714,6 @@ class YoutubeModel {
     {
       return str[0].toUpperCase() + str.slice(1).toLowerCase();
     }    
-
-    getSheetByName(sheetName)
-    {
-        let spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-
-        let sheet = spreadsheet.getSheetByName(sheetName);
-        if (!sheet)
-            Throw (`Tab ${sheetName} not found...?`);
-
-        return sheet;
-    }
 
 
 }
