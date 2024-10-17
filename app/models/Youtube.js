@@ -347,7 +347,7 @@ class YoutubeModel {
             if (video.videoID.length != 11)
                 return; // Not a video
             
-            if (video.okForWiki !== "o")
+            if (video.okForWiki !== "o" && video.okForWiki !== "f") //  f for force - will overwrite the existing page !
                 return; // Not ok to push
 
             // if the video page is set (col in the excel), just skip (don't update)
@@ -358,7 +358,7 @@ class YoutubeModel {
 
             // if the page is not set, try to find the page using the youtube URL
             let pages = apiTools.getPagesWithForSemanticQuery("[[A une URL de vidéo::" + video.url + "]]");
-            if (pages.length > 0)
+            if (video.okForWiki !== "f" && pages.length > 0)
             {
                 let pageTitle = pages[0];
 

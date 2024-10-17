@@ -11,7 +11,7 @@ function addYoutubePlaylistTab() {
 
 function fetchNewVideos() {
     let ytModel = new YoutubeModel();
-    ytModel.fetchNewVideos();
+    ytModel.fetchVideosFromYouTube();
 }
 
 function card_buildYoutubeCard() {

@@ -30,8 +30,30 @@ function parametersbuildCard() {
 
     const availableURLs = [
         'https://wiki.tripleperformance.fr/', 
-        'https://en.tripleperformance.ag/'
+        'https://en.tripleperformance.ag/',
+        'https://de.tripleperformance.ag/',
+        'https://es.tripleperformance.ag/',
+        'https://fi.tripleperformance.ag/',
+        'https://el.tripleperformance.ag/',
+        'https://hu.tripleperformance.ag/',
+        'https://it.tripleperformance.ag/',
+        'https://nl.tripleperformance.ag/',
+        'https://pl.tripleperformance.ag/',
+        'https://pt.tripleperformance.ag/',
+
+        'https://wiki.preprod.tripleperformance.fr/', 
+        'https://en.preprod.tripleperformance.ag/',
+        'https://de.preprod.tripleperformance.ag/',
+        'https://es.preprod.tripleperformance.ag/',
+        'https://fi.preprod.tripleperformance.ag/',
+        'https://el.preprod.tripleperformance.ag/',
+        'https://hu.preprod.tripleperformance.ag/',
+        'https://it.preprod.tripleperformance.ag/',
+        'https://nl.preprod.tripleperformance.ag/',
+        'https://pl.preprod.tripleperformance.ag/',
+        'https://pt.preprod.tripleperformance.ag/'
     ];
+
     let cardSection1TextParagraphTitle = CardService.newTextParagraph()
         .setText('<b>Paramètres</b>');
 
