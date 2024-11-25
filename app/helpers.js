@@ -151,7 +151,7 @@ function getApiTools(language) {
     if (!parameters.checkSecrets())
         return null;
 
-    if (language.length == 0)
+    if (!language || language.length == 0)
         url = parameters.secrets().wikiURL;
     else
         url = "https://" + language + ".tripleperformance.ag/";
@@ -163,7 +163,7 @@ var triplePerformanceURL = "";
 
 function getTriplePerformanceURL(language)
 {
-    if (language.length > 0)
+    if (language && language.length > 0)
         return "https://" + language + ".tripleperformance.ag/";
 
     if (triplePerformanceURL.length > 0)
@@ -174,10 +174,7 @@ function getTriplePerformanceURL(language)
     if (!parameters.checkSecrets())
         return;
         
-    if (language.length == 0)
-        triplePerformanceURL = parameters.secrets().wikiURL;
-    else
-        triplePerformanceURL = "https://" + language + ".tripleperformance.ag/";
+    triplePerformanceURL = parameters.secrets().wikiURL;
 
     return triplePerformanceURL;
 }
