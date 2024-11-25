@@ -18,6 +18,7 @@ function card_onHomepage(event) {
             .addItem("Pousser les vidéos vers Triple Performance", 'pushVideosToTriplePerformance')
             .addItem("Mettre à jour la liste des intervenants", 'updateYoutubeSpeakersList')
             .addItem("Pousser les intervenants vers Triple Performance", 'pushSpeakersToTriplePerformance')
+            .addItem("Récupérer la langue des vidéos", 'fetchVideosLanguage')
         )
         .addSubMenu(ui.createMenu('Traitements en lots')
             .addItem("Créer des pages avec une template", 'createPagesWithTemplate')
@@ -84,6 +85,12 @@ function updateYoutubeSpeakersList() {
     Logger.log("updateYoutubeSpeakersList")
     let youTube = new YoutubeModel();
     youTube.buildSpeakersList();
+}
+
+function fetchVideosLanguage() {
+    Logger.log("fetchVideosLanguage")
+    let youTube = new YoutubeModel();
+    youTube.fetchVideosLanguage();
 }
 
 function pushSpeakersToTriplePerformance() {

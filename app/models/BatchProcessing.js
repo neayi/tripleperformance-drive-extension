@@ -371,23 +371,23 @@ class BatchProcessingytModel {
 
         sheet.setFrozenRows(1);
 
-        sheet.setRowHeightsForced(2, 900, 70);
-        sheet.getRange(2, 1, 900, sheet.getMaxColumns()).setVerticalAlignment("middle");
+        sheet.setRowHeightsForced(2, sheet.getMaxRows() - 1, 70);
+        sheet.getRange(2, 1, sheet.getMaxRows() - 1, sheet.getMaxColumns()).setVerticalAlignment("middle");
 
         // Wrap the description cols
         this.columnsCreatePagesDefinitions.forEach((col, colNumber) => {
             sheet.setColumnWidth(colNumber + 1, col[1]);
-            sheet.getRange(2, colNumber + 1, 900, 1)
+            sheet.getRange(2, colNumber + 1, sheet.getMaxRows() - 1, 1)
                 .setHorizontalAlignment(col[2])
                 .setWrap(col[3]);
 
             if (col[4])
-                sheet.getRange(2, colNumber + 1, 900, 1).setFontWeight("bold");
+                sheet.getRange(2, colNumber + 1, sheet.getMaxRows() - 1, 1).setFontWeight("bold");
         });
 
         const statusCol = this.getColNumberCreatePages("Statut (a/u/x)");
 
-        var range = sheet.getRange(2, statusCol, 900, 1);
+        var range = sheet.getRange(2, statusCol, sheet.getMaxRows() - 1, 1);
         setConditionalFormatingYN(range);
 
         return sheet;
@@ -401,20 +401,20 @@ class BatchProcessingytModel {
 
         sheet.setFrozenRows(1);
 
-        sheet.getRange(2, 1, 900, sheet.getMaxColumns()).setVerticalAlignment("middle");
+        sheet.getRange(2, 1, sheet.getMaxRows() - 1, sheet.getMaxColumns()).setVerticalAlignment("middle");
 
         // Wrap the description cols
         this.columnsAddKeywordsDefinitions.forEach((col, colNumber) => {
             sheet.setColumnWidth(colNumber + 1, col[1]);
-            sheet.getRange(2, colNumber + 1, 900, 1)
+            sheet.getRange(2, colNumber + 1, sheet.getMaxRows() - 1, 1)
                 .setHorizontalAlignment(col[2])
                 .setWrap(col[3]);
 
             if (col[4])
-                sheet.getRange(2, colNumber + 1, 900, 1).setFontWeight("bold");
+                sheet.getRange(2, colNumber + 1, sheet.getMaxRows() - 1, 1).setFontWeight("bold");
         });
 
-        var range = sheet.getRange(2, 2, 900, 20);
+        var range = sheet.getRange(2, 2, sheet.getMaxRows() - 1, 20);
         setConditionalFormatingYN(range);
 
         return sheet;
@@ -428,20 +428,20 @@ class BatchProcessingytModel {
 
         sheet.setFrozenRows(1);
 
-        sheet.getRange(2, 1, 900, sheet.getMaxColumns()).setVerticalAlignment("middle");
+        sheet.getRange(2, 1, sheet.getMaxRows() - 1, sheet.getMaxColumns()).setVerticalAlignment("middle");
 
         // Wrap the description cols
         this.columnsInsertCodeDefinitions.forEach((col, colNumber) => {
             sheet.setColumnWidth(colNumber + 1, col[1]);
-            sheet.getRange(2, colNumber + 1, 900, 1)
+            sheet.getRange(2, colNumber + 1, sheet.getMaxRows() - 1, 1)
                 .setHorizontalAlignment(col[2])
                 .setWrap(col[3]);
 
             if (col[4])
-                sheet.getRange(2, colNumber + 1, 900, 1).setFontWeight("bold");
+                sheet.getRange(2, colNumber + 1, sheet.getMaxRows() - 1, 1).setFontWeight("bold");
         });
 
-        sheet.getRange(2, 2, 900, 1).setFontFamily("Code");
+        sheet.getRange(2, 2, sheet.getMaxRows() - 1, 1).setFontFamily("Code");
 
         return sheet;
     }
@@ -454,19 +454,19 @@ class BatchProcessingytModel {
 
         sheet.setFrozenRows(1);
 
-        sheet.getRange(2, 1, 900, sheet.getMaxColumns()).setVerticalAlignment("middle");
+        sheet.getRange(2, 1, sheet.getMaxRows() - 1, sheet.getMaxColumns()).setVerticalAlignment("middle");
 
         this.columnsSearchDefinitions.forEach((col, colNumber) => {
             sheet.setColumnWidth(colNumber + 1, col[1]);
-            sheet.getRange(2, colNumber + 1, 900, 1)
+            sheet.getRange(2, colNumber + 1, sheet.getMaxRows() - 1, 1)
                 .setHorizontalAlignment(col[2])
                 .setWrap(col[3]);
 
             if (col[4])
-                sheet.getRange(2, colNumber + 1, 900, 1).setFontWeight("bold");
+                sheet.getRange(2, colNumber + 1, sheet.getMaxRows() - 1, 1).setFontWeight("bold");
         });
 
-        setConditionalFormatingYN(sheet.getRange(2, 3, 900, 20));
+        setConditionalFormatingYN(sheet.getRange(2, 3, sheet.getMaxRows() - 1, 20));
 
         return sheet;
     }

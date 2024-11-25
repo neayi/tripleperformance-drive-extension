@@ -145,19 +145,27 @@ function htmlStyleRtRun(richTextRun) {
     return formattedText;
 }
 
-function getApiTools() {
+function getApiTools(language) {
     let parameters = new tp_parameters();
     parameters.loadSecrets();
     if (!parameters.checkSecrets())
         return null;
 
-    return new api_tools(parameters.secrets().wikiURL, parameters.secrets().username, parameters.secrets().password);
+    if (language.length == 0)
+        url = parameters.secrets().wikiURL;
+    else
+        url = "https://" + language + ".tripleperformance.ag/";
+
+    return new api_tools(url, parameters.secrets().username, parameters.secrets().password);
 }
 
 var triplePerformanceURL = "";
 
-function getTriplePerformanceURL()
+function getTriplePerformanceURL(language)
 {
+    if (language.length > 0)
+        return "https://" + language + ".tripleperformance.ag/";
+
     if (triplePerformanceURL.length > 0)
         return triplePerformanceURL;
 
@@ -166,7 +174,10 @@ function getTriplePerformanceURL()
     if (!parameters.checkSecrets())
         return;
         
-    triplePerformanceURL = parameters.secrets().wikiURL;
+    if (language.length == 0)
+        triplePerformanceURL = parameters.secrets().wikiURL;
+    else
+        triplePerformanceURL = "https://" + language + ".tripleperformance.ag/";
 
     return triplePerformanceURL;
 }
@@ -266,6 +277,7 @@ function fixTitle(title)
   title = title.replace('É', "É");
   title = title.replace('–', "-");
   title = title.replace('@', " - ");
+  title = title.replace('|', "-");
 
   return title;
 }

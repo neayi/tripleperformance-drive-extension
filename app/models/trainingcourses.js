@@ -328,22 +328,22 @@ class TrainingCourseModel {
 
         this.colDefs.forEach((col, colNumber) => {
             sheet.setColumnWidth(colNumber + 1, col[1]);
-            sheet.getRange(1, colNumber + 1, 900, 1)
+            sheet.getRange(1, colNumber + 1, sheet.getMaxRows(), 1)
                 .setHorizontalAlignment(col[2]);
         });
 
-        sheet.getRange(1, 1, 900, sheet.getMaxColumns())
+        sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns())
             .setVerticalAlignment("middle")
             .setWrap(true);
-        sheet.setRowHeightsForced(1, 900, 70);
+        sheet.setRowHeightsForced(1, sheet.getMaxRows(), 70);
 
-        sheet.getRange(2, this.getColNumber("URL"), 900, 1).setWrap(false);
-        sheet.getRange(2, this.getColNumber("URL Image"), 900, 1).setWrap(false);
+        sheet.getRange(2, this.getColNumber("URL"), sheet.getMaxRows() - 1, 1).setWrap(false);
+        sheet.getRange(2, this.getColNumber("URL Image"), sheet.getMaxRows() - 1, 1).setWrap(false);
 
-        sheet.getRange(2, this.getColNumber("Coût"), 900, 1)
+        sheet.getRange(2, this.getColNumber("Coût"), sheet.getMaxRows() - 1, 1)
             .setNumberFormat("#,##0 €");
 
-        var modalite = sheet.getRange(2, this.getColNumber("Modalité"), 900, 1);
+        var modalite = sheet.getRange(2, this.getColNumber("Modalité"), sheet.getMaxRows() - 1, 1);
         var rule = SpreadsheetApp.newDataValidation()
             .requireValueInList(
                 ["Présentiel",
@@ -357,10 +357,10 @@ class TrainingCourseModel {
             .build();
         modalite.setDataValidation(rule);
 
-        var fundableCells = sheet.getRange(2, this.getColNumber("Finançable VIVEA, OPCO"), 900, 3);
+        var fundableCells = sheet.getRange(2, this.getColNumber("Finançable VIVEA, OPCO"), sheet.getMaxRows() - 1, 3);
         setConditionalFormatingYN(fundableCells);
 
-        var forceUpdateRange = sheet.getRange(2, this.getColNumber("Mettre à jour le contenu éditorial"), 900, 1);
+        var forceUpdateRange = sheet.getRange(2, this.getColNumber("Mettre à jour le contenu éditorial"), sheet.getMaxRows() - 1, 1);
         setConditionalFormatingYN(forceUpdateRange);
 
         let speakM = new speakersModel();

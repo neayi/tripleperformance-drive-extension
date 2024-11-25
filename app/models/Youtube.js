@@ -6,7 +6,7 @@ class YoutubeModel {
 
         this.columns = [
             "ID", "URL", "ThumbnailURL", "Vignette", "Titre", "Description", "Producteur", "Date de mise en ligne", 
-            "Durée", "Sous-titres", "Vues", "Commentaires",
+            "Durée", "Sous-titres", "Vues", "Commentaires", "Langage",
             "Titre corrigé", "Description courte", "Production", "Intervenants", "Mots clés", "ok pour wiki",
             "thumbnail", "wiki", "Date de création de la page"
         ];
@@ -117,6 +117,7 @@ class YoutubeModel {
 
         // Check all the videos were the page name is empty and fill it if the map exists
         let sheet = SpreadsheetApp.getActiveSheet();
+        this.updateSpreadsheetCols(sheet);
 
         let data = sheet.getDataRange();
         let startRow = data.getRow();
@@ -165,6 +166,7 @@ class YoutubeModel {
         Logger.log('pushThumbnailsToWiki');
 
         let sheet = SpreadsheetApp.getActiveSheet();
+        this.updateSpreadsheetCols(sheet);
 
         this.pushThumbnailsToWikiForSheet(sheet);
     }
@@ -173,6 +175,7 @@ class YoutubeModel {
         Logger.log('pushYoutubePagesToWiki');
 
         let sheet = SpreadsheetApp.getActiveSheet();
+        this.updateSpreadsheetCols(sheet);
 
         this.pushYoutubePagesToWikiForSheet(sheet);
     }
@@ -191,6 +194,8 @@ class YoutubeModel {
         const sheetName = sheet.getName();
         let data = sheet.getDataRange();
         let startRow = data.getRow();
+
+        this.updateSpreadsheetCols();
 
         const self = this;
 
@@ -263,7 +268,9 @@ class YoutubeModel {
             let thumbnailURL = v.snippet?.thumbnails?.maxres?.url;
             if (!thumbnailURL)
                 thumbnailURL = v.snippet?.thumbnails?.standard?.url;
-            
+            if (!thumbnailURL)
+                thumbnailURL = "https://i.ytimg.com/vi/" + v.id + "/hqdefault.jpg";
+
             let detail = [
                 "https://www.youtube.com/watch?v=" + v.id,
                 thumbnailURL,
@@ -276,6 +283,7 @@ class YoutubeModel {
                 v.contentDetails.caption,
                 v.statistics.viewCount,
                 v.statistics.commentCount,
+                '',
                 fixTitle(v.snippet.title),
                 self.getRelevantDescription(v.snippet.description),
                 self.getProductionFromTitle(v.snippet.title),
@@ -284,6 +292,64 @@ class YoutubeModel {
 
             this.setValuesForVideo(v.id, detail, sheet);
             SpreadsheetApp.flush();
+        });
+    }
+
+    fetchCaptions(videoId)
+    {
+        Logger.log("fetchCaptions " + videoId);
+
+        //let sr = YouTube.Captions.list('snippet', {videoId:videoId});
+        let sr = YouTube.Captions.list(['snippet'], videoId);
+
+        Logger.log(sr);
+        
+        let language = '';
+        sr.items.forEach(function (res) { 
+            if (res.snippet.trackKind == 'asr')
+                language = res.snippet.language;
+        });
+        
+        return language;
+    }
+
+    fetchVideosLanguage()
+    {
+        let sheet = SpreadsheetApp.getActiveSheet();
+
+        Logger.log("fetchVideosLanguage");
+
+        let data = sheet.getDataRange();
+        let startRow = data.getRow();
+
+        this.updateSpreadsheetCols(sheet);
+
+        let idFound = false;
+        const languageCol = this.getColNumber("Langage");
+
+        data.getValues().forEach((row, rowIndex) => {
+            if (!idFound && row[0] == this.columns[0])
+            {
+                idFound = true;
+                return;
+            }
+
+            if (!idFound)
+                return;
+
+            let video = this.getVideoFromRow(row);
+   
+            if (video.videoID.length != 11)
+                return;
+            
+            if (video.language.length > 0)
+                return; // the language details where already fetched for this video, skip
+            
+            let language = this.fetchCaptions(video.videoID);
+
+            if (language.length > 0) {
+                sheet.getRange(rowIndex + startRow, languageCol).setValue(language);
+            }
         });
     }
 
@@ -318,7 +384,7 @@ class YoutubeModel {
             if (video.okForWiki !== "o")
                 return; // Not to be pushed
 
-            let apiTools = getApiTools();
+            let apiTools = getApiTools(video.language);
 
             // Find the URL for this thumbnail
             const destName = `Thumbnail_youtube_${video.videoID}.jpg`;
@@ -327,7 +393,7 @@ class YoutubeModel {
             Logger.log("Getting thumbnail for " + video.videoID + " " + video.thumbnailURL + " " + destName);
             let ret = apiTools.uploadImage(video.thumbnailURL, destName, comment);
 
-            let content = getHyperlinkedTitle(getTriplePerformanceURL(), 'File:' + destName, destName);
+            let content = getHyperlinkedTitle(getTriplePerformanceURL(video.language), 'File:' + destName, destName);
             sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
             SpreadsheetApp.flush();
         });
@@ -354,7 +420,7 @@ class YoutubeModel {
             if (video.wiki.length > 0)
                 return; // Already on the wiki
 
-            let apiTools = getApiTools();
+            let apiTools = getApiTools(video.language);
 
             // if the page is not set, try to find the page using the youtube URL
             let pages = apiTools.getPagesWithForSemanticQuery("[[A une URL de vidéo::" + video.url + "]]");
@@ -363,7 +429,7 @@ class YoutubeModel {
                 let pageTitle = pages[0];
 
                 // if found, just set the page in the col and go the the next row
-                let content = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
+                let content = getHyperlinkedTitle(getTriplePerformanceURL(video.language), pageTitle);
 
                 sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
                 return;
@@ -401,7 +467,7 @@ class YoutubeModel {
             let pageTitle = video.fixedTitle;
             apiTools.createWikiPage(pageTitle, pageContent, "Création de la page");
 
-            let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
+            let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(video.language), pageTitle);
             sheet.getRange(rowIndex + startRow, wikiCol, 1, 2).setValues([[cellcontent, new Date()]]);
         });
     }
@@ -458,7 +524,7 @@ class YoutubeModel {
         let video = {};
         let [videoID, url, thumbnailURL, Vignette, title, 
             description, channelTitle, publishedAt, duration,
-            hasCaptions, viewCount, commentCount, fixedTitle, fixedDescription,
+            hasCaptions, viewCount, commentCount, language, fixedTitle, fixedDescription,
             mainProduction, speakers, tags, okForWiki, thumbnail, wiki, ...others] = row;
             
         video.videoID = videoID;
@@ -476,6 +542,7 @@ class YoutubeModel {
         video.hasCaptions = hasCaptions;
         video.viewCount = viewCount;
         video.commentCount = commentCount;
+        video.language = language;
         video.fixedTitle = fixedTitle;
         video.fixedDescription = fixedDescription;
         video.mainProduction = mainProduction;
@@ -541,27 +608,70 @@ class YoutubeModel {
         let sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
 
         sheet.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight("bold");
-        sheet.getRange(3, 1, 1, this.columns.length).setValues([this.columns]).setFontWeight("bold");
+
+        this.updateSpreadsheetCols(sheet);
+
+        return sheet;
+    }
+
+    /**
+     * Checks the list of cols in the current tab and create the missing ones
+     */
+    updateSpreadsheetCols(sheet = null)
+    {
+        if (sheet == null)
+            sheet = SpreadsheetApp.getActiveSheet();
+
+        // Get the current list of cols
+        let colHeaderRow = sheet.getRange(3, 1, 1, this.columns.length);
+        let currentCols = colHeaderRow.getValues();
+
+        // If all the currentCols are blank, just insert the new cols and go on with it
+        let colsAreBlank = currentCols[0].join('').length == 0;
+
+        if (colsAreBlank) {
+            colHeaderRow.setValues([this.columns]);
+        } else {
+            let colsAreOk = false;
+            while (!colsAreOk) {
+                colsAreOk = true;
+
+                for (let index = 0; index < currentCols[0].length; index++) {
+                    const currentColName = currentCols[0][index];
+                    
+                    if (this.columns[index] != currentColName) {
+                        // Insert a col and give it the right name
+                        colsAreOk = false;
+                        sheet.insertColumns(index + 1);
+                        sheet.getRange(3, index + 1).setValue(this.columns[index]);
+                        colHeaderRow = sheet.getRange(3, 1, 1, this.columns.length);
+                        currentCols = colHeaderRow.getValues();  
+                    }
+                }
+            }    
+        }
+
+        colHeaderRow.setFontWeight("bold");
 
         sheet.setFrozenRows(3);
         sheet.setFrozenColumns(4);      
 
-        sheet.setRowHeightsForced(4, 900, 70);
-        sheet.getRange(4, 1, 900, sheet.getMaxColumns()).setVerticalAlignment("middle");
+        sheet.setRowHeightsForced(4, sheet.getMaxRows() - 3, 70);
+        sheet.getRange(4, 1, sheet.getMaxRows(), sheet.getMaxColumns()).setVerticalAlignment("middle");
 
         // Wrap the description cols
-        sheet.getRange(4, this.getColNumber("Titre"), 900, 1).setWrap(true).setFontWeight("bold");
-        sheet.getRange(4, this.getColNumber("Description"), 900, 1).setWrap(true);
-        sheet.getRange(4, this.getColNumber("Titre corrigé"), 900, 1).setWrap(true).setFontWeight("bold");
-        sheet.getRange(4, this.getColNumber("Description courte"), 900, 1).setWrap(true);
-        sheet.getRange(4, this.getColNumber("Intervenants"), 900, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Titre"), sheet.getMaxRows() - 3, 1).setWrap(true).setFontWeight("bold");
+        sheet.getRange(4, this.getColNumber("Description"), sheet.getMaxRows() - 3, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Titre corrigé"), sheet.getMaxRows() - 3, 1).setWrap(true).setFontWeight("bold");
+        sheet.getRange(4, this.getColNumber("Description courte"), sheet.getMaxRows() - 3, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Intervenants"), sheet.getMaxRows() - 3, 1).setWrap(true);
         sheet.setColumnWidth(this.getColNumber("Titre"), 300);
         sheet.setColumnWidth(this.getColNumber("Description"), 300);
         sheet.setColumnWidth(this.getColNumber("Titre corrigé"), 300);
         sheet.setColumnWidth(this.getColNumber("Description courte"), 300);
         sheet.setColumnWidth(this.getColNumber("Intervenants"), 300);
 
-        var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), 900, 1).setHorizontalAlignment("center");
+        var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), sheet.getMaxRows() - 3, 1).setHorizontalAlignment("center");
         setConditionalFormatingYN(range);
         
         return sheet;
@@ -600,22 +710,22 @@ class YoutubeModel {
         sheet.setFrozenRows(3);
         sheet.setFrozenColumns(4);      
 
-        sheet.setRowHeightsForced(4, 900, 70);
-        sheet.getRange(4, 1, 900, sheet.getMaxColumns()).setVerticalAlignment("middle");
+        sheet.setRowHeightsForced(4, sheet.getMaxRows() - 3, 70);
+        sheet.getRange(4, 1, sheet.getMaxRows() - 3, sheet.getMaxColumns()).setVerticalAlignment("middle");
 
         // Wrap the description cols
-        sheet.getRange(4, this.getColNumber("Titre"), 900, 1).setWrap(true).setFontWeight("bold");
-        sheet.getRange(4, this.getColNumber("Description"), 900, 1).setWrap(true);
-        sheet.getRange(4, this.getColNumber("Titre corrigé"), 900, 1).setWrap(true).setFontWeight("bold");
-        sheet.getRange(4, this.getColNumber("Description courte"), 900, 1).setWrap(true);
-        sheet.getRange(4, this.getColNumber("Intervenants"), 900, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Titre"), sheet.getMaxRows() - 3, 1).setWrap(true).setFontWeight("bold");
+        sheet.getRange(4, this.getColNumber("Description"), sheet.getMaxRows() - 3, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Titre corrigé"), sheet.getMaxRows() - 3, 1).setWrap(true).setFontWeight("bold");
+        sheet.getRange(4, this.getColNumber("Description courte"), sheet.getMaxRows() - 3, 1).setWrap(true);
+        sheet.getRange(4, this.getColNumber("Intervenants"), sheet.getMaxRows() - 3, 1).setWrap(true);
         sheet.setColumnWidth(this.getColNumber("Titre"), 300);
         sheet.setColumnWidth(this.getColNumber("Description"), 300);
         sheet.setColumnWidth(this.getColNumber("Titre corrigé"), 300);
         sheet.setColumnWidth(this.getColNumber("Description courte"), 300);
         sheet.setColumnWidth(this.getColNumber("Intervenants"), 300);
 
-        var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), 900, 1).setHorizontalAlignment("center");
+        var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), sheet.getMaxRows() - 3, 1).setHorizontalAlignment("center");
         setConditionalFormatingYN(range);
 
         return sheet;
