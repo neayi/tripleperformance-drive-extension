@@ -180,14 +180,14 @@ class YoutubeModel {
         this.pushYoutubePagesToWikiForSheet(sheet);
     }
 
-    fetchDetailsFromYoutube()
+    fetchDetailsFromYoutube(limit = 50)
     {
         let sheet = SpreadsheetApp.getActiveSheet();
-        this.fetchVideosDetailsForTab(sheet);
-        alert(`Détail des vidéos récupéré (relancer la commande si plus de 50 vidéos)`);
+        this.fetchVideosDetailsForTab(sheet, limit);
+        alert(`Détail des vidéos récupéré (relancer la commande si plus de ${limit} vidéos)`);
     }
        
-    fetchVideosDetailsForTab(sheet) {
+    fetchVideosDetailsForTab(sheet, limit) {
 
         Logger.log("fetchVideosDetailsForTab");
 
@@ -213,7 +213,7 @@ class YoutubeModel {
             if (!idFound)
                 return;
 
-            if (idCount >= 50)
+            if (idCount >= limit)
                 return;
 
             let video = this.getVideoFromRow(row);
@@ -234,7 +234,12 @@ class YoutubeModel {
         Logger.log("Fetching the following videos:");
         Logger.log(ids);
 
-        this.fetchDetailsForVideoIDs(ids, sheet);
+        const chunkSize = 40;
+        for (let i = 0; i < ids.length; i += chunkSize) {
+            const chunk = ids.slice(i, i + chunkSize);
+            // do whatever
+            this.fetchDetailsForVideoIDs(chunk, sheet);
+        }       
     }
 
     /**

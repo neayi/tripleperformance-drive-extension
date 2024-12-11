@@ -60,7 +60,7 @@ function fetchVideosFromYouTubeChannel() {
 function fetchVideosDetailsFromYouTubeChannel() {
     Logger.log("fetchVideosDetailsFromYouTubeChannel")
     let youTube = new YoutubeModel();
-    youTube.fetchDetailsFromYoutube();
+    youTube.fetchDetailsFromYoutube(800);
 }
 
 function checkVideosFromTriplePerformance() {
