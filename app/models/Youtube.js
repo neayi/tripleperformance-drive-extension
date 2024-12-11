@@ -380,14 +380,14 @@ class YoutubeModel {
             
             if (video.thumbnail.length > 0)
                 return; // Already on the wiki
-            
-            if (video.okForWiki !== "o")
+
+            if (video.okForWiki !== "o" && video.okForWiki !== "f") //  f for force - will overwrite the existing page !
                 return; // Not to be pushed
 
             let apiTools = getApiTools(video.language);
 
             // Find the URL for this thumbnail
-            const destName = `Thumbnail_youtube_${video.videoID}.jpg`;
+            const destName = self.getThumbnailFileName(video.videoID);
             let comment = `Image accompagnant la vidéo [[${video.fixedTitle}]]`;
 
             Logger.log("Getting thumbnail for " + video.videoID + " " + video.thumbnailURL + " " + destName);
@@ -437,13 +437,13 @@ class YoutubeModel {
 
             // if not found, create it
             let params = new Map();
-            params.set('Titre',         "Titre = " + video.fixedTitle);
-            params.set('Producteur',    "Producteur = " + video.channelTitle);
-            params.set('Vignette',      `Vignette = Thumbnail_youtube_${video.videoID}.jpg`);
-            params.set('Date de mise en ligne', `Date de mise en ligne = ${video.publishedAt}`);
-            params.set('Durée',         `Durée = ${video.duration} minutes`);
-            params.set('Production',    "Production = " + video.mainProduction);
-            params.set('Vidéo',         `Vidéo = https://www.youtube.com/watch?v=${video.videoID}`);
+            params.set('Titre',                 "Titre = " + video.fixedTitle);
+            params.set('Producteur',            "Producteur = " + video.channelTitle);
+            params.set('Vignette',              "Vignette = " + self.getThumbnailFileName(video.videoID));
+            params.set('Date de mise en ligne', "Date de mise en ligne = " + video.publishedAt);
+            params.set('Durée',                 "Durée = " + video.duration + " minutes");
+            params.set('Production',            "Production = " + video.mainProduction);
+            params.set('Vidéo',                 "Vidéo = https://www.youtube.com/watch?v=" + video.videoID);
             
             video.speakers.split(',').forEach((intervenant, i) => {
                 intervenant = intervenant.trim();
@@ -825,5 +825,8 @@ class YoutubeModel {
       return str[0].toUpperCase() + str.slice(1).toLowerCase();
     }    
 
-
+    getThumbnailFileName(youtubeID) {
+        // In wiki links, spaces and underscores are considered as spaces, and replaced with only one underscore
+        return 'Thumbnail_youtube_' + youtubeID.replace(/^_*/, '').replace(/_+/, '_').replace(/_$/, '') + '.jpg';
+    }
 }
