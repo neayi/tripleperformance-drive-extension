@@ -38,8 +38,8 @@ class wikiPage {
             if (parts.length == 1)
                 throw new Error("This template has unnamed parameters - cannot update");
 
-            let field = parts[0].trim();
-            let value = parts[1].trim();
+            let field = parts.shift().trim();
+            let value = parts.join('=').trim();
             new_args.set(field.toLowerCase(), field + " = " + value);
         });
 
@@ -156,8 +156,8 @@ class wikiPage {
                     if (parts.length == 1)
                         throw new Error("This template has unnamed parameters - cannot update");
 
-                    let field = parts[0].trim();
-                    let value = parts[1].trim();
+                    let field = parts.shift().trim();
+                    let value = parts.join('=').trim();
                     new_args.set(field.toLowerCase(), field + " = " + value);
                 });
             }
@@ -238,8 +238,8 @@ class wikiPage {
             if (anArg.includes('=')) {
                 let parts = anArg.split('=');
 
-                let field = parts[0].trim();
-                let value = parts[1].trim();
+                let field = parts.shift().trim();
+                let value = parts.join('=').trim();
                 args.set(field, value);
             }
             else
@@ -266,27 +266,8 @@ class wikiPage {
     insertKeywordInPage(pageContent, keyword) {
         Logger.log("insertKeywordInPage : " + keyword);
 
-        const lcKeyword = keyword.toLowerCase();
+throw new Error("This is broken, please fix with Mots Clés first");
 
-        const regex = /\|\s*Tag\s+([0-9]+)\s*=\s*([^|}]+)/gi;
-        const matches = pageContent.matchAll(regex);
-        const tagNumbers = [];
-        let newTagNumber = 0;
-        const keywords = [];
-
-        for (const match of matches) {
-            tagNumbers.push(parseInt(match[1], 10));
-            keywords.push(match[2].trim().toLowerCase());
-        }
-
-        if (tagNumbers.length > 0) {
-            newTagNumber = Math.max(...tagNumbers) + 1;
-
-            if (keywords.includes(lcKeyword)) {
-                Logger.log("Keyword already in page : " + keyword);
-                return pageContent;
-            }
-        }
 
         const templates = [
             "{{Auxiliaire",
@@ -304,47 +285,94 @@ class wikiPage {
             "{{Vidéo"
         ];
 
-        const templateRegex = new RegExp(templates.join('|'), 'i');
+        let self = this;
 
-        if (!templateRegex.test(pageContent)) {
-            const matches = pageContent.match(/{{\s*[^|}]+/g);
-            Logger.log("Compatible template not found.");
-            return pageContent;
-        }
+        templates.forEach(aTemplate, {
 
-        for (const template of templates) {
-            const templateRegex = new RegExp(template + '(\s*\|[^}]*)}}', 'i');
-            const matches = pageContent.match(templateRegex);
+            const self.getTemplateParams(pageContent, aTemplate);
 
-            if (!matches || matches.length == 0)
-                continue;
 
-            const args = matches[1].split('|').map(arg => arg.trim());
-            args.push(`Tag ${newTagNumber} = ${keyword}`);
+        });
+        
+        // const lcKeyword = keyword.toLowerCase();
 
-            const firstArgs = [];
-            const tagArgs = [];
+        // const regex = /\|\s*Tag\s+([0-9]+)\s*=\s*([^|}]+)/gi;
+        // const matches = pageContent.matchAll(regex);
+        // const tagNumbers = [];
+        // let newTagNumber = 0;
+        // const keywords = [];
 
-            for (const arg of args) {
-                if (arg.match(/Tag [0-9]+\s*=\s*$/)) {
-                    continue;
-                }
+        // for (const match of matches) {
+        //     tagNumbers.push(parseInt(match[1], 10));
+        //     keywords.push(match[2].trim().toLowerCase());
+        // }
 
-                if (arg.match(/Tag [0-9]+\s*=@/)) {
-                    tagArgs.push(arg);
-                } else {
-                    firstArgs.push(arg);
-                }
-            }
+        // if (tagNumbers.length > 0) {
+        //     newTagNumber = Math.max(...tagNumbers) + 1;
 
-            tagArgs.sort();
-            const sortedArgs = firstArgs.concat(tagArgs);
+        //     if (keywords.includes(lcKeyword)) {
+        //         Logger.log("Keyword already in page : " + keyword);
+        //         return pageContent;
+        //     }
+        // }
 
-            const newTemplate = `${template} ${sortedArgs.join('\n| ')} }}`;
-            pageContent = pageContent.replace(templateRegex, newTemplate);
+        // const templates = [
+        //     "{{Auxiliaire",
+        //     "{{Bioagresseur",
+        //     "{{Exemple de mise en oeuvre",
+        //     "{{Exemple de mise en œuvre",
+        //     "{{Formation",
+        //     "{{Livre",
+        //     "{{Matériel",
+        //     "{{Outil d'aide",
+        //     "{{Portrait de ferme",
+        //     "{{Pratique",
+        //     "{{Programme",
+        //     "{{Présentation",
+        //     "{{Vidéo"
+        // ];
 
-            break;
-        }
+        // const templateRegex = new RegExp(templates.join('|'), 'i');
+
+        // if (!templateRegex.test(pageContent)) {
+        //     const matches = pageContent.match(/{{\s*[^|}]+/g);
+        //     Logger.log("Compatible template not found.");
+        //     return pageContent;
+        // }
+
+        // for (const template of templates) {
+        //     const templateRegex = new RegExp(template + '(\s*\|[^}]*)}}', 'i');
+        //     const matches = pageContent.match(templateRegex);
+
+        //     if (!matches || matches.length == 0)
+        //         continue;
+
+        //     const args = matches[1].split('|').map(arg => arg.trim());
+        //     args.push(`Tag ${newTagNumber} = ${keyword}`);
+
+        //     const firstArgs = [];
+        //     const tagArgs = [];
+
+        //     for (const arg of args) {
+        //         if (arg.match(/Tag [0-9]+\s*=\s*$/)) {
+        //             continue;
+        //         }
+
+        //         if (arg.match(/Tag [0-9]+\s*=@/)) {
+        //             tagArgs.push(arg);
+        //         } else {
+        //             firstArgs.push(arg);
+        //         }
+        //     }
+
+        //     tagArgs.sort();
+        //     const sortedArgs = firstArgs.concat(tagArgs);
+
+        //     const newTemplate = `${template} ${sortedArgs.join('\n| ')} }}`;
+        //     pageContent = pageContent.replace(templateRegex, newTemplate);
+
+        //     break;
+        // }
 
         return pageContent;
     }
@@ -383,8 +411,8 @@ class wikiPage {
                     if (parts.length == 1)
                         return;
 
-                    let field = parts[0].trim().toLowerCase();
-                    let value = parts[1].trim().toLowerCase();
+                    let field = parts.shift().trim().toLowerCase();
+                    let value = parts.join('=').trim().toLowerCase();                    
                     if (field == 'title' && value == chartName) {
                         // Found !
                         originalChart = chart;
