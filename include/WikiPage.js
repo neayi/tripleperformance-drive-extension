@@ -269,30 +269,30 @@ class wikiPage {
 throw new Error("This is broken, please fix with Mots Clés first");
 
 
-        const templates = [
-            "{{Auxiliaire",
-            "{{Bioagresseur",
-            "{{Exemple de mise en oeuvre",
-            "{{Exemple de mise en œuvre",
-            "{{Formation",
-            "{{Livre",
-            "{{Matériel",
-            "{{Outil d'aide",
-            "{{Portrait de ferme",
-            "{{Pratique",
-            "{{Programme",
-            "{{Présentation",
-            "{{Vidéo"
-        ];
+        // const templates = [
+        //     "{{Auxiliaire",
+        //     "{{Bioagresseur",
+        //     "{{Exemple de mise en oeuvre",
+        //     "{{Exemple de mise en œuvre",
+        //     "{{Formation",
+        //     "{{Livre",
+        //     "{{Matériel",
+        //     "{{Outil d'aide",
+        //     "{{Portrait de ferme",
+        //     "{{Pratique",
+        //     "{{Programme",
+        //     "{{Présentation",
+        //     "{{Vidéo"
+        // ];
 
-        let self = this;
+        // let self = this;
 
-        templates.forEach(aTemplate, {
+        // templates.forEach(aTemplate, {
 
-            const self.getTemplateParams(pageContent, aTemplate);
+        //     const self.getTemplateParams(pageContent, aTemplate);
 
 
-        });
+        // });
         
         // const lcKeyword = keyword.toLowerCase();
 
