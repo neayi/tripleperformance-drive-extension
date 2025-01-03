@@ -457,7 +457,7 @@ class YoutubeModel {
                 params.set('Intervenants ' + i, `Intervenants ${i} = ${intervenant}`);
             });
             
-            params.set('Mots-clés', video.tags);
+            params.set('Mots-clés', 'Mots-clés = ' + video.tags);
 
             const wikipage = new wikiPage();
             let pageContent = wikipage.buildTemplateFromMap('vidéo', params);
