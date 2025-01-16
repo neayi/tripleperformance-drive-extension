@@ -5,7 +5,7 @@ class YoutubeModel {
         this.rowIndexForYoutubeId = new Map();
 
         this.columns = [
-            "ID", "URL", "ThumbnailURL", "Vignette", "Titre", "Description", "Producteur", "Date de mise en ligne", 
+            "ID", "URL", "ThumbnailURL", "Vignette", "Titre", "Description", "Producteur", "Date de mise en ligne",
             "Durée", "Sous-titres", "Vues", "Commentaires", "Langage",
             "Titre corrigé", "Description courte", "Production", "Intervenants", "Mots clés", "ok pour wiki",
             "thumbnail", "wiki", "Date de création de la page"
@@ -16,23 +16,23 @@ class YoutubeModel {
 
     /**
      * Get the missing IDs for the current channel and add them to the page
-     * 
-     * @returns 
+     *
+     * @returns
      */
     fetchVideosFromYouTube() {
         let sheet = SpreadsheetApp.getActiveSheet();
         this.fetchNewVideosForTab(sheet);
     }
-    
+
     fetchNewVideosForTab(sheet) {
         let ids  = [];
 
         let channelId = this.getSheetsChannelID(sheet);
         let playlistId = this.getSheetsPlaylistID(sheet);
 
-        if (channelId) 
+        if (channelId)
         {
-            let sr = YouTube.Search.list("id", { 
+            let sr = YouTube.Search.list("id", {
                 channelId: channelId,
                 maxResults: 50,
                 order: 'date' });
@@ -41,7 +41,7 @@ class YoutubeModel {
 
             ids = vids.map(function (v) { return v.id.videoId; });
         }
-        else if (playlistId) 
+        else if (playlistId)
         {
             let sr = YouTube.PlaylistItems.list("id,contentDetails,status", {
                     playlistId: playlistId,
@@ -49,17 +49,17 @@ class YoutubeModel {
                 });
 
             let vids = sr.items.filter(function (res) {
-                return res.kind === "youtube#playlistItem" && 
+                return res.kind === "youtube#playlistItem" &&
                        res.status?.privacyStatus === "public"
                 });
 
-            ids = vids.map(function (v) { return v.contentDetails.videoId; });              
+            ids = vids.map(function (v) { return v.contentDetails.videoId; });
         }
         else
         {
             return;
         }
-        
+
         if (ids.length == 0)
             return;
 
@@ -78,9 +78,9 @@ class YoutubeModel {
 
         Logger.log(newVideosIds.length + " nouvelles videos trouvées");
     }
-    
+
     /**
-     * Get all pages that have a video on Triple Performance 
+     * Get all pages that have a video on Triple Performance
      * and check that the videos in the page are already there or not
      */
     checkVideosFromTriplePerformance() {
@@ -90,9 +90,9 @@ class YoutubeModel {
         let apiTools = getApiTools();
 
         let pagesWithVideos = apiTools.getSemanticValuesWithForSemanticQuery(
-            "[[A une URL de vidéo::+]]", 
+            "[[A une URL de vidéo::+]]",
             ['A une URL de vidéo']);
-            
+
         // Build a map with id --> page
         let wikiPages = new Map(pagesWithVideos.map(page => {
             let pageTitle = page[0];
@@ -137,7 +137,7 @@ class YoutubeModel {
                 return;
 
             let video = this.getVideoFromRow(row);
-   
+
             if (video.videoID.length != 11)
                 return;
 
@@ -151,7 +151,7 @@ class YoutubeModel {
             if (pageTitle != undefined)
             {
                 let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
-                sheet.getRange(rowIndex + startRow, wikiCol, 1, 3).setValues([['o', '', cellcontent]]);    
+                sheet.getRange(rowIndex + startRow, wikiCol, 1, 3).setValues([['o', '', cellcontent]]);
             }
         });
 
@@ -160,7 +160,7 @@ class YoutubeModel {
 
     /**
      * Go through all the videos of the current sheet,
-     * check that the col 
+     * check that the col
      */
     pushThumbnailsToWiki() {
         Logger.log('pushThumbnailsToWiki');
@@ -186,7 +186,7 @@ class YoutubeModel {
         this.fetchVideosDetailsForTab(sheet, limit);
         alert(`Détail des vidéos récupéré (relancer la commande si plus de ${limit} vidéos)`);
     }
-       
+
     fetchVideosDetailsForTab(sheet, limit) {
 
         Logger.log("fetchVideosDetailsForTab");
@@ -217,13 +217,13 @@ class YoutubeModel {
                 return;
 
             let video = this.getVideoFromRow(row);
-   
+
             if (video.videoID.length != 11)
                 return;
-            
+
             if (video.url.length > 0)
                 return; // the details where already fetched for this video, skip
-            
+
             ids.push(video.videoID);
 
             self.rowIndexForYoutubeId.set(sheetName + video.videoID, rowIndex + startRow);
@@ -239,12 +239,12 @@ class YoutubeModel {
             const chunk = ids.slice(i, i + chunkSize);
             // do whatever
             this.fetchDetailsForVideoIDs(chunk, sheet);
-        }       
+        }
     }
 
     /**
      * From an array of ids, returns details for each video in a map
-     * @param {*} ids 
+     * @param {*} ids
      */
     fetchDetailsForVideoIDs(ids, sheet)
     {
@@ -254,10 +254,10 @@ class YoutubeModel {
         let sr = YouTube.Videos.list(part.join(','), {id:ids.join(',')});
 
         let vids = sr.items.filter(function (res) { return res.kind === "youtube#video" });
-        
+
         let self = this;
-        
-        vids.forEach((v) => { 
+
+        vids.forEach((v) => {
 
             let duration = v.contentDetails.duration; // PT5M45S
             let minutes = 0;
@@ -280,7 +280,7 @@ class YoutubeModel {
                 "https://www.youtube.com/watch?v=" + v.id,
                 thumbnailURL,
                 "=IMAGE(\""+thumbnailURL+"\")",
-                v.snippet.title, 
+                v.snippet.title,
                 v.snippet.description,
                 v.snippet.channelTitle,
                 publishedAt,
@@ -308,13 +308,13 @@ class YoutubeModel {
         let sr = YouTube.Captions.list(['snippet'], videoId);
 
         Logger.log(sr);
-        
+
         let language = '';
-        sr.items.forEach(function (res) { 
+        sr.items.forEach(function (res) {
             if (res.snippet.trackKind == 'asr')
                 language = res.snippet.language;
         });
-        
+
         return language;
     }
 
@@ -343,13 +343,13 @@ class YoutubeModel {
                 return;
 
             let video = this.getVideoFromRow(row);
-   
+
             if (video.videoID.length != 11)
                 return;
-            
+
             if (video.language.length > 0)
                 return; // the language details where already fetched for this video, skip
-            
+
             let language = this.fetchCaptions(video.videoID);
 
             if (language.length > 0) {
@@ -379,10 +379,10 @@ class YoutubeModel {
         data.getValues().forEach((row, rowIndex) => {
 
             let video = this.getVideoFromRow(row);
-   
+
             if (video.videoID.length != 11 || !video.thumbnailURL.match(/^http/))
                 return;
-            
+
             if (video.thumbnail.length > 0)
                 return; // Already on the wiki
 
@@ -414,10 +414,10 @@ class YoutubeModel {
 
         data.getValues().forEach((row, rowIndex) => {
             let video = this.getVideoFromRow(row);
-   
+
             if (video.videoID.length != 11)
                 return; // Not a video
-            
+
             if (video.okForWiki !== "o" && video.okForWiki !== "f") //  f for force - will overwrite the existing page !
                 return; // Not ok to push
 
@@ -449,14 +449,14 @@ class YoutubeModel {
             params.set('Durée',                 "Durée = " + video.duration + " minutes");
             params.set('Production',            "Production = " + video.mainProduction);
             params.set('Vidéo',                 "Vidéo = https://www.youtube.com/watch?v=" + video.videoID);
-            
+
             video.speakers.split(',').forEach((intervenant, i) => {
                 intervenant = intervenant.trim();
                 if (intervenant.length == 0)
                     return;
                 params.set('Intervenants ' + i, `Intervenants ${i} = ${intervenant}`);
             });
-            
+
             params.set('Mots-clés', 'Mots-clés = ' + video.tags);
 
             const wikipage = new wikiPage();
@@ -472,61 +472,14 @@ class YoutubeModel {
         });
     }
 
-    buildSpeakersList() {
-        const self = this;
-        let speakers = [];
-
-        let sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
-        sheets.forEach((sheet) => {
-            
-            let channelId = self.getSheetsChannelID(sheet);
-            let playlistId = self.getSheetsPlaylistID(sheet);
-
-            if (!channelId && !playlistId)
-                return; // Not a youtube Sheet
-
-            sheet.getDataRange().getValues().forEach((row, rowIndex) => {
-    
-                let video = this.getVideoFromRow(row);
-       
-                if (video.videoID.length != 11)
-                    return; // Not a video
-                
-                if (video.okForWiki !== "o")
-                    return; // Not marked for import
-    
-                video.speakers.split(',').forEach((intervenant, i) => {
-                    intervenant = intervenant.trim();
-                    if (intervenant.length == 0)
-                        return;
-    
-                    speakers.push(intervenant);
-                });
-            });
-        });
-
-        let speakersManager = new speakersModel();
-        speakersManager.getAllSpeakersFromWiki();
-        let newSpeakers = speakersManager.addSpeakers(speakers);
-
-        alert(`Terminé - ${newSpeakers} intervenants ajoutés (veuillez compléter leur bio)`);
-    }
-
-    syncSpeakersToTriplePerformance() {
-        // To do
-
-        // Créer la redirection si le nom ne correspond pas au nom final
-
-    }
-
     getVideoFromRow(row)
     {
         let video = {};
-        let [videoID, url, thumbnailURL, Vignette, title, 
+        let [videoID, url, thumbnailURL, Vignette, title,
             description, channelTitle, publishedAt, duration,
             hasCaptions, viewCount, commentCount, language, fixedTitle, fixedDescription,
             mainProduction, speakers, tags, okForWiki, thumbnail, wiki, ...others] = row;
-            
+
         video.videoID = videoID;
         video.url = url;
         video.thumbnailURL = thumbnailURL;
@@ -535,7 +488,7 @@ class YoutubeModel {
         video.channelTitle = channelTitle;
         if (publishedAt instanceof Date)
             video.publishedAt =  publishedAt.toISOString().substring(0, 10);
-        else 
+        else
             video.publishedAt = "";
 
         video.duration = duration;
@@ -551,7 +504,7 @@ class YoutubeModel {
         video.okForWiki = okForWiki;
         video.thumbnail = thumbnail;
         video.wiki = wiki;
-        
+
         return video;
     }
 
@@ -587,7 +540,7 @@ class YoutubeModel {
             return matches[1];
 
         return false;
-    }    
+    }
 
     getTabs()
     {
@@ -596,11 +549,11 @@ class YoutubeModel {
 
     createPlaylistTab() {
         const cols = ["Playlist", "https://www.youtube.com/playlist?list=PLQNBggapGeH_7kXfyelk_ShC1a8HCsQE7"];
-        return this.createCommonTab(cols);   
+        return this.createCommonTab(cols);
     }
 
     createChannelTab() {
-        const cols = ["Chaîne", "Ver de Terre Production", "Channel ID", "UCUaPiJJ2wH9CpuPN4zEB3nA", "https://stackoverflow.com/a/76285153"];        
+        const cols = ["Chaîne", "Ver de Terre Production", "Channel ID", "UCUaPiJJ2wH9CpuPN4zEB3nA", "https://stackoverflow.com/a/76285153"];
         return this.createCommonTab(cols);
     }
 
@@ -638,23 +591,23 @@ class YoutubeModel {
 
                 for (let index = 0; index < currentCols[0].length; index++) {
                     const currentColName = currentCols[0][index];
-                    
+
                     if (this.columns[index] != currentColName) {
                         // Insert a col and give it the right name
                         colsAreOk = false;
                         sheet.insertColumns(index + 1);
                         sheet.getRange(3, index + 1).setValue(this.columns[index]);
                         colHeaderRow = sheet.getRange(3, 1, 1, this.columns.length);
-                        currentCols = colHeaderRow.getValues();  
+                        currentCols = colHeaderRow.getValues();
                     }
                 }
-            }    
+            }
         }
 
         colHeaderRow.setFontWeight("bold");
 
         sheet.setFrozenRows(3);
-        sheet.setFrozenColumns(4);      
+        sheet.setFrozenColumns(4);
 
         sheet.setRowHeightsForced(4, sheet.getMaxRows() - 3, 70);
         sheet.getRange(4, 1, sheet.getMaxRows(), sheet.getMaxColumns()).setVerticalAlignment("middle");
@@ -673,24 +626,18 @@ class YoutubeModel {
 
         var range = sheet.getRange(4, this.getColNumber("ok pour wiki"), sheet.getMaxRows() - 3, 1).setHorizontalAlignment("center");
         setConditionalFormatingYN(range);
-        
+
         return sheet;
     }
 
     /**
-     * @param {*} tabName 
-     * @returns 
+     * @param {*} tabName
+     * @returns
      */
     createTab(tabName)
     {
         if (!this.tabs.includes(tabName))
             return false;
-
-        if (tabName == "Intervenants")
-        {
-            let speakM = new speakersModel();
-            return speakM.createTab(tabName);
-        }
 
         let sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
 
@@ -708,7 +655,7 @@ class YoutubeModel {
         sheet.getRange(3, 1, 1, this.columns.length).setValues([this.columns]).setFontWeight("bold");
 
         sheet.setFrozenRows(3);
-        sheet.setFrozenColumns(4);      
+        sheet.setFrozenColumns(4);
 
         sheet.setRowHeightsForced(4, sheet.getMaxRows() - 3, 70);
         sheet.getRange(4, 1, sheet.getMaxRows() - 3, sheet.getMaxColumns()).setVerticalAlignment("middle");
@@ -762,7 +709,7 @@ class YoutubeModel {
             aLine = aLine.replace(/^-/, '* ');
             description += aLine + "\n\n";
         });
-        
+
         return description;
     }
 
@@ -785,11 +732,11 @@ class YoutubeModel {
         if (title.match(/viticulture/i) ||
             title.match(/vigne/i))
             return 'Viticulture';
-        
+
         if (title.match(/arboriculture/i) ||
             title.match(/verger/i))
             return 'Arboriculture';
-           
+
         if (title.match(/couverts/i))
             return 'Grandes cultures';
 
@@ -800,30 +747,30 @@ class YoutubeModel {
     {
       /**
        * If the title has the following form, lets assume the last two words are the author:
-       * 
+       *
        * some title some title, firstname name (et firstname name)
        * some title avec firstname name (et firstname name)
        * some title par firstname name (et firstname name)
        * some title - firstname name (et firstname name)
        */
-    
+
       let matches = title.match(/(,|par|avec|-|\?)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+)(\s+et\s+([A-Za-zÀ-ÖØ-öø-ÿ]+)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+))?\s*$/);
       let intervenants = [];
       if (matches)
       {
         intervenants.push(this.fixCase(matches[2]) + " " + this.fixCase(matches[3]));
-    
+
         if (matches[5])
           intervenants.push(this.fixCase(matches[5]) + " " + this.fixCase(matches[6]));
       }
-    
+
       return intervenants;
     }
-    
+
     fixCase(str)
     {
       return str[0].toUpperCase() + str.slice(1).toLowerCase();
-    }    
+    }
 
     getThumbnailFileName(youtubeID) {
         // In wiki links, spaces and underscores are considered as spaces, and replaced with only one underscore

@@ -64,10 +64,10 @@ function getLightGrayColor() {
  *    and call out to htmlStyleRtRun() to return the text wrapped
  *    in <span> tags with specific styling.
  * @see https://gist.github.com/mvogelgesang/8fe14931d79ed79d73154d969f02aada
- * 
+ *
  * @param {RichTextValue} richTextValue a RichTextValue object
  *    from a given Cell.
- * @return {string} HTML encoded text 
+ * @return {string} HTML encoded text
  */
 function htmlEncodeRichText(richTextValue) {
     // create an empty string which will hold the html content
@@ -83,17 +83,17 @@ function htmlEncodeRichText(richTextValue) {
 }
 
 /**
- * Given a RichTextValue Run, evaluates for style attributes and 
- *    builds a <span> tag with in-line styles. 
+ * Given a RichTextValue Run, evaluates for style attributes and
+ *    builds a <span> tag with in-line styles.
  *    For instance:
  *    <span style="color: cyan">text</span>
  *
  * @see https://gist.github.com/mvogelgesang/8fe14931d79ed79d73154d969f02aada
- * 
+ *
  * @param {RichTextValue} richTextRun an instance of a
  *    RichTextValue run
- * @return {string} inputted text wrapped in <span> tag with 
- *    applicable styling. 
+ * @return {string} inputted text wrapped in <span> tag with
+ *    applicable styling.
  */
 function htmlStyleRtRun(richTextRun) {
     // string to hold the inline style key value pairs
@@ -114,8 +114,8 @@ function htmlStyleRtRun(richTextRun) {
     // styleString += "color:" + richTextRun.getTextStyle().getForegroundColor() +
     //   ";";
 
-    // underline and strikethrough use the same style key, text-decoration, must evaluate together, otherwise, the styling breaks. 
-    // both false 
+    // underline and strikethrough use the same style key, text-decoration, must evaluate together, otherwise, the styling breaks.
+    // both false
     if (!richTextRun.getTextStyle().isUnderline() && !richTextRun.getTextStyle().isStrikethrough()) {
         // do nothing
     }
@@ -173,7 +173,7 @@ function getTriplePerformanceURL(language)
     parameters.loadSecrets();
     if (!parameters.checkSecrets())
         return;
-        
+
     triplePerformanceURL = parameters.secrets().wikiURL;
 
     return triplePerformanceURL;
@@ -184,7 +184,7 @@ function alert(message) {
         Logger.log(message);
         SpreadsheetApp.getUi().alert(message);
     } catch (error) {
-        
+
     }
 }
 
@@ -214,13 +214,13 @@ function removeTrigger()
         ScriptApp.deleteTrigger(trigger);
     });
 
-    documentProperties.deleteProperty('queuedTabsForTrigger');        
+    documentProperties.deleteProperty('queuedTabsForTrigger');
 }
 
 /**
- * Adds a conditional formating rule thats shows green or red for 
+ * Adds a conditional formating rule thats shows green or red for
  * value o or n in the range
- * @param {*} range 
+ * @param {*} range
  */
 function setConditionalFormatingYN(range) {
 
@@ -246,6 +246,8 @@ function setConditionalFormatingYN(range) {
     });
 
     sheet.setConditionalFormatRules(rules);
+
+    range.setHorizontalAlignment("center").setVerticalAlignment("middle");
 }
 
 

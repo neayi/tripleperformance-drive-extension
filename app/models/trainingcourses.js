@@ -56,10 +56,10 @@ class TrainingCourseModel {
                 return;
 
             let course = this.getCourseFromRow(row);
-   
+
             if (course.courseCode.length == 0 || !course.courseImageURL.match(/^http/))
                 return;
-            
+
             if (course.tripleperformanceImage.length > 0)
                 return;
 
@@ -117,7 +117,7 @@ class TrainingCourseModel {
                 continue;
 
             const trainingParams = this.getTemplateForTrainingCourse(course);
-            
+
             if (existingPages.size == 0)
                 existingPages = this.findCoursePagesForStructure(course.structure);
 
@@ -145,7 +145,7 @@ class TrainingCourseModel {
                     apiTools.updateWikiPage(wikiTitle, newPageContent, "Mise à jour des données de la formation");
                     updatedCourses++;
                 }
-            }            
+            }
             else {
                 // Create a new page
                 wikiTitle = 'Formation:' + course.courseTitle;
@@ -156,12 +156,12 @@ class TrainingCourseModel {
                     throw new Error("Une page " + wikiTitle + " existe déjà. Merci de vérifier si elle correspond à la formation " + trainingParams.get("Titre") + " (et dans ce cas modifier le code de la formation dans la page avant de recommancer), et sinon de changer le titre de la formation pour éviter le doublon");
                 }
 
-                let presentation = course.shortPresentation.trim(); 
-                let objectives = course.objectives.trim(); 
-                let target = course.target.trim(); 
+                let presentation = course.shortPresentation.trim();
+                let objectives = course.objectives.trim();
+                let target = course.target.trim();
 
                 pageContent = wiki.updateTemplate("Formation", trainingParams, pageContent).trim();
-                
+
                 if (presentation.length > 0)
                     pageContent += "\n" + presentation;
 
@@ -170,9 +170,9 @@ class TrainingCourseModel {
 
                 if (target.length > 0)
                     pageContent += "\n\n== Public visé et prérequis ==\n" + target;
-    
+
                 pageContent += "\n\n{{Pages liées}}";
-    
+
                 apiTools.createWikiPage(wikiTitle, pageContent, "Création de la page");
                 newCourses++;
             }
@@ -199,7 +199,7 @@ class TrainingCourseModel {
         let apiTools = getApiTools();
 
         let pages = apiTools.getSemanticValuesWithForSemanticQuery("[[A un type de page::Formation]][[Est produit par::" + Structure + "]]", ['A un code de formation']);
-        
+
         let ret = new Map();
 
         pages.forEach((row) => { ret.set(row[1], row[0]); });
@@ -242,8 +242,8 @@ class TrainingCourseModel {
     getCourseFromRow(row)
     {
         let course = {};
-        let [courseTitle, courseCode, courseURL, courseImageURL, imageInSpreadsheet, durationInHours, durationInDays, cost, modality, speaker, 
-             production, tags, financeableVivea, financeableCPF, financeableFranceTravail, shortPresentation, departments, structure, 
+        let [courseTitle, courseCode, courseURL, courseImageURL, imageInSpreadsheet, durationInHours, durationInDays, cost, modality, speaker,
+             production, tags, financeableVivea, financeableCPF, financeableFranceTravail, shortPresentation, departments, structure,
              tripleperformanceTitle, tripleperformanceImage, updateDate, objectives, target, forceUpdatePage, ...others] = row;
 
         course.courseTitle = courseTitle;
@@ -280,7 +280,7 @@ class TrainingCourseModel {
 
         return col + 1;
     }
-    
+
     buildSpeakersList() {
         let sheet = SpreadsheetApp.getActiveSheet();
         let idFound = false;
@@ -297,7 +297,7 @@ class TrainingCourseModel {
                 return;
 
             let course = this.getCourseFromRow(row);
-              
+
             if (course.speaker.length == 0)
                 return;
 
@@ -362,9 +362,6 @@ class TrainingCourseModel {
 
         var forceUpdateRange = sheet.getRange(2, this.getColNumber("Mettre à jour le contenu éditorial"), sheet.getMaxRows() - 1, 1);
         setConditionalFormatingYN(forceUpdateRange);
-
-        let speakM = new speakersModel();
-        speakM.createTab("Intervenants");
 
         return sheet;
     }

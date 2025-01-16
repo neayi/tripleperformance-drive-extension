@@ -1,9 +1,7 @@
 class speakersModel {
     constructor() {
         this.startTime = new Date();
-
-        this.columns = ["Nom tel que trouvé dans l'excel", "Nom corrigé", "URL de la photo", "Photo",
-                        "Biographie", "URL bio", "Page Wiki", "Date de création"];
+        this.columns = ['Page Triple Performance', 'Nom', 'Photo', 'Biographie', 'URL Société', 'URL Nouvelle photo', "Mise à jour ('o')", "Date de mise à jour"];
     }
 
     createTab() {
@@ -26,37 +24,32 @@ class speakersModel {
 
     addSpeakers(speakers) {
 
-        // Unique speakers only
-        speakers = speakers.filter((value, index, array) => array.indexOf(value) === index);
+        // // Unique speakers only
+        // speakers = speakers.filter((value, index, array) => array.indexOf(value) === index);
 
-        let speakerSheet = this.createTab();
+        // let speakerSheet = this.createTab();
 
-        let existingSpeakers = speakerSheet.getDataRange().getValues().map((r) => r[0]).filter((v) => v != "");
-        let newSpeakers = speakers.filter(speakername => !existingSpeakers.includes(speakername));
+        // let existingSpeakers = speakerSheet.getDataRange().getValues().map((r) => r[0]).filter((v) => v != "");
+        // let newSpeakers = speakers.filter(speakername => !existingSpeakers.includes(speakername));
 
-        newSpeakers.forEach(speaker => {
-            speakerSheet.appendRow([speaker]);
-        });
+        // newSpeakers.forEach(speaker => {
+        //     speakerSheet.appendRow([speaker]);
+        // });
 
-        return newSpeakers.length;
+        // return newSpeakers.length;
     }
 
     pushSpeakersToWiki() {
-        Logger.log('pushYoutubePagesToWiki');
+        Logger.log('pushSpeakersToWiki');
 
-        // Remove any existing trigger first
-        removeTrigger();
-
-        onPushSpeakerPagesToWiki();
-    }
-
-    pushSpeakersToWikiPrivate() {
-        let speakerSheet = this.createTab();
+        let speakerSheet = SpreadsheetApp.getActiveSheet();
 
         let data = speakerSheet.getDataRange();
         let startRow = data.getRow();
-        const wikiPageCol = this.getColNumber("Page Wiki");
+
         const photoPageCol = this.getColNumber("Photo");
+        const photoURLCol = this.getColNumber("URL Nouvelle photo");
+        const wikiPageUpdateTimeCol = this.getColNumber("Mise à jour ('o')");
 
         let newPersons = 0;
         let updatedPersons = 0;
@@ -70,7 +63,6 @@ class speakersModel {
         const tripleperformanceURL = getTriplePerformanceURL();
 
         data.getValues().forEach((row, rowIndex) => {
-            self.checkTime();
 
             if (!idFound && row[0] == this.columns[0]) {
                 idFound = true;
@@ -82,85 +74,41 @@ class speakersModel {
 
             let speaker = self.getSpeakerFromRow(row);
 
-            if (speaker.fixedName.length == 0)
+            if (speaker.name.length == 0 ||
+                speaker.wikiPage.length == 0 ||
+                speaker.update != 'o')
                 return;
 
-            if (speaker.wikiPage.length > 0)
-                return;
+            console.log("Starting process of updating speaker " + speaker.name);
 
-            if (speaker.originalName != speaker.fixedName) {
-                redirectPages.set(speaker.fixedName, speaker.originalName);
-                return;
+            if (speaker.nameFromWikiPageName != speaker.name) {
+                let newWikiPageName = 'User:' + speaker.name;
+                redirectPages.set(speaker.wikiPage, newWikiPageName);
+                speaker.wikiPage = newWikiPageName;
             }
 
-            if (speaker.photoURL.length > 0 && speaker.photoPage.length == 0)
+            if (speaker.newPhotoURL.length > 0)
             {
-                speaker.photoPage = self.pushSpeakerPhoto(speaker.fixedName, speaker.photoURL);
+                speaker.photoPage = self.pushSpeakerPhoto(speaker.name, speaker.newPhotoURL);
 
                 let content = getHyperlinkedTitle(tripleperformanceURL, speaker.photoPage, speaker.photoPage);
                 speakerSheet.getRange(rowIndex + startRow, photoPageCol).setValue(content);
+                speakerSheet.getRange(rowIndex + startRow, photoURLCol).setValue('');
                 SpreadsheetApp.flush();
             }
 
-            let wikiTitle = self.findWikiPageForSpeaker(speaker.fixedName);
-            self.checkTime();
-
             let apiTools = getApiTools();
 
-            if (wikiTitle) {
-                // Update the page
-                let pageContent = apiTools.getPageContent(wikiTitle);
+            // Update the page
+            let pageContent = apiTools.getPageContent(speaker.wikiPage);
 
-                self.checkTime();
+            let newPageContent = pageContent;
 
-                if (!wiki.hasTemplate(pageContent, "Contributeur") &&
-                    !wiki.hasTemplate(pageContent, "Intervenant")) {
-                    throw new Error("La page " + wikiTitle + " a été trouvée pour l'utilisateur "
-                        + speaker.fixedName + " mais elle ne contient pas la template Contributeur !");
-                }
-
-                let newPageContent = pageContent;
-
-                if (wiki.hasTemplate(pageContent, "Contributeur"))
-                {
-                    let params = new Map();
-                    if (speaker.biography.length > 0)
-                        params.set('Biographie', speaker.biography);
-                    if (speaker.biographyURL.length > 0)
-                        params.set('URL', speaker.biographyURL);
-                    if (speaker.photoPage.length > 0)
-                        params.set('Photo', speaker.fixedName + ".jpg");
-
-                    newPageContent = wiki.updateTemplate("Contributeur", params, pageContent);
-                }
-                else
-                {
-                    let newArgs = new Map();
-                    
-                    // Only update the fields that are set here
-                    newArgs.set('nom', 'Nom = ' + speaker.fixedName);
-                    if (speaker.biography.length > 0)
-                        newArgs.set('biographie', 'Biographie = ' +  speaker.biography);
-                    if (speaker.biographyURL.length > 0)
-                        newArgs.set('url', 'URL = ' +  speaker.biographyURL);
-                    if (speaker.photoPage.length > 0)
-                        newArgs.set('photo', 'Photo = ' +  speaker.fixedName + ".jpg");
-
-                    newPageContent = wiki.replaceTemplate("Intervenant", "Contributeur", newArgs, pageContent);
-                }
-
-                if (newPageContent == pageContent)
-                    untouchedPersons++
-                else {
-                    apiTools.updateWikiPage(wikiTitle, newPageContent, "Mise à jour des données de la personne");
-                    updatedPersons++;
-                }
-            }
-            else {
-                wikiTitle = "User:" + speaker.fixedName;
-
+            if (wiki.hasTemplate(pageContent, "Contributeur"))
+            {
                 let params = new Map();
-                params.set('Nom', speaker.fixedName);
+                if (speaker.name.length > 0)
+                    params.set('Nom', speaker.name);
                 if (speaker.biography.length > 0)
                     params.set('Biographie', speaker.biography);
                 if (speaker.biographyURL.length > 0)
@@ -168,88 +116,80 @@ class speakersModel {
                 if (speaker.photoPage.length > 0)
                     params.set('Photo', speaker.fixedName + ".jpg");
 
-                let pageContent = "";
-                pageContent = wiki.updateTemplate("Contributeur", params, pageContent);
+                newPageContent = wiki.updateTemplate("Contributeur", params, pageContent);
+                console.log("Updating template for " + speaker.name);
+            }
+            else
+            {
+                let newArgs = new Map();
 
-                apiTools.createWikiPage(wikiTitle, pageContent, "Création de la page");
-                newPersons++;
+                // Only update the fields that are set here
+                newArgs.set('nom', 'Nom = ' + speaker.name);
+                if (speaker.biography.length > 0)
+                    newArgs.set('biographie', 'Biographie = ' +  speaker.biography);
+                if (speaker.biographyURL.length > 0)
+                    newArgs.set('url', 'URL = ' +  speaker.biographyURL);
+                if (speaker.photoPage.length > 0)
+                    newArgs.set('photo', 'Photo = ' +  speaker.fixedName + ".jpg");
+
+                newPageContent = wiki.buildTemplateFromMap("Contributeur", newArgs);
+                console.log("Creating template for " + speaker.name);
             }
 
-            let content = getHyperlinkedTitle(tripleperformanceURL, wikiTitle, speaker.fixedName);
+            if (newPageContent == pageContent)
+                untouchedPersons++
+            else {
+                if (pageContent === false)
+                    apiTools.createWikiPage(speaker.wikiPage, newPageContent, "Création d'une page pour la personne'");
+                else
+                    apiTools.updateWikiPage(speaker.wikiPage, newPageContent, "Mise à jour des données de la personne");
 
-            speakerSheet.getRange(rowIndex + startRow, wikiPageCol, 1, 2).setValues([[content, new Date()]]);
+                console.log("Saving page for " + speaker.name);
+                updatedPersons++;
+            }
+
+        // }
+        //     else {
+        //         wikiTitle = "User:" + speaker.fixedName;
+
+        //         let params = new Map();
+        //         params.set('Nom', speaker.fixedName);
+        //         if (speaker.biography.length > 0)
+        //             params.set('Biographie', speaker.biography);
+        //         if (speaker.biographyURL.length > 0)
+        //             params.set('URL', speaker.biographyURL);
+        //         if (speaker.photoPage.length > 0)
+        //             params.set('Photo', speaker.fixedName + ".jpg");
+
+        //         let pageContent = "";
+        //         pageContent = wiki.updateTemplate("Contributeur", params, pageContent);
+
+        //         apiTools.createWikiPage(wikiTitle, pageContent, "Création de la page");
+        //         newPersons++;
+        //     }
+
+            speakerSheet.getRange(rowIndex + startRow, wikiPageUpdateTimeCol, 1, 2).setValues([['', new Date()]]);
+        });
+
+        redirectPages.forEach((properPage, badPage) => {
+            let apiTools = getApiTools();
+            apiTools.createWikiPage(badPage, "#Redirect [["+properPage+"]]", "Création d'une redirection vers le nom bien orthographié'");
+            console.log("Created a redirect from " + badPage + " to " + properPage);
         });
 
         return [newPersons, updatedPersons, untouchedPersons];
     }
 
-    findWikiPageForSpeaker(speakerName) {
-        let apiTools = getApiTools();
+    // findWikiPageForSpeaker(speakerName) {
+    //     let apiTools = getApiTools();
 
-        let pages = apiTools.getPagesWithForSemanticQuery("[[A un type de page::Personne]][[A un nom::" + speakerName + "]]");
-        if (pages.length > 0)
-            return pages[0];
+    //     let pages = apiTools.getPagesWithForSemanticQuery("[[A un type de page::Personne]][[A un nom::" + speakerName + "]]");
+    //     if (pages.length > 0)
+    //         return pages[0];
 
-        return null;
-    }
+    //     return null;
+    // }
 
-    getSpeakerFromRow(row) {
-        let speaker = {};
-        let [originalName, fixedName, photoURL, photoPage, biography, biographyURL, wikiPage, ...others] = row;
-
-        speaker.originalName = originalName;
-        speaker.fixedName = fixedName;
-        speaker.photoURL = photoURL;
-        speaker.photoPage = photoPage;
-        speaker.biography = biography;
-        speaker.biographyURL = biographyURL;
-        speaker.wikiPage = wikiPage;
-
-        return speaker;
-    }
-
-    getAllSpeakersFromWiki() {
-        let apiTools = getApiTools();
-
-        Logger.log("getAllSpeakersFromWiki");
-        let speakers = apiTools.getSemanticValuesWithForSemanticQuery(
-            "[[A un type de page::Personne]]", 
-            ['A un nom', 'Biographie', 'A une photo']);
-
-        Logger.log("Got " + speakers.length + " speakers on Triple Performance");
-
-        // A une photo :
-        // {
-        //     exists=1,
-        //     namespace=6.0,
-        //     fullurl=//wiki.tripleperformance.fr/wiki/Fichier:Ana%C3%AFs_Brucelle.jpg, 
-        //     displaytitle=, 
-        //     fulltext=Fichier:Anaïs Brucelle.jpg
-        // }
-
-        let speakerSheet = this.createTab();
-
-        let existingSpeakers = speakerSheet.getDataRange().getValues().map((r) => r[0]).filter((v) => v != "");
-
-        Logger.log("Had already " + existingSpeakers.length + " existing speakers");
-        const triplePerformanceURL = getTriplePerformanceURL();
-
-        let newSpeakers = speakers.filter(speaker => !existingSpeakers.includes(speaker[1])).map(speaker => {
-            let photo = "";
-            if (speaker[3] != "")
-                photo = getHyperlinkedTitle(triplePerformanceURL, speaker[3].fulltext, speaker[3].fulltext);
-
-            return [speaker[1], speaker[1], "", photo, speaker[2], "", getHyperlinkedTitle(triplePerformanceURL, speaker[0], speaker[1])]
-        });
-
-        Logger.log("Now insert the list of the  " + newSpeakers.length + " speakers");
-
-        if (newSpeakers.length == 0)
-            return;
-
-        const insertRow = speakerSheet.getLastRow() + 1;
-        speakerSheet.getRange(insertRow, 1, newSpeakers.length, 7).setValues(newSpeakers);
-    }
 
     pushSpeakerPhoto(fixedName, photoURL) {
         let apiTools = getApiTools();
@@ -266,10 +206,64 @@ class speakersModel {
     getColNumber(colname) {
         return this.columns.indexOf(colname) + 1;
     }
-    
-    checkTime() {
-        Logger.log("checkTime " + this.startTime + new Date());
-        if (new Date().getTime() - this.startTime.getTime() > 40000) // 45 seconds from start of the script
-            throw("time up");
+
+    buildContributorsSheet() {
+        Logger.log('buildContributorsSheet');
+
+        // Adds a new sheet
+        let sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+
+        let apiTools = getApiTools();
+
+        // Loads all the users, including missing
+        // [[-Contributeur::+]] OR [[-A comme agriculteur::+]] OR [[-A un auteur::+]] OR [[-Page author::+]]
+        let allUsers = apiTools.getSemanticValuesWithForSemanticQuery('[[-Contributeur::+]] OR [[-A comme agriculteur::+]] OR [[-A un auteur::+]] OR [[-Page author::+]]', ['A un nom', 'A une photo', 'Biographie', 'A une URL']);
+
+        let data = [];
+        data.push(this.columns);
+
+
+        allUsers.forEach(aUser => {
+            let currentUserName = aUser[1];
+            if (currentUserName.length == 0) {
+                currentUserName = aUser[0].replace(/^[^:]+:/, '').replace(/ \([0-9]+\)$/, '');
+            }
+
+            data.push([
+                getHyperlinkedTitle(getTriplePerformanceURL(), aUser[0]),
+                currentUserName,
+                aUser[2].length > 0 ? getHyperlinkedTitle(getTriplePerformanceURL(), aUser[2]) : '',
+                aUser[3],
+                aUser[4],
+                '',
+                aUser[1].length > 0 ? '' : 'o',
+                ''
+            ]);
+        });
+
+        // Now show the list, with a final colum for updating or creating the row
+        // By default, the missing users will have the 'c' flag
+        sheet.getRange(1, 1, data.length, data[0].length).setValues(data)
+        sheet.getRange(1, 1, 1, data[0].length).setFontWeight("bold");
+        let range = sheet.getRange(2, 7, sheet.getMaxRows() - 1, 1);
+        setConditionalFormatingYN(range);
+
+        sheet.setFrozenRows(1);
+    }
+
+    getSpeakerFromRow(row) {
+        let speaker = {};
+        let [wikiPage, name, photoPage, biography, biographyURL, newPhotoURL, update, ...others] = row;
+
+        speaker.wikiPage = wikiPage;
+        speaker.name = name;
+        speaker.nameFromWikiPageName = wikiPage.replace(/^[^:]+:/, '');
+        speaker.photoPage = photoPage;
+        speaker.biography = biography;
+        speaker.biographyURL = biographyURL;
+        speaker.newPhotoURL = newPhotoURL;
+        speaker.update = update;
+
+        return speaker;
     }
 }
