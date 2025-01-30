@@ -30,7 +30,8 @@ class BatchProcessingytModel {
         // title, width, alignment, wrap, bold
         this.columnsInsertCodeDefinitions = [
             ["Titre", "262", "left", true,  true],
-            ["Code",  "500", "left", true,  false]
+            ["Code",  "500", "left", true,  false],
+            ["Statut",  "100", "center", true,  false]
         ];
 
         this.columnsInsertCode = this.columnsInsertCodeDefinitions.map(col => col[0]);
@@ -294,7 +295,52 @@ class BatchProcessingytModel {
     addCodeToPages() {
         Logger.log('addCodeToPages');
 
-        //
+        // Get data range
+        let sheet = SpreadsheetApp.getActiveSheet();
+
+        let data = sheet.getDataRange();
+        let values = data.getValues();
+        let startRow = data.getRow();
+
+        values.shift(); // remove the title
+
+        // For each row, get the page content
+        values.forEach((row, rowIndex) => {
+            let title = row[0];
+            let code = row[1];
+            let status = row[2];
+
+            if (code.length == 0)
+                return;
+
+            if (status != 'o')
+                return;
+
+            let apiTools = getApiTools();
+            let pageContent = apiTools.getPageContent(title);
+
+            if (pageContent == undefined) {
+                Logger.log("Page not found: " + title);
+                return;
+            }
+
+            // Check if the code is already in the page
+            if (pageContent.match(code)) {
+                Logger.log("Code already in page: " + title);
+                sheet.getRange(rowIndex + startRow + 1, 3, 1, 1).setValue('x');
+                SpreadsheetApp.flush();
+                return;
+            }
+
+            // Add the code to the page content
+            pageContent += "\n\n" + code;
+
+            // Update the page content
+            apiTools.updateWikiPage(title, pageContent, "Ajout de code");
+            sheet.getRange(rowIndex + startRow + 1, 3, 1, 1).setValue('x');
+
+            SpreadsheetApp.flush();
+        });
         
         alert("Terminé");
     }
@@ -442,6 +488,9 @@ class BatchProcessingytModel {
         });
 
         sheet.getRange(2, 2, sheet.getMaxRows() - 1, 1).setFontFamily("Code");
+        
+        var range = sheet.getRange(2, 3, sheet.getMaxRows() - 1, 1);
+        setConditionalFormatingYN(range);
 
         return sheet;
     }
