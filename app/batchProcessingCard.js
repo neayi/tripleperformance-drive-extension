@@ -29,6 +29,11 @@ function findPages() {
     batchProcessingytModel.findPages();
 }
 
+function platformStatistics() {
+    let batchProcessingytModel = new BatchProcessingytModel();
+    batchProcessingytModel.platformStatistics();
+}
+
 function card_buildBatchProcessingCard() {
 
     var builder = CardService.newCardBuilder();
@@ -40,7 +45,8 @@ function card_buildBatchProcessingCard() {
     let actions = [
         {title: "Ajouter les onglets de traitement en lots", subtitle: "Ajouter les onglets", function: 'addBatchProcessingTabs'},
         {title: "Vérifier les mots-clés des pages", subtitle: "Vérifier les mots clés", function: 'checkKeywordsInPages'},
-        {title: "Lancer une recherche", subtitle: "Rechercher des pages", function: 'findPages'}
+        {title: "Lancer une recherche", subtitle: "Rechercher des pages", function: 'findPages'},
+        {title: "Nouvel onglet de statistiques de la plateforme", subtitle: "Calculer les statistiques", function: 'platformStatistics'},
     ];
 
     actions.forEach((action) => {

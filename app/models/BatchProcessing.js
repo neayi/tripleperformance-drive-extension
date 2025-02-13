@@ -528,4 +528,112 @@ class BatchProcessingytModel {
         return this.columnsAddKeywords.indexOf(colname) + 1;
     }
 
+    /**
+     * Create a new tab and build some useful stats out of the French platform
+     */
+    platformStatistics() {
+        // Start by getting a huge table of all the pages with the type of page and the type of production
+        let apiTools = getApiTools('fr');
+
+        // if the page is not set, try to find the page using the youtube URL
+        let pages = apiTools.getSemanticValuesWithForSemanticQuery("[[A un type de page::!Personne]]", ['A un type de page', 'A un type de production', 'Number of page views']);
+        let viewByProductions = {};
+        let viewByTypes = {};
+        let countByProductions = {};
+        let countByTypes = {};
+        let productions = [];
+        let types = [];
+
+        let self = this;
+
+        pages.forEach(aPage => {
+            let pageTypes = aPage[1];
+            let pageProductions = aPage[2];
+            let pageViews = Number(aPage[3]);
+            
+            if (typeof pageTypes == 'string')
+                pageTypes = [pageTypes];
+
+            pageTypes.forEach(pageType => {
+                if (types.indexOf(pageType) == -1)
+                    types.push(pageType);
+
+                if (countByTypes[pageType] == undefined)
+                    countByTypes[pageType] = 1;
+                else
+                    countByTypes[pageType] ++;
+
+                if (viewByTypes[pageType] == undefined)
+                    viewByTypes[pageType] = pageViews;
+                else
+                    viewByTypes[pageType] += pageViews;
+            });
+
+            if (typeof pageProductions == 'string')
+                pageProductions = [pageProductions];
+
+            pageProductions.forEach(production => {
+                production = self.simplifyProductionName(production);
+
+                if (productions.indexOf(production) == -1)
+                    productions.push(production);
+
+                if (countByProductions[production] == undefined)
+                    countByProductions[production] = 1;
+                else
+                    countByProductions[production] ++;
+
+                if (viewByProductions[production] == undefined)
+                    viewByProductions[production] = pageViews;
+                else
+                    viewByProductions[production] += pageViews;
+            });
+        });
+
+        // Create a new tab and write the results
+        let sheet = renameAndCreateTab("Statistiques");
+
+        let dataTypes = [['Type de page', 'Nombre de pages', 'Nombre de vues']];
+        let dataProductions =  [['Type de production', 'Nombre de pages', 'Nombre de vues']];
+
+        types.forEach(type => {
+            dataTypes.push([type, countByTypes[type], viewByTypes[type]]);
+        });
+        sheet.getRange(1, 1, dataTypes.length, 3).setValues(dataTypes);
+
+        productions.forEach(production => {
+            dataProductions.push([production, countByProductions[production], viewByProductions[production]]);
+        });
+
+        sheet.getRange(1, 5, dataProductions.length, 3).setValues(dataProductions);
+    }
+
+    simplifyProductionName(production) {
+        if (production.match(/Élevage/))
+            return 'Élevage';
+        if (production.match(/Ovin/))
+            return 'Élevage';
+        if (production.match(/Bovin/))
+            return 'Élevage';
+
+        if (production.match(/Aviculture/))
+            return 'Aviculture';
+
+        if (production.match(/Polyculture/))
+            return 'Polyculture-élevage';
+
+        if (production.match(/Prairies/))
+            return 'Prairies';
+
+        switch (production) {
+            case 'Agriculture':
+            case 'Agronomie':
+                return '';
+
+            default:
+                break;
+        }
+        
+        return production;
+    }
 }
