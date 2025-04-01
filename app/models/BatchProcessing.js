@@ -346,6 +346,94 @@ class BatchProcessingytModel {
     }
 
     /**
+     * For each page, adds or remplace the given parameter in the given template
+     */
+    addParameterToPages() {
+        // Get all the current sheet data
+        Logger.log('addParameterToPages');
+
+        // Get data range
+        let sheet = SpreadsheetApp.getActiveSheet();
+
+        let data = sheet.getDataRange();
+        let values = data.getValues();
+        let startRow = data.getRow();
+
+        let headers = values.shift(); // remove the title
+
+        // Find the column with the page name (the column header must be "Page" or "Page Triple Performance")
+        let pageCol = headers.indexOf("Page Triple Performance");
+        if (pageCol == -1)
+            pageCol = headers.indexOf("Page");
+
+        // Find the column with the template's name (header must be "Template")
+        let templateCol = headers.indexOf("Template");
+
+        // Find the column with the parameter's name (header must be "Parameter")
+        let parameterCol = headers.indexOf("Paramètre");
+        if (parameterCol == -1)
+            parameterCol = headers.indexOf("Parameter");
+
+        // Find the column with the new value (header must be "Valeur")
+        let valueCol = headers.indexOf("Valeur");
+        if (valueCol == -1)
+            valueCol = headers.indexOf("Value");
+
+        // Find the column with the status (header must be "Statut" or "Status")
+        let statusCol = headers.indexOf("Statut");
+        if (statusCol == -1)
+            statusCol = headers.indexOf("Status");
+
+        if (pageCol == -1 || templateCol == -1 || parameterCol == -1 || valueCol == -1 || statusCol == -1) {
+            alert("Veuillez vous assurer d'avoir les colonnes suivantes : Page Triple Performance, Template, Paramètre, Valeur, Statut");
+            return;
+        }
+
+        const wikipage = new wikiPage();
+
+        // Now, for each row, if the status is "o" then proceed, else ignore
+        values.forEach((row, rowIndex) => {
+            let title = row[pageCol];
+            let template = row[templateCol];
+            let parameter = row[parameterCol];
+            let newValue = row[valueCol];
+            let status = row[statusCol];
+
+            if (!(status == 'o' || status == 'f'))
+                return;
+            
+            if (template.length == 0 || title.length == 0 || parameter.length == 0)
+                return;
+
+            let apiTools = getApiTools();
+            let pageContent = apiTools.getPageContent(title);
+
+            if (pageContent == undefined) {
+                Logger.log("Page not found: " + title);
+                return;
+            }
+
+            let bIgnoreWhenExisting = (status == 'o'); // if f, we will force the new value
+
+            pageContent = wikipage.addValueToTemplate(pageContent, template, parameter, newValue, bIgnoreWhenExisting);
+
+            if (pageContent === false)
+                return;
+
+            console.log('Before updateWikiPage ');
+            console.log(pageContent);
+
+            // Update the page content
+            apiTools.updateWikiPage(title, pageContent, "Mise à jour du paramètre " + parameter + " dans la template " + template);
+            sheet.getRange(rowIndex + startRow + 1, statusCol + 1, 1, 1).setValue('x');
+
+            SpreadsheetApp.flush();
+        });
+        
+        alert("Terminé");
+    }
+
+    /**
      * Performs a search on each keyword in the header
      */
     findPages() {

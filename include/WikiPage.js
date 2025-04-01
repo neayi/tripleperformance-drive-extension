@@ -6,17 +6,18 @@ class wikiPage {
 
     /**
      * Add value to a template in the page
-     * String pagetitle The name of the page we are currently changing
      * String pageContent The content of the page (wikitext)
      * String template The template to look for. If the template is not found, the content is left untouched
      * String fieldname The name of the field to add to the template
-     * String newValue The content to add for this field. If empty, then the field is removed from the template.
+     * String newValue The content to add for this field. If null, then the field is removed from the template.
      * Bool bIgnoreWhenExisting If true, the existing field will not be touched if already present. If false it'll be overwritten.
      *
-     * Returns true is the content has been changed
+     * Returns the new content is the content has been changed, false otherwise
      */
     addValueToTemplate(pageContent, template, fieldname, newValue, bIgnoreWhenExisting) {
         const re = new RegExp('{{' + template + '(\s*\|[^}]*)}}|{{' + template + '\s*}}', 'i');
+
+        let new_args = new Map();
 
         let matches = pageContent.match(re);
         if (!matches || matches.length == 0) {
@@ -24,28 +25,28 @@ class wikiPage {
             return false;
         }
 
-        let existing_args = [];
-        if (matches[1] != "")
-            existing_args = matches[1].split('|').map((x) => x.trim());
+        if (matches[1] != "") {
+          let templateContent = matches[1].trim();
 
-        let new_args = new Map();
+          let existing_args = templateContent.match(/((\|[^|=]+=).*)+/gm);
 
-        existing_args.shift(); // Remove the template name
+          let fieldnames = [];
+          existing_args.forEach(part => {
+            part = part.replace(/=.*/, '');
+            fieldnames.push(part.trim().replace(/^[| ]+/, ''));
+            templateContent = templateContent.replace(part + '=', '¤@¤@');
+          });
+          let values = templateContent.split('¤@¤@').map((x) => x.trim());
+          values.shift();
 
-        existing_args.forEach(function (anArg) {
-            let parts = anArg.split('=');
-
-            if (parts.length == 1)
-                throw new Error("This template has unnamed parameters - cannot update");
-
-            let field = parts.shift().trim();
-            let value = parts.join('=').trim();
-            new_args.set(field.toLowerCase(), field + " = " + value);
-        });
+          fieldnames.forEach((field, i) => {
+            new_args.set(field.toLowerCase(), field + " = " + values[i]);
+          });
+        }
 
         let key = fieldname.toLowerCase();
 
-        if (!newValue) // Remove the field from the template
+        if (newValue === null) // Remove the field from the template
         {
             if (!new_args.has(key))
                 return false;
@@ -64,7 +65,7 @@ class wikiPage {
             new_args.set(key, fieldname + " = " + newValue);
         }
 
-        return pageContent = this.replaceTemplate(template, template, new_args, pageContent);
+        return this.replaceTemplate(template, template, new_args, pageContent);
     }
 
     /**
@@ -75,7 +76,10 @@ class wikiPage {
 
         const re = new RegExp("{{" + oldTemplate + '(\s*\|[^}]*)}}|{{' + oldTemplate + "\s*}}", 'i');
 
-        return pageContent.replace(re, this.buildTemplateFromMap(newTemplate, newParams));
+        let newTemplateCode = this.buildTemplateFromMap(newTemplate, newParams);
+
+        console.log("In replaceTemplate - " + newTemplateCode);
+        return pageContent.replace(re, newTemplateCode);
     }
 
 

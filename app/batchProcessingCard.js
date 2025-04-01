@@ -24,6 +24,11 @@ function addCodeToPages() {
     batchProcessingytModel.addCodeToPages();
 }
 
+function addParameterToPages() {
+    let batchProcessingytModel = new BatchProcessingytModel();
+    batchProcessingytModel.addParameterToPages();
+}
+
 function findPages() {
     let batchProcessingytModel = new BatchProcessingytModel();
     batchProcessingytModel.findPages();

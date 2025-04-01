@@ -20,6 +20,7 @@ function card_onHomepage(event) {
             .addItem("Créer des pages avec une template", 'createPagesWithTemplate')
             .addItem("Ajouter des mots-clés aux pages", 'addKeywordsToPages')
             .addItem("Ajouter du code en bas des pages", 'addCodeToPages')
+            .addItem("Ajouter ou modifier des paramètres d'une template", 'addParameterToPages')
             .addItem("Charger tous les contributeurs", 'loadAllContributors')
             .addItem("Pousser les intervenants vers Triple Performance", 'pushSpeakersToTriplePerformance')
         )

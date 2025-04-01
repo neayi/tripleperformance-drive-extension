@@ -2,7 +2,7 @@ class api_tools {
   constructor(api, username, password) {
     this.wikiURL = api;
 
-    this.api = new MediawikiAPI(api + "/api.php", username, password);
+    this.api = new MediawikiAPI(api + "api.php", username, password);
 
     let logindata = this.api.login();
     if (!logindata.login.result || logindata.login.result != 'Success') {
@@ -24,7 +24,7 @@ class api_tools {
       'redirects': 'true'
     };
 
-    let url = this.wikiURL + "/api.php?" + this.objectToQueryParams(parameters);
+    let url = this.wikiURL + "api.php?" + this.objectToQueryParams(parameters);
 
     let options = {
       'method': 'get',
@@ -212,7 +212,7 @@ class api_tools {
       };
 
       const queryString = this.objectToQueryParams(parameters);
-      const url = `${this.wikiURL}/api.php?${queryString}`;
+      const url = `${this.wikiURL}api.php?${queryString}`;
 
       let options = {
         'method': 'get',
@@ -255,7 +255,7 @@ class api_tools {
       };
 
       const queryString = this.objectToQueryParams(parameters);
-      const url = `${this.wikiURL}/api.php?${queryString}`;
+      const url = `${this.wikiURL}api.php?${queryString}`;
 
       let options = {
         'method': 'get',

@@ -142,7 +142,7 @@ class tp_parameters {
             return false;
         }
     
-        let api = new MediawikiAPI(this.secrets().wikiURL + "/api.php", this.secrets().username, this.secrets().password);
+        let api = new MediawikiAPI(this.secrets().wikiURL + "api.php", this.secrets().username, this.secrets().password);
     
         let logindata = api.login();
         if (!logindata.login.result || logindata.login.result != 'Success') {
