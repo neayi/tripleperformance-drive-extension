@@ -57,7 +57,9 @@
     "https://it.preprod.tripleperformance.ag/",
     "https://nl.preprod.tripleperformance.ag/",
     "https://pl.preprod.tripleperformance.ag/",
-    "https://pt.preprod.tripleperformance.ag/"
+    "https://pt.preprod.tripleperformance.ag/",
+
+    "https://generativelanguage.googleapis.com/"
   ],
   "timeZone": "Europe/Paris",
   "dependencies": {

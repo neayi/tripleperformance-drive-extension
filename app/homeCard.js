@@ -24,6 +24,11 @@ function card_onHomepage(event) {
             .addItem("Charger tous les contributeurs", 'loadAllContributors')
             .addItem("Pousser les intervenants vers Triple Performance", 'pushSpeakersToTriplePerformance')
         )
+        .addSubMenu(ui.createMenu('Gemini')
+            .addItem("Faire tourner Gemini™ sur la sélection", 'runGeminiOnSelection')
+            .addItem("Entrer votre clé API", 'showApiKeyModal')
+            .addItem("Choisir un modèle LLM", 'showModelSelectionModal')
+        )
         .addToUi();
     } catch (error) {
         Logger.log(error);
@@ -31,6 +36,63 @@ function card_onHomepage(event) {
 
     return card_buildHomepageCard();
 }
+
+function runGeminiOnSelection() {
+    Logger.log("runGeminiOnSelection");
+    let model = new tp_gemini();
+    model.runGeminiOnSelection();
+}
+
+
+/**
+ * Displays a modal for API key entry.
+ */
+function showApiKeyModal() {
+    let model = new tp_gemini();
+
+    const ui = HtmlService.createHtmlOutputFromFile('app/interfaces/apiKeyModal.html')
+        .setWidth(600)
+        .setHeight(600);
+
+    SpreadsheetApp.getUi().showModalDialog(ui, 'Saisir la clé API');
+}
+
+/**
+ * Sets the API key in the user's properties.
+ * @param {string} apiKey - The API key to set.
+ */
+function setApiKey(apiKey) {
+    PropertiesService.getUserProperties().setProperty('geminiApiKey', apiKey);
+    SpreadsheetApp.getUi().alert("La clé d'API a été enregistrée avec succès.");
+}
+function removeApiKey() {
+    // Deletes the stored API key for the Gemini API from the user's property store.
+    PropertiesService.getUserProperties().deleteProperty('geminiApiKey');
+    // Alerts the user that the API key has been successfully removed.
+    SpreadsheetApp.getUi().alert("La clé d'API a bien été supprimée.");
+}
+
+/**
+ * Displays a modal to select a model for the API.
+ */
+function showModelSelectionModal() {
+  const html = HtmlService.createHtmlOutputFromFile('app/interfaces/modelSelectionModal.html')
+    .setWidth(500)
+    .setHeight(550);
+
+  SpreadsheetApp.getUi().showModalDialog(html, 'Séléctionner un modèle Gemini™');
+}
+function onSelectGeminiModel(modelName) {
+    Logger.log("selectModel");
+    let model = new tp_gemini();
+    model.selectModel(modelName);
+}
+function getGeminiModels() {
+    Logger.log("getGeminiModels");
+    let model = new tp_gemini();
+    return model.getModels();
+}
+
 
 function syncTrainingCourses() {
     Logger.log("Synchro de la liste des formations")

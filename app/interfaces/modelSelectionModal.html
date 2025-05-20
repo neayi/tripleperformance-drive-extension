@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Selection Interface</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"  integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"  integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+</head>
+
+<body>
+  <div class="container-fluid px-0" id="models-list">
+
+  </div>
+
+  <script>
+  
+    google.script.run.withSuccessHandler(updateContent).getGeminiModels();
+
+    // Function to update modal content dynamically
+    function updateContent(models) {
+     
+      models.forEach(aModel => {
+
+        $("#models-list").append(`<article class="card mb-3" aria-labelledby="${aModel.Model}">
+      <div class="card-body">
+        <h5 id="${aModel.Model}" class="mb-0">${aModel.Variant}</h5>
+        <p class="mb-0">
+          <small>
+            <span class="badge text-bg-success">Access</span> ${aModel.Description}<br>
+            ${aModel.RPM} RPM, ${aModel.RPD} RPD, ${aModel.TPM} TPM - <a href="https://ai.google.dev/models/gemini#rate-limits" target="_blank" rel="noopener noreferrer">Voir les limites d'utilisation.</a>
+          </small>
+        </p>
+        <button class="btn btn-primary w-100 mt-2" onclick="selectModel('${aModel.Model}')">Selectionner</button>
+      </div>
+    </article>`);
+
+      });
+    }
+    
+    function selectModel(modelId) {
+      google.script.run.onSelectGeminiModel(modelId);
+      google.script.host.close();
+    }
+  </script>
+</body>
+
+</html>
