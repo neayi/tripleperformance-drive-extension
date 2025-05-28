@@ -727,4 +727,122 @@ class BatchProcessingytModel {
         
         return production;
     }
+
+
+    analyzeTranslations() {
+        // The sheet should have one column per language, with the language code as the header. Each subsequent row should contain the page title in that language.
+        Logger.log('analyzeTranslations');
+        let sheet = SpreadsheetApp.getActiveSheet();
+        let data = sheet.getDataRange();
+        let values = data.getValues();
+        let languages = values.shift(); // remove the title row
+
+        values.forEach((row, rowIndex) => {
+            languages.forEach((language, colIndex) => {
+                let title = row[colIndex];
+                if (title.length == 0)
+                    return;
+
+                Logger.log("Analyzing translations for " + title + " in " + language);
+
+                let apiTools = getApiTools(language);
+              
+                let translations = apiTools.getTranslationsForPage(title);
+                if (translations.length == 0) {
+                    Logger.log("No translations found for " + title + " in " + language);
+                    return;
+                }
+
+                Logger.log(translations);
+
+                // For each translation, check if the page is properly set in the corresponding language column
+                for (const [targetLanguage, translatedTitle] of Object.entries(translations)) {
+                    let targetColIndex = languages.indexOf(targetLanguage);
+                    if (targetColIndex == -1) {
+                        // Add a new column for the target language
+                        targetColIndex = languages.length;
+                        languages.push(targetLanguage);
+                        sheet.insertColumnAfter(targetColIndex);
+                        sheet.getRange(1, targetColIndex + 1).setValue(targetLanguage);
+                    }
+
+                    // If the cell is not empty, skip it
+                    const existingValue = sheet.getRange(rowIndex + 2, targetColIndex + 1).getValue();
+                    if (existingValue.length > 0) {
+                        if (existingValue != translatedTitle) {
+                            // Set the cell color to red to indicate a mismatch
+                            sheet.getRange(rowIndex + 2, targetColIndex + 1).setBackground("red");
+                        }
+
+                        continue;
+                    }
+
+                    // Set the value in the corresponding cell
+                    sheet.getRange(rowIndex + 2, targetColIndex + 1).setValue(translatedTitle);
+                }
+            });
+        });
+    }
+
+    fixTranslations() {
+        // The sheet should have one column per language, with the language code as the header. Each subsequent row should contain the page title in that language.
+        Logger.log('analyzeTranslations');
+        let sheet = SpreadsheetApp.getActiveSheet();
+        let data = sheet.getDataRange();
+        let values = data.getValues();
+        let languages = values.shift(); // remove the title row
+        const wikipage = new wikiPage();
+
+        values.forEach((row, rowIndex) => {
+            languages.forEach((language, colIndex) => {
+                let title = row[colIndex];
+                if (title.length == 0)
+                    return;
+
+                let pageContent = null;
+
+                Logger.log("Analyzing translations for " + title + " in " + language);
+
+                let apiTools = getApiTools(language);
+              
+                let translations = apiTools.getTranslationsForPage(title);
+                if (translations.length == 0) {
+                    Logger.log("No translations found for " + title + " in " + language);
+                    return;
+                }
+
+                Logger.log(translations);
+
+                languages.forEach((targetLanguage, targetColIndex) => {
+                    if (targetLanguage == language)
+                        return; // skip the current language
+
+                    const targetTranslation = sheet.getRange(rowIndex + 2, targetColIndex + 1).getValue();
+                    if (targetTranslation.length == 0)
+                        return;
+
+                    if (targetTranslation == translations[targetLanguage])
+                        return; // the translation is already correct
+                    
+                    // Update the wiki page with the correct translation
+                    Logger.log("Updating translation for " + title + " in " + targetLanguage + " to " + targetTranslation);
+
+                    if (pageContent == null)
+                        pageContent = apiTools.getPageContent(title);
+
+                    if (pageContent.length == 0)
+                        return; // the page does not exist
+
+                    pageContent = wikipage.setTranslationForPage(pageContent, targetLanguage, targetTranslation);
+                });
+                
+                if (pageContent != null) {
+                    // Update the page content
+                    apiTools.updateWikiPage(title, pageContent, "Mise à jour des traductions");
+                }   
+            });
+        });
+
+        alert("Les traductions ont été mises à jour.");
+    }
 }

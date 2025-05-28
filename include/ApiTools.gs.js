@@ -525,4 +525,46 @@ class api_tools {
     return [];
   }
 
+  /**
+   * Get translations for a page
+   * @param {String} pageName
+   * @returns {Object} An object with language codes as keys and page titles as values
+   * @see https://www.mediawiki.org/wiki/API:Language#Get_translations_for_a_page
+   */
+  getTranslationsForPage(pageName) {
+    try {
+      const parameters = {
+        action: 'query',
+        prop: 'langlinks',
+        titles: pageName,
+        lllimit: '500',
+        redirects: true,
+        format: 'json'
+      };
+
+      const results = this.api.query(parameters);
+
+      const pages = results.query.pages;
+      if (!pages || Object.keys(pages).length === 0) {
+        return {};
+      }
+
+      const page = pages[Object.keys(pages)[0]];
+      if (!page.langlinks) {
+        return {};
+      }
+
+      const translations = {};
+      page.langlinks.forEach(link => {
+        translations[link.lang] = link['*'];
+      });
+
+      return translations;
+    } catch (error) {
+      console.error(error.message);
+    }
+
+    return {};
+  }
+
 }

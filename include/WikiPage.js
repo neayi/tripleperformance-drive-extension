@@ -365,4 +365,25 @@ class wikiPage {
 
         return pageContent;
     }
+
+    /**
+     * Analyze the page content, and adds the right translation tag at the end if missing (replace the existing one if already present)
+     * @param {*} pageContent 
+     * @param {*} targetLanguage 
+     * @param {*} targetTranslation 
+     */
+    setTranslationForPage(pageContent, targetLanguage, targetTranslation) {
+        // The translation tag is of the form [[fr:Title in French]] with fr the target language and Title in French the title of the page in that language
+        const re = new RegExp('\\[\\[' + targetLanguage + ':(.*?)\\]\\]', 'i');
+        let matches = pageContent.match(re); 
+        if (matches && matches.length > 0) {
+            // The translation tag is already present, replace it
+            pageContent = pageContent.replace(matches[0], '[[' + targetLanguage + ':' + targetTranslation + ']]');
+        }
+        else {
+            // The translation tag is not present, add it at the end of the page
+            pageContent += '\n[[' + targetLanguage + ':' + targetTranslation + ']]';
+        }
+        return pageContent;
+    }
 }
