@@ -269,114 +269,42 @@ class wikiPage {
 
     insertKeywordInPage(pageContent, keyword) {
         Logger.log("insertKeywordInPage : " + keyword);
+        let self = this;
 
-throw new Error("This is broken, please fix with Mots Clés first");
+        const templates = [
+            "Auxiliaire",
+            "Bioagresseur",
+            "Exemple de mise en oeuvre",
+            "Exemple de mise en œuvre",
+            "Formation",
+            "Livre",
+            "Matériel",
+            "Outil d'aide",
+            "Portrait de ferme",
+            "Pratique",
+            "Programme",
+            "Présentation",
+            "Vidéo"
+        ];
 
+        templates.forEach((aTemplate) => {
+            if (self.hasTemplate(pageContent, aTemplate)) {
+                Logger.log("insertKeywordInPage : we have the template " + aTemplate);
 
-        // const templates = [
-        //     "{{Auxiliaire",
-        //     "{{Bioagresseur",
-        //     "{{Exemple de mise en oeuvre",
-        //     "{{Exemple de mise en œuvre",
-        //     "{{Formation",
-        //     "{{Livre",
-        //     "{{Matériel",
-        //     "{{Outil d'aide",
-        //     "{{Portrait de ferme",
-        //     "{{Pratique",
-        //     "{{Programme",
-        //     "{{Présentation",
-        //     "{{Vidéo"
-        // ];
+                let params = self.getTemplateParams(pageContent, aTemplate);
+                let keywords = keyword;
+                if (params.has('Mots-clés')) {
+                    keywords = params.get('Mots-clés') + ', ' + keyword;
 
-        // let self = this;
+                    keywords = Array.from(new Set(keywords.split(',').map(k => k.trim()))).join(', ');
+                }
+                
+                Logger.log("insertKeywordInPage : new keywords " + keywords);
 
-        // templates.forEach(aTemplate, {
-
-        //     const self.getTemplateParams(pageContent, aTemplate);
-
-
-        // });
-        
-        // const lcKeyword = keyword.toLowerCase();
-
-        // const regex = /\|\s*Tag\s+([0-9]+)\s*=\s*([^|}]+)/gi;
-        // const matches = pageContent.matchAll(regex);
-        // const tagNumbers = [];
-        // let newTagNumber = 0;
-        // const keywords = [];
-
-        // for (const match of matches) {
-        //     tagNumbers.push(parseInt(match[1], 10));
-        //     keywords.push(match[2].trim().toLowerCase());
-        // }
-
-        // if (tagNumbers.length > 0) {
-        //     newTagNumber = Math.max(...tagNumbers) + 1;
-
-        //     if (keywords.includes(lcKeyword)) {
-        //         Logger.log("Keyword already in page : " + keyword);
-        //         return pageContent;
-        //     }
-        // }
-
-        // const templates = [
-        //     "{{Auxiliaire",
-        //     "{{Bioagresseur",
-        //     "{{Exemple de mise en oeuvre",
-        //     "{{Exemple de mise en œuvre",
-        //     "{{Formation",
-        //     "{{Livre",
-        //     "{{Matériel",
-        //     "{{Outil d'aide",
-        //     "{{Portrait de ferme",
-        //     "{{Pratique",
-        //     "{{Programme",
-        //     "{{Présentation",
-        //     "{{Vidéo"
-        // ];
-
-        // const templateRegex = new RegExp(templates.join('|'), 'i');
-
-        // if (!templateRegex.test(pageContent)) {
-        //     const matches = pageContent.match(/{{\s*[^|}]+/g);
-        //     Logger.log("Compatible template not found.");
-        //     return pageContent;
-        // }
-
-        // for (const template of templates) {
-        //     const templateRegex = new RegExp(template + '(\s*\|[^}]*)}}', 'i');
-        //     const matches = pageContent.match(templateRegex);
-
-        //     if (!matches || matches.length == 0)
-        //         continue;
-
-        //     const args = matches[1].split('|').map(arg => arg.trim());
-        //     args.push(`Tag ${newTagNumber} = ${keyword}`);
-
-        //     const firstArgs = [];
-        //     const tagArgs = [];
-
-        //     for (const arg of args) {
-        //         if (arg.match(/Tag [0-9]+\s*=\s*$/)) {
-        //             continue;
-        //         }
-
-        //         if (arg.match(/Tag [0-9]+\s*=@/)) {
-        //             tagArgs.push(arg);
-        //         } else {
-        //             firstArgs.push(arg);
-        //         }
-        //     }
-
-        //     tagArgs.sort();
-        //     const sortedArgs = firstArgs.concat(tagArgs);
-
-        //     const newTemplate = `${template} ${sortedArgs.join('\n| ')} }}`;
-        //     pageContent = pageContent.replace(templateRegex, newTemplate);
-
-        //     break;
-        // }
+                params.set('Mots-clés', keywords);
+                pageContent = self.updateTemplate(aTemplate, params, pageContent);
+            }
+        });
 
         return pageContent;
     }

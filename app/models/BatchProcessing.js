@@ -20,9 +20,9 @@ class BatchProcessingytModel {
 
         // title, width, alignment, wrap, bold
         this.columnsAddKeywordsDefinitions = [
-            ["Titre",     "262", "left",   true,  true],
-            ["Mot-clé 1", "100", "center", true,  false],
-            ["Mot-clé 2", "100", "center", true,  false]
+            ["Titre",                   "262", "left",   true,  true],
+            ["Mot-clé",                 "100", "center", true,  false],
+            ["Statut (a/u/x)",          "100", "center", false, false]
         ];
 
         this.columnsAddKeywords = this.columnsAddKeywordsDefinitions.map(col => col[0]);
@@ -197,17 +197,29 @@ class BatchProcessingytModel {
         let sheet = SpreadsheetApp.getActiveSheet();
 
         let data = sheet.getDataRange();
-        let values = data.getValues();
-        let keywordsToLookup = values.shift();
-        keywordsToLookup.shift(); // remove the title
+        let pagesToModify = data.getValues();
+        
+        pagesToModify.shift(); // remove the title row
+
+        let colTitle = this.getColNumberAddKeyword("Titre");
+        let colKeyword = this.getColNumberAddKeyword("Mot-clé");
+        let colStatus = this.getColNumberAddKeyword("Statut (a/u/x)");
 
         let startRow = data.getRow();
 
-        values.forEach((row, rowIndex) => {
+        pagesToModify.forEach((row, rowIndex) => {
 
-            let title = row[0];
-   
-            let newValues = [];
+            let title = row[colTitle - 1];
+            let status = row[colStatus - 1];
+            let keyword = row[colKeyword - 1].trim();
+            if (keyword.length == 0)
+                return;
+
+            Logger.log("Processing page " + title + " with keyword " + keyword + " and status " + status);
+
+            if (status != 'a')
+                return;
+            
 
             var wiki = new wikiPage();
             let apiTools = getApiTools();
@@ -215,21 +227,12 @@ class BatchProcessingytModel {
             var pageContent = apiTools.getPageContent(title);
             const originalPageContent = pageContent;
 
-            let col = 1;
-            keywordsToLookup.forEach(keyword => {
-                if (row[col] == 'a') {
-                    pageContent = wiki.insertKeywordInPage(pageContent, keyword);
-                    newValues.push('x');
-                } else 
-                    newValues.push(row[col]);
-
-                col++;
-            });
+            pageContent = wiki.insertKeywordInPage(pageContent, keyword);
 
             if (originalPageContent != pageContent)
                 apiTools.updateWikiPage(title, pageContent, "Ajout de mot clé");
 
-            sheet.getRange(rowIndex + startRow + 1, 2, 1, keywordsToLookup.length).setValues([newValues]);
+            sheet.getRange(rowIndex + startRow + 1, colStatus, 1, 1).setValue('x');
             SpreadsheetApp.flush();
         });
 
