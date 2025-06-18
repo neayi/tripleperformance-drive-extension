@@ -739,7 +739,7 @@ class BatchProcessingytModel {
 
         values.forEach((row, rowIndex) => {
             languages.forEach((language, colIndex) => {
-                let title = row[colIndex];
+                let title = String(row[colIndex]);
                 if (title.length == 0)
                     return;
 
