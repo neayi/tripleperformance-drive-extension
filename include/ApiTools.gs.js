@@ -10,7 +10,58 @@ class api_tools {
     }
   }
 
+  /**
+   * Get the content of the page, without trying to redirect. If you want to follow redirects, use getPageContentWithRedirect !
+   * @param {} page 
+   * @returns 
+   */
   getPageContent(page) {
+    // https://wiki.tripleperformance.fr/api.php?action=query&prop=revisions&titles=Pratiquer%20l%27agroforesterie|Pratiquer%20la%20vitiforesterie&rvslots=*&rvprop=content&formatversion=2
+
+    let parameters = {
+      "action": "query",
+      "prop": "revisions",
+      "titles": page,
+      "rvslots": "*",
+      "rvprop": "content",
+      "formatversion": "2",
+      "format": 'json',
+      'redirects': 'false' // do not follow redirects
+    };
+
+    let url = this.wikiURL + "api.php?" + this.objectToQueryParams(parameters);
+
+    let options = {
+      'method': 'get',
+      'payload': parameters
+    };
+
+    let results = UrlFetchApp.fetch(url, options);
+
+    let json = results.getContentText();
+
+    let result = JSON.parse(json);
+
+    if (!result.query.pages ||
+      result.query.pages.length == 0 ||
+      !result.query.pages[0].revisions ||
+      result.query.pages[0].revisions.length == 0) {
+      return false;
+    }
+
+    let pageContent = result['query']['pages'][0]['revisions'][0]['slots']['main']['content'];
+
+    return pageContent;
+  }
+
+  
+  /**
+   * Get the content of the page, and follows redirects
+   * @param {} page 
+   * @returns an object with both the page content and the final page title after redirects. If the page does not exist, returns false.
+   * @see https://www.mediawiki.org/wiki/API:Redirects
+   */
+  getPageContentWithRedirect(page) {
     // https://wiki.tripleperformance.fr/api.php?action=query&prop=revisions&titles=Pratiquer%20l%27agroforesterie|Pratiquer%20la%20vitiforesterie&rvslots=*&rvprop=content&formatversion=2
 
     let parameters = {
@@ -46,8 +97,12 @@ class api_tools {
 
     let pageContent = result['query']['pages'][0]['revisions'][0]['slots']['main']['content'];
 
-    return pageContent;
+    return {
+      content: pageContent,
+      title: result['query']['pages'][0]['title']
+    };
   }
+
 
   updateWikiPage(pageName, newContent, reason) {
     const edittoken = this.api.getEditToken();

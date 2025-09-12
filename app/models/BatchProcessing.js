@@ -799,11 +799,15 @@ class BatchProcessingytModel {
                 if (title.length == 0)
                     return;
 
-                let pageContent = null;
-
-                Logger.log("Analyzing translations for " + title + " in " + language);
-
                 let apiTools = getApiTools(language);
+                let pageContent = apiTools.getPageContentWithRedirect(title);
+
+                if (!pageContent || pageContent.content.length == 0)
+                    return; // the page does not exist
+
+                console.log(pageContent);
+            
+                Logger.log("Analyzing translations for " + title + " in " + language);
               
                 let translations = apiTools.getTranslationsForPage(title);
                 if (translations.length == 0) {
@@ -827,18 +831,12 @@ class BatchProcessingytModel {
                     // Update the wiki page with the correct translation
                     Logger.log("Updating translation for " + title + " in " + targetLanguage + " to " + targetTranslation);
 
-                    if (pageContent == null)
-                        pageContent = apiTools.getPageContent(title);
-
-                    if (pageContent.length == 0)
-                        return; // the page does not exist
-
-                    pageContent = wikipage.setTranslationForPage(pageContent, targetLanguage, targetTranslation);
+                    pageContent.content = wikipage.setTranslationForPage(pageContent.content, targetLanguage, targetTranslation);
                 });
-                
-                if (pageContent != null) {
+
+                if (pageContent && pageContent.content.length > 0) {
                     // Update the page content
-                    apiTools.updateWikiPage(title, pageContent, "Mise à jour des traductions");
+                    apiTools.updateWikiPage(pageContent.title, pageContent.content, "Mise à jour des traductions");
                 }   
             });
         });

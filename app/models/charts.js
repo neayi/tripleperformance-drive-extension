@@ -366,158 +366,66 @@ class chartsBuilder {
     getRotation(range, wikiTitle) {
         const values = range.getValues();
         const bgColors = range.getBackgrounds();
-        const richTextValues = range.getRichTextValues();
 
         const title = this.getChartValue("Titre", values);
 
-        let option = {
-            "title": {
-                "text": title,
-                "left": 'center'
+        // We build a minimal JSON that conforms with https://github.com/osfarm/itineraire-technique/
+        let json = {
+            "title": title,
+            "options": {
+                "view" : "vertical",
+                "show_transcript": false,
+                "title_top_interventions": "Contrôle adventices",
+                "title_bottom_interventions": "Autres interventions",
+                "title_steps": "Étapes de la rotation dans la parcelle"
             },
-            "tooltip": {
-                "formatter": "rotation",
-                "confine": true
-            },
-            "series": []
-        };
+            "steps": [ ]
+        }
 
         const headerRow = this.getChartRowIndex("Cultures/couverts", values);
         const footerRow = this.getChartRowIndex("Fin du graphique", values);
         Logger.log(`header and footer : ${headerRow} - ${footerRow}`);
 
-        // Build the crop ring
-        let crops = {
-            name: 'Rotation',
-            type: 'pie',
-            top: '40',
-            radius: ['70%', '100%'],
-            labelLine: {
-                length: 30
-            },
-            label: {
-                position: 'inner',
-                fontWeight: 'bold'
-            },
-            data: []
-        };
+        let currentDate = this.getChartValue("Date de démarrage", values);
 
-        let totalMonths = 0;
         for (let rowIndex = headerRow + 1; rowIndex < footerRow; rowIndex++) {
             let [culture, nbMois, Description] = values[rowIndex];
 
             if (culture == "" && nbMois == "" && Description == "")
                 break; // We are at the end of our table
 
-            let description = htmlEncodeRichText(richTextValues[rowIndex][2])
+            let description = values[rowIndex][2];
+            
+            let startDate = currentDate;
+            let endDate = new Date(startDate.valueOf());
+            endDate.setMonth(endDate.getMonth() + nbMois);
 
-            let item = {
-                'name': culture,
-                'value': nbMois,
-                'description': description
+            let step = {
+                "name": culture,
+                "startDate": startDate.toISOString().split('T')[0],
+                "endDate": endDate.toISOString().split('T')[0],
+                "color": '',
+                "description": description,
+                "attributes": [],
+                "interventions": []
             };
-
+            
             const color = bgColors[rowIndex][0];
             if (color != '#ffffff')
-                item.itemStyle = { 'color': color };
+                step.color = color;
 
-            crops.data.push(item);
+            currentDate = endDate;
+            currentDate.setDate(currentDate.getDate() + 1);
 
-            totalMonths += nbMois;
+            json.steps.push(step);
         }
 
-        option.series.push(crops);
-
-        // Create the calendar ring
-        let months = {
-            name: 'Months',
-            type: 'pie',
-            top: '40',
-            radius: ['60%', '70%'],
-            label: {
-                position: 'inner',
-                rotate: 'tangential'
-            },
-            tooltip: {
-                show: true,
-                formatter: '{b}'
-            },
-            itemStyle: {
-                borderColor: '#555',
-                color: '#FFFFFF',
-                borderWidth: 1
-            },
-            data: []
-        };
-
-        const monthsColorScale = [
-            '#c7d2e3', // winter
-            '#c7d2e3',
-            '#bdd8c0', // spring
-            '#bdd8c0',
-            '#bdd8c0',
-            '#ecebb3', // summer
-            '#ecebb3',
-            '#ecebb3',
-            '#f8e0c5', // automn
-            '#f8e0c5',
-            '#f8e0c5',
-            '#c7d2e3'
-        ];
-
-        let monthsPerYear = new Map();
-        let currentDate = this.getChartValue("Date de démarrage", values);
-        for (let month = 1; month <= totalMonths; month++) {
-            let monthName = currentDate.toLocaleDateString(undefined, { month: 'short' });
-
-            let item = { 'name': monthName, 'value': 1 };
-            const year = currentDate.getFullYear();
-            // if (year % 2 == 0)
-            //     item.itemStyle = { color: '#EEE' };
-            item.itemStyle = { color: monthsColorScale[currentDate.getMonth()] };
-
-            months.data.push(item);
-
-            let currentMonthsPerYear = monthsPerYear.get(year);
-            if (currentMonthsPerYear == undefined)
-                currentMonthsPerYear = 0;
-            monthsPerYear.set(year, ++currentMonthsPerYear);
-
-            // increment the current month
-            currentDate.setMonth(currentDate.getMonth() + 1);
-        }
-        option.series.push(months);
-
-        // Create the calendar years ring
-        let years = {
-            name: 'Years',
-            type: 'pie',
-            top: '40',
-            radius: ['45%', '60%'],
-            label: {
-                position: 'inner',
-                rotate: 'tangential',
-                fontWeight: 'bold'
-            },
-            emphasis: { disabled: true },
-            tooltip: { show: false },
-            itemStyle: {
-                color: '#FFFFFF',
-                borderWidth: 1
-            },
-            data: []
-        };
-
-        monthsPerYear.forEach((nbMonths, year) => {
-            years.data.push({ 'name': year, 'value': nbMonths });
-        });
-        option.series.push(years);
-
-        let parserFunction = this.buildParserFunction(wikiTitle, option,
+        let parserFunction = this.buildParserFunction(wikiTitle, json,
             this.getChartValue("Titre", values),
-            this.getChartValue("Largeur", values),
+            '', // 100%
             this.getChartValue("Hauteur", values),
-            this.getChartValue("Alignement", values));
+            '' // centered
+        );
 
         return parserFunction;
     }

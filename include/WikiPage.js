@@ -373,6 +373,10 @@ class wikiPage {
      * @param {*} targetTranslation 
      */
     setTranslationForPage(pageContent, targetLanguage, targetTranslation) {
+
+        if (String(pageContent).length == 0)
+            return pageContent;
+
         // The translation tag is of the form [[fr:Title in French]] with fr the target language and Title in French the title of the page in that language
         const re = new RegExp('\\[\\[' + targetLanguage + ':(.*?)\\]\\]', 'i');
         let matches = pageContent.match(re); 
