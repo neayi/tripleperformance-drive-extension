@@ -321,27 +321,33 @@ class wikiPage {
 
         chartName = chartName.trim().toLowerCase();
         
-        const re = new RegExp('\{\{#' + chartType + '\s*:(.*?)\}\}', 'sgmi');
+        // if chartType starts with a # then it's a parserfunction:
+        let re = null;
+        if (chartType[0] == '#')
+            re = new RegExp('\{\{' + chartType + '\s*:(.*?)\}\}', 'sgmi');
+        else
+            re = new RegExp('\{\{' + chartType + '\s*\|(.*?)\}\}', 'sgmi');
 
         let matches = pageContent.match(re);
         let originalChart = '';
 
         if (matches) {
 
-            matches.forEach((chart) => {
-                if (originalChart != "")
-                    return;
-
-                const re = new RegExp('\{\{#' + chartType + '\s*:', 'i');
+            for (let chart of matches) {
+                let re = null;
+                if (chartType[0] == '#')
+                    re = new RegExp('\{\{' + chartType + '\s*:', 'i');
+                else
+                    re = new RegExp('\{\{' + chartType + '\s*\|', 'i');
 
                 let chartcontent = chart.replace(re, '');
                 let existing_args = chartcontent.split('|').map((x) => x.trim());
 
-                existing_args.forEach((anArg) => {
+                for (let anArg of existing_args) {
                     let parts = anArg.split('=');
 
                     if (parts.length == 1)
-                        return;
+                        continue;
 
                     let field = parts.shift().trim().toLowerCase();
                     let value = parts.join('=').trim().toLowerCase();                    
@@ -349,15 +355,17 @@ class wikiPage {
                         // Found !
                         originalChart = chart;
                         Logger.log(`Chart ${chartName} found`);
-
+                        break;
                     }
-                });
-            });
+                }
+
+                if (originalChart != "")
+                    break;                
+            }
         }
         else
             Logger.log(`Chart ${chartName} not found - adding chart at the end of the page...`);
             
-
         if (originalChart != "")
             pageContent = pageContent.replace(originalChart, chartCode);
         else

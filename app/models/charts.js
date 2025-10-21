@@ -103,7 +103,7 @@ class chartsBuilder {
 
         const values = range.getValues();
 
-        let chartParserFunction = 'echart';
+        let chartParserFunction = 'Graphique Triple Performance';
         let chartTemplate = '';
         let chartArgs = new Map();
 
@@ -128,7 +128,7 @@ class chartsBuilder {
 
             case "Comptabilité":
                 chart = this.getComptabilite(range);
-                chartParserFunction = 'economic_charts';
+                chartParserFunction = '#economic_charts';
                 break;
 
             case "Analyse environnementale":
@@ -262,7 +262,7 @@ class chartsBuilder {
             option.series.push(series);
         }
 
-        return this.buildParserFunction(wikiTitle, option,
+        return this.buildParserFunction("Bar chart par année", wikiTitle, option,
             this.getChartValue("Titre", values),
             this.getChartValue("Largeur", values),
             this.getChartValue("Hauteur", values),
@@ -354,7 +354,7 @@ class chartsBuilder {
             option.series[0].data.push(currentCategoryJSON);
         }
 
-        let parserFunction = this.buildParserFunction(wikiTitle, option,
+        let parserFunction = this.buildParserFunction("Assolement", wikiTitle, option,
             this.getChartValue("Titre", values),
             this.getChartValue("Largeur", values),
             this.getChartValue("Hauteur", values),
@@ -420,7 +420,7 @@ class chartsBuilder {
             json.steps.push(step);
         }
 
-        let parserFunction = this.buildParserFunction(wikiTitle, json,
+        let parserFunction = this.buildParserFunction("Rotation", wikiTitle, json,
             this.getChartValue("Titre", values),
             '', // 100%
             this.getChartValue("Hauteur", values),
@@ -497,7 +497,7 @@ class chartsBuilder {
         if (!hasMoyenne)
             option.series[0].data.pop();
 
-        return this.buildParserFunction(wikiTitle, option,
+        return this.buildParserFunction("Radar", wikiTitle, option,
             this.getChartValue("Titre", values),
             this.getChartValue("Largeur", values),
             this.getChartValue("Hauteur", values),
@@ -730,14 +730,14 @@ class chartsBuilder {
             option.yAxis[0].min = -10; // °C
         }
 
-        return this.buildParserFunction(wikiTitle, option,
+        return this.buildParserFunction("Ombrothermique", wikiTitle, option,
             this.getChartValue("Titre", values),
             this.getChartValue("Largeur", values),
             this.getChartValue("Hauteur", values),
             this.getChartValue("Alignement", values));        
     }
 
-    buildParserFunction(wikiTitle, option, title, width, height, align) {
+    buildParserFunction(graphType, wikiTitle, option, title, width, height, align) {
 
         // Push the content to its own JSON page
 
@@ -778,7 +778,7 @@ class chartsBuilder {
         if (String(height).trim().length == 0)
             height = "400px";
 
-        let content = `{{#echarts: title=${title} | width=${width} | height=${height} ${align} | json = ${JsonPageTitle} }}`;
+        let content = `{{Graphique Triple Performance| type=${graphType} | title=${title} | width=${width} | height=${height} ${align} | json = ${JsonPageTitle} }}`;
 
         return content;
     }
