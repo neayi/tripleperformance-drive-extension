@@ -91,7 +91,7 @@ class YoutubeModel {
 
         let pagesWithVideos = apiTools.getSemanticValuesWithForSemanticQuery(
             "[[A une URL de vidéo::+]]",
-            ['A une URL de vidéo', 'A un intervenant', 'A un mot-clé', 'A comme agriculteur', 'Est dans le projet']);
+            ['A une URL de vidéo', 'A un intervenant', 'A un mot-clé', 'A comme agriculteur', 'Est dans le projet', 'A une photo']);
 
         // Build a map with id --> page
         let wikiPages = new Map();
@@ -104,6 +104,7 @@ class YoutubeModel {
                 intervenants = String(page[4]);
             let motsCles = String(page[3]);
             let projets = String(page[5]);
+            let photo = String(page[6]);
 
             urls = urls.map(url => {
                 var match = url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
@@ -119,7 +120,7 @@ class YoutubeModel {
             }).filter(id => id != null);
 
             urls.forEach(id => {
-                wikiPages.set(id, [pageTitle, intervenants, motsCles, projets, new Date(), urls.join(', ')]);
+                wikiPages.set(id, [pageTitle, intervenants, motsCles, projets, new Date(), urls.join(', '), photo]);
             });
         });
 
@@ -173,10 +174,15 @@ class YoutubeModel {
                 console.log(modificationDate);
 
                 let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
-                sheet.getRange(rowIndex + startRow, wikiCol, 1, 8).setValues([[intervenants, motsCles, projets, 'o', '', cellcontent, modificationDate, urls]]);
+
+                let photo = pageInfo[6] ?? '';
+                let imageContent = getImageFormula(getTriplePerformanceURL(), 'Special:Filepath/' + photo);
+
+                sheet.getRange(rowIndex + startRow, wikiCol, 1, 8).setValues([[intervenants, motsCles, projets, 'o', imageContent, cellcontent, modificationDate, urls]]);
             }
         });
 
+        SpreadsheetApp.flush();
         alert("Terminé");
     }
 
@@ -398,14 +404,17 @@ class YoutubeModel {
 
         const self = this;
 
+        const formulas = data.getFormulas();
+
         data.getValues().forEach((row, rowIndex) => {
 
             let video = this.getVideoFromRow(row);
+            let thumbnail = formulas[rowIndex][wikiCol - 1];
 
             if (video.videoID.length != 11 || !video.thumbnailURL.match(/^http/))
                 return;
 
-            if (video.thumbnail.length > 0)
+            if (video.thumbnail.length > 0 || thumbnail.length > 0)
                 return; // Already on the wiki
 
             if (video.okForWiki !== "o" && video.okForWiki !== "f") //  f for force - will overwrite the existing page !
@@ -420,7 +429,8 @@ class YoutubeModel {
             Logger.log("Getting thumbnail for " + video.videoID + " " + video.thumbnailURL + " " + destName);
             let ret = apiTools.uploadImage(video.thumbnailURL, destName, comment);
 
-            let content = getHyperlinkedTitle(getTriplePerformanceURL(video.language), 'File:' + destName, destName);
+            let content = getImageFormula(getTriplePerformanceURL(video.language), 'Special:Filepath/File:' + destName);
+
             sheet.getRange(rowIndex + startRow, wikiCol).setValue(content);
             SpreadsheetApp.flush();
         });
@@ -491,7 +501,7 @@ class YoutubeModel {
             apiTools.createWikiPage(pageTitle, pageContent, "Création de la page");
 
             let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(video.language), pageTitle);
-            sheet.getRange(rowIndex + startRow, wikiCol, 1, 2).setValues([[cellcontent, new Date()]]);
+            sheet.getRange(rowIndex + startRow, wikiCol, 1, 3).setValues([[cellcontent, new Date(), video.videoID]]);
         });
     }
 

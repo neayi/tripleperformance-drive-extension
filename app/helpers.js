@@ -54,6 +54,11 @@ function getHyperlinkedTitle(tripleperformanceURL, pageTitle, displayTitle = "")
     return `=HYPERLINK("${tripleperformanceURL}wiki/${pageURL}"; "${displayTitle}")`;
 }
 
+function getImageFormula(tripleperformanceURL, pageTitle) {
+    let pageURL = encodeURI(pageTitle.replaceAll(' ', '_')).replaceAll('?', '%3F');
+    return `=IMAGE("${tripleperformanceURL}wiki/${pageURL}")`;
+}
+
 function getLightGrayColor() {
     return "#f3f3f3";
 }

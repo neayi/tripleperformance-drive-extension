@@ -471,7 +471,7 @@ class api_tools {
         return JSON.stringify(r.upload.warnings);
       }
 
-      throw new Error("Could not upload image: " + JSON.stringify(r));
+      throw new Error("Could not upload image: " + imageURL + "\n" + desFilename + "\n" + JSON.stringify(r));
     }
 
     Logger.log("Uploaded");
