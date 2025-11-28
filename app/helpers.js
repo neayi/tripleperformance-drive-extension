@@ -50,7 +50,7 @@ function getHyperlinkedTitle(tripleperformanceURL, pageTitle, displayTitle = "")
 
     displayTitle = displayTitle.replaceAll('"', '""');
 
-    let pageURL = encodeURI(pageTitle.replaceAll(' ', '_'));
+    let pageURL = encodeURI(pageTitle.replaceAll(' ', '_')).replaceAll('?', '%3F');
     return `=HYPERLINK("${tripleperformanceURL}wiki/${pageURL}"; "${displayTitle}")`;
 }
 
@@ -269,6 +269,7 @@ function fixTitle(title)
 
   title = title.replace('’', "'");
   title = title.replace('…', "...");
+  title = title.replace('é', "é");
   title = title.replace('é', "é");
   title = title.replace('è', "è");
   title = title.replace('à', "à");

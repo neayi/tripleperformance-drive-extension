@@ -11,7 +11,7 @@ class chartsBuilder {
             { type: 'Radar', name: 'Analyse environnementale', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/analyse-environnementale.png' },
             { type: 'Radar', name: 'Analyse socio-économique', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/analyse-socio-eco.png' },
             { type: 'Barres horizontales', name: "Capacité d'autoproduction", image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/autonomie.png' },
-            { type: 'Camembert', name: 'Stratégie commerciale', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/commercialisation.png' },
+            { type: 'Camembert', name: 'Camembert', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/commercialisation.png' },
 
             { type: 'Histogramme', name: 'Diagramme ombrothermique', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/ombrothermique.png' }
         ];
@@ -146,9 +146,9 @@ class chartsBuilder {
                 chartTemplate = "EChart Capacité d'autoproduction MSV";
                 break;
 
-            case "Stratégie commerciale":
-                chartArgs = this.getStrategieCommerciale(range);
-                chartTemplate = "EChart Stratégie commerciale MSV";
+            case "Camembert":
+                chart = this.getCamembert(range);
+                chartParserFunction = '#pie_chart';
                 break;
 
             case "Diagramme ombrothermique":
@@ -850,6 +850,9 @@ class chartsBuilder {
         else if (chartName == "Stratégie commerciale") {
             this.createStrategieCommerciale();
         }
+        else if (chartName == "Camembert") {
+            this.createStrategieCommerciale();
+        }
         else if (chartName == "Diagramme ombrothermique") {
             this.createClimateGraph();
         }        
@@ -1269,11 +1272,11 @@ class chartsBuilder {
         return args;
     }
 
-    // {{EChart Stratégie commerciale MSV
+    // {{#pie_chart
     createStrategieCommerciale() {
 
         let sheet = SpreadsheetApp.getActiveSheet();
-        const insertRow = this.createChartHeader("Stratégie commerciale", "Stratégie commerciale", "Droite", 3);
+        const insertRow = this.createChartHeader("Camembert", "Stratégie commerciale", "Droite", 3);
 
         const totalStartRow = insertRow + 1;
         const totalEndRow = insertRow + 9;
@@ -1301,7 +1304,7 @@ class chartsBuilder {
             .setNumberFormat("0 \%");
 
         this.createChartFooter(
-            "Vous ne pouvez pas ajouter des lignes, mais vous pouvez supprimer celles qui ne concernent pas la ferme. "
+            "Vous pouvez ajouter des lignes ou en supprimer au besoin. "
             + " N'oubliez pas de changer le nom de la ferme (entête de colonne).", 3);
     }
 
@@ -1363,6 +1366,47 @@ class chartsBuilder {
         }
 
         return args;
+    }
+
+    getCamembert(range) {
+        const values = range.getValues();
+        const formats = range.getNumberFormats(); // renvoie une string, ex : "0.00%" ou "0%"
+
+        let args = new Map();
+
+        const footerRow = this.getChartRowIndex("Fin du graphique", values);
+        let columnsFound = false;
+
+        for (let rowIndex = 1; rowIndex < footerRow; rowIndex++) {
+            let [nomAxe, value] = values[rowIndex];
+
+            if (!columnsFound &&
+                nomAxe.trim().length == 0 &&
+                value.trim().length > 0) {
+                args.set('Nom de la ferme', value);
+                columnsFound = true;
+                continue;
+            }
+
+            if (!columnsFound)
+                continue;
+
+            if (nomAxe.trim().length == 0 &&
+                value.trim().length == 0)
+                break;
+
+            const format = formats[rowIndex][1];
+
+            // vérifier si le format contient le symbole %
+            if (format.indexOf("%") !== -1)
+                args.set(nomAxe, Number(value) * 100);
+            else 
+                args.set(nomAxe, Number(value));
+        }
+
+        let parserFunction = "{{#pie_chart:\n   " + Array.from(args).map(([key, value]) => `${key}=${value}`).join("\n | ") + '}}';
+
+        return parserFunction;
     }
 
     /**

@@ -7,8 +7,8 @@ class YoutubeModel {
         this.columns = [
             "ID", "URL", "ThumbnailURL", "Vignette", "Titre", "Description", "Producteur", "Date de mise en ligne",
             "Durée", "Sous-titres", "Vues", "Commentaires", "Langage",
-            "Titre corrigé", "Description courte", "Production", "Intervenants", "Mots clés", "ok pour wiki",
-            "thumbnail", "wiki", "Date de création de la page"
+            "Titre corrigé", "Description courte", "Production", "Intervenants", "Mots clés", "Projets", "ok pour wiki",
+            "thumbnail", "wiki", "Date de création de la page", "IDs Youtube"
         ];
 
         this.tabs = ["Vidéos d'une chaîne", "Vidéos d'une playlist", "Intervenants"];
@@ -91,29 +91,37 @@ class YoutubeModel {
 
         let pagesWithVideos = apiTools.getSemanticValuesWithForSemanticQuery(
             "[[A une URL de vidéo::+]]",
-            ['A une URL de vidéo']);
+            ['A une URL de vidéo', 'A un intervenant', 'A un mot-clé', 'A comme agriculteur', 'Est dans le projet']);
 
         // Build a map with id --> page
-        let wikiPages = new Map(pagesWithVideos.map(page => {
+        let wikiPages = new Map();
+        
+        pagesWithVideos.forEach(page => {
             let pageTitle = page[0];
-            let url = String(page[1]);
-            let id = '';
+            let urls = String(page[1]).split(',');
+            let intervenants = String(page[2]);
+            if (intervenants.length == 0)
+                intervenants = String(page[4]);
+            let motsCles = String(page[3]);
+            let projets = String(page[5]);
 
-            var match = url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
-            var match2 = url.match(/^http:\/\/([^#\&\?]*).*/);
+            urls = urls.map(url => {
+                var match = url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+                var match2 = url.match(/^http:\/\/([^#\&\?]*).*/);
 
-            if (match && match[2].length == 11) {
-                id = match[2];
-            }
-            else if (match2 && match2[1].length == 11) {
-                id = match2[1];
-            }
-            else {
-                Logger.log("Unrocognized URL : " + url);
-            }
+                if (match && match[2].length == 11) {
+                    return match[2];
+                }
+                else if (match2 && match2[1].length == 11) {
+                    return match2[1];
+                }
+                return null;
+            }).filter(id => id != null);
 
-            return [id, pageTitle];
-        }));
+            urls.forEach(id => {
+                wikiPages.set(id, [pageTitle, intervenants, motsCles, projets, new Date(), urls.join(', ')]);
+            });
+        });
 
         // Check all the videos were the page name is empty and fill it if the map exists
         let sheet = SpreadsheetApp.getActiveSheet();
@@ -124,7 +132,7 @@ class YoutubeModel {
 
         let idFound = false;
 
-        const wikiCol = this.getColNumber("ok pour wiki");
+        const wikiCol = this.getColNumber("Intervenants");
 
         data.getValues().forEach((row, rowIndex) => {
             if (!idFound && row[0] == this.columns[0])
@@ -144,14 +152,28 @@ class YoutubeModel {
             if (video.wiki.length > 0)
                 return;
 
-            let pageTitle = wikiPages.get(video.videoID);
+            let pageInfo = wikiPages.get(video.videoID);
 
-            Logger.log(video.videoID + " " + pageTitle);
-
-            if (pageTitle != undefined)
+            if (pageInfo != undefined)
             {
+                let pageTitle = pageInfo[0] ?? '';
+                let intervenants = pageInfo[1] ?? '';
+                // Add a space after the commas, and remove the user/utilisateur prefix if any
+                intervenants = intervenants.split(',').map(s => s.replace(/^Utilisateur:/i, '').replace(/^User:/i, '').trim()).join(', ');
+
+                let motsCles = pageInfo[2] ?? '';
+                // Add a space after the commas, and remove the structure/category/categorie prefix if any
+                motsCles = motsCles.split(',').map(s => s.replace(/^Structure:/i, '').replace(/^Category:/i, '').replace(/^Categorie:/i, '').trim()).join(', ');
+
+                let projets = pageInfo[3] ?? '';
+                projets = projets.split(',').map(s => s.trim()).join(', ');
+
+                let modificationDate = pageInfo[4] ?? '';
+                let urls = pageInfo[5] ?? '';
+                console.log(modificationDate);
+
                 let cellcontent = getHyperlinkedTitle(getTriplePerformanceURL(), pageTitle);
-                sheet.getRange(rowIndex + startRow, wikiCol, 1, 3).setValues([['o', '', cellcontent]]);
+                sheet.getRange(rowIndex + startRow, wikiCol, 1, 8).setValues([[intervenants, motsCles, projets, 'o', '', cellcontent, modificationDate, urls]]);
             }
         });
 
@@ -449,6 +471,7 @@ class YoutubeModel {
             params.set('Durée',                 "Durée = " + video.duration + " minutes");
             params.set('Production',            "Production = " + video.mainProduction);
             params.set('Vidéo',                 "Vidéo = https://www.youtube.com/watch?v=" + video.videoID);
+            params.set('Programme',             "Programme = " + video.programme);
 
             video.speakers.split(',').forEach((intervenant, i) => {
                 intervenant = intervenant.trim();
@@ -478,7 +501,7 @@ class YoutubeModel {
         let [videoID, url, thumbnailURL, Vignette, title,
             description, channelTitle, publishedAt, duration,
             hasCaptions, viewCount, commentCount, language, fixedTitle, fixedDescription,
-            mainProduction, speakers, tags, okForWiki, thumbnail, wiki, ...others] = row;
+            mainProduction, speakers, tags, programme, okForWiki, thumbnail, wiki, ...others] = row;
 
         video.videoID = videoID;
         video.url = url;
@@ -501,6 +524,7 @@ class YoutubeModel {
         video.mainProduction = mainProduction;
         video.speakers = speakers;
         video.tags = tags;
+        video.programme = programme;
         video.okForWiki = okForWiki;
         video.thumbnail = thumbnail;
         video.wiki = wiki;
