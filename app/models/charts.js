@@ -13,8 +13,41 @@ class chartsBuilder {
             { type: 'Barres horizontales', name: "Capacité d'autoproduction", image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/autonomie.png' },
             { type: 'Camembert', name: 'Camembert', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/commercialisation.png' },
 
-            { type: 'Histogramme', name: 'Diagramme ombrothermique', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/ombrothermique.png' }
+            { type: 'Histogramme', name: 'Diagramme ombrothermique', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/ombrothermique.png' },
+
+            { type: 'Tableau', name: 'Tableau', image: 'https://wiki.tripleperformance.fr/skins/skin-neayi/add-on/tableau.png' }
         ];
+        
+        this.savedRange = null;
+    }
+
+    /**
+     * Sauvegarde la plage de cellules actuellement sélectionnée
+     */
+    saveSelectedRange() {
+        try {
+            this.savedRange = SpreadsheetApp.getActiveRange();
+            if (this.savedRange) {
+                Logger.log(`Plage sauvegardée: ${this.savedRange.getA1Notation()}`);
+            }
+        } catch (e) {
+            Logger.log(`Erreur lors de la sauvegarde de la sélection: ${e.message}`);
+            this.savedRange = null;
+        }
+    }
+
+    /**
+     * Restaure la plage de cellules précédemment sauvegardée
+     */
+    restoreSelectedRange() {
+        try {
+            if (this.savedRange) {
+                this.savedRange.activate();
+                Logger.log(`Plage restaurée: ${this.savedRange.getA1Notation()}`);
+            }
+        } catch (e) {
+            Logger.log(`Erreur lors de la restauration de la sélection: ${e.message}`);
+        }
     }
 
     /**
@@ -820,8 +853,13 @@ class chartsBuilder {
         if (!this.charts.find((element) => element.name == chartName))
             return false;
 
+        // Save the selected cells before going further, in order to be able to restore them later
+        this.saveSelectedRange();
+
         let farm = new FarmModel()
         farm.createFermeTab();
+
+        this.restoreSelectedRange();
 
         if (chartName == "Histogramme par année") {
             this.createBarChartPerYear();
@@ -855,6 +893,10 @@ class chartsBuilder {
         }
         else if (chartName == "Diagramme ombrothermique") {
             this.createClimateGraph();
+        }
+        else if (chartName == "Tableau") {
+            this.syncTableau();
+            return;
         }        
         else {
             alert("Ce graphique n'a pas encore été implémenté !");
@@ -1334,6 +1376,353 @@ class chartsBuilder {
 
         this.createChartFooter(
             "Ne modifiez pas les lignes et les entêtes. Vous pouvez laisser les lignes vides si vous n'avez pas les valeurs", 13);
+    }
+
+    /**
+     * Prend le tableau actuellement sélectionné dans la page, en fait un tableau au format Wikitext, puis l'intègre dans la page Wiki.
+     * NB : le tableau est toujours ajouté à la fin, il n'y a pas de synchronisation si le tableau préexiste dans la page.
+     * 
+     * Formatage conservé :
+     * - Gras / italique
+     * - Retours chariot
+     * - Liens internes / externes
+     * - Les couleurs de fond de cellules (sauf gris, voir ci-dessous)
+     * - Les couleurs de textes (sauf si fond gris, voir ci-dessous)
+     * 
+     * Les cellules fusionnées sont gérées.
+     * 
+     * Les cellules avec un fond gris sont converties en entêtes de colonnes ou de lignes (le gras est alors supprimé des textes de ces cellules).
+     * 
+     */
+    syncTableau() {
+        // Récupérer la sélection active
+        let sheet = SpreadsheetApp.getActiveSheet();
+        let range = sheet.getActiveRange();
+
+        if (!range) {
+            alert("Veuillez sélectionner un tableau à synchroniser.");
+            return;
+        }
+
+        Logger.log("Synchronisation du tableau sélectionné");
+
+        // Récupérer les données et le formatage
+        const values = range.getValues();
+        const bgColors = range.getBackgrounds();
+        const fontColors = range.getFontColorObjects();
+        const fontWeights = range.getFontWeights();
+        const fontStyles = range.getFontStyles();
+        const richTextValues = range.getRichTextValues();
+
+        const numRows = range.getNumRows();
+        const numCols = range.getNumColumns();
+
+        // Détecter les cellules fusionnées
+        const mergedRanges = range.getMergedRanges();
+        const mergeInfo = this.buildMergeInfoMap(mergedRanges, range);
+
+        if (numCols <= 1 && numRows <= 1) {
+            alert("Veuillez sélectionner un tableau contenant au moins deux lignes ou deux colonnes.");
+            return;
+        }
+
+        // Construire le tableau Wikitext
+        let wikiTable = '{| class="wikitable"\n';
+
+        for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
+            wikiTable += '|-\n';
+
+            for (let colIndex = 0; colIndex < numCols; colIndex++) {
+                // Vérifier si cette cellule doit être ignorée (fait partie d'une fusion mais n'est pas la cellule d'origine)
+                const cellKey = `${rowIndex},${colIndex}`;
+                if (mergeInfo.skipped.has(cellKey)) {
+                    continue; // Sauter cette cellule
+                }
+
+                const cellValue = values[rowIndex][colIndex];
+                const bgColor = bgColors[rowIndex][colIndex];
+                const fontColor = fontColors[rowIndex][colIndex];
+                const isHeader = this.isGrayBackground(bgColor);
+
+                // Déterminer si c'est une cellule d'entête
+                const cellType = isHeader ? '!' : '|';
+
+                // Construire les attributs (fusion + style)
+                let cellAttributes = '';
+                
+                // Vérifier si cette cellule est fusionnée
+                if (mergeInfo.merged.has(cellKey)) {
+                    const mergeData = mergeInfo.merged.get(cellKey);
+                    if (mergeData.colspan > 1) {
+                        cellAttributes += ` colspan="${mergeData.colspan}"`;
+                    }
+                    if (mergeData.rowspan > 1) {
+                        cellAttributes += ` rowspan="${mergeData.rowspan}"`;
+                    }
+                }
+
+                // Ajouter les styles de couleur (sauf si c'est un entête)
+                if (!isHeader) {
+                    const styleAttr = this.buildCellStyleAttribute(bgColor, fontColor);
+                    if (styleAttr) {
+                        cellAttributes += ` style="${styleAttr}"`;
+                    }
+                }
+
+                // Obtenir le texte formaté de la cellule
+                let cellText = this.formatCellText(
+                    cellValue,
+                    richTextValues[rowIndex][colIndex],
+                    fontWeights[rowIndex][colIndex],
+                    fontStyles[rowIndex][colIndex],
+                    isHeader
+                );
+
+                wikiTable += cellType + cellAttributes + ' | ' + cellText + '\n';
+            }
+        }
+
+        wikiTable += '|}';
+
+        Logger.log(wikiTable);
+
+        let farm = new FarmModel();
+        let wikiTitle = farm.getFarmPageTitle();
+
+        if (!wikiTitle) {
+            alert("Impossible de trouver le titre de la page wiki de la ferme.");
+            return;
+        }
+
+
+        // Mettre à jour la page wiki
+        let apiTools = getApiTools();
+        if (!apiTools) {
+            alert("Impossible de se connecter à l'API.");
+            return;
+        }
+
+        let pageContent = apiTools.getPageContent(wikiTitle);
+        if (pageContent === false) {
+            alert("La page \"" + wikiTitle + "\" n'existe pas encore dans le wiki. Veuillez la créer avant d'y insérer un tableau !");
+            return;
+        }
+
+        // Ajouter le tableau à la fin de la page
+        pageContent += "\n\n" + wikiTable;
+
+        apiTools.updateWikiPage(wikiTitle, pageContent, "Ajout d'un tableau depuis Google Spreadsheet™");
+
+        alert("Le tableau a été ajouté à la fin de la page wiki.");
+    }
+
+    /**
+     * Construit l'attribut style pour une cellule avec couleurs de fond et de texte
+     * @param {string} bgColor - Couleur de fond au format #rrggbb
+     * @param {Color} fontColor - Objet Color de Google Apps Script
+     * @returns {string} - Attribut style CSS ou chaîne vide
+     */
+    buildCellStyleAttribute(bgColor, fontColor) {
+        let styles = [];
+
+        // Ajouter la couleur de fond (si ce n'est pas blanc)
+        if (bgColor && bgColor !== '#ffffff') {
+            styles.push(`background-color: ${bgColor}`);
+        }
+
+        // Ajouter la couleur de texte (si ce n'est pas noir par défaut)
+        if (fontColor) {
+            let fontColorHex = fontColor.asRgbColor().asHexString();
+            
+            // Gérer le format #aarrggbb (avec alpha) en le convertissant en #rrggbb
+            if (fontColorHex.length === 9) {
+                fontColorHex = '#' + fontColorHex.slice(3);
+            }
+            
+            // Ignorer le noir par défaut (#000000)
+            if (fontColorHex !== '#000000') {
+                styles.push(`color: ${fontColorHex}`);
+            }
+        }
+
+        return styles.join('; ');
+    }
+
+    /**
+     * Construit une map des informations de fusion de cellules
+     * @param {Range[]} mergedRanges - Les plages fusionnées
+     * @param {Range} baseRange - La plage de base sélectionnée
+     * @returns {Object} - Objet contenant les maps 'merged' et 'skipped'
+     */
+    buildMergeInfoMap(mergedRanges, baseRange) {
+        const merged = new Map(); // Cellules d'origine des fusions avec leurs dimensions
+        const skipped = new Set(); // Cellules à ignorer (partie d'une fusion mais pas l'origine)
+
+        const baseRow = baseRange.getRow();
+        const baseCol = baseRange.getColumn();
+
+        for (let mergedRange of mergedRanges) {
+            const mergeRow = mergedRange.getRow();
+            const mergeCol = mergedRange.getColumn();
+            const mergeNumRows = mergedRange.getNumRows();
+            const mergeNumCols = mergedRange.getNumColumns();
+
+            // Convertir en coordonnées relatives à la sélection
+            const relRow = mergeRow - baseRow;
+            const relCol = mergeCol - baseCol;
+
+            // Vérifier si cette fusion est dans notre sélection
+            if (relRow >= 0 && relCol >= 0 && 
+                relRow < baseRange.getNumRows() && 
+                relCol < baseRange.getNumColumns()) {
+
+                // La cellule d'origine (coin supérieur gauche)
+                const originKey = `${relRow},${relCol}`;
+                merged.set(originKey, {
+                    rowspan: mergeNumRows,
+                    colspan: mergeNumCols
+                });
+
+                // Marquer toutes les autres cellules de la fusion comme devant être sautées
+                for (let r = 0; r < mergeNumRows; r++) {
+                    for (let c = 0; c < mergeNumCols; c++) {
+                        if (r === 0 && c === 0) continue; // Sauter la cellule d'origine
+                        const skipKey = `${relRow + r},${relCol + c}`;
+                        skipped.add(skipKey);
+                    }
+                }
+            }
+        }
+
+        return { merged, skipped };
+    }
+
+    /**
+     * Vérifie si une couleur de fond correspond à du gris (entête)
+     */
+    isGrayBackground(color) {
+        if (!color || color === '#ffffff') {
+            return false;
+        }
+
+        // Extraire les composantes RGB
+        const hex = color.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        // Vérifier si c'est une nuance de gris (R ≈ G ≈ B)
+        const tolerance = 15;
+        const isGray = Math.abs(r - g) <= tolerance && 
+                       Math.abs(g - b) <= tolerance && 
+                       Math.abs(r - b) <= tolerance;
+
+        // Vérifier si c'est suffisamment clair pour être considéré comme gris clair
+        const brightness = (r + g + b) / 3;
+        return isGray && brightness > 180;
+    }
+
+    /**
+     * Formate le texte d'une cellule en Wikitext
+     */
+    formatCellText(value, richTextValue, fontWeight, fontStyle, isHeader) {
+        if (!value || value === '') {
+            return '';
+        }
+
+        let text = String(value);
+
+        // Si la cellule a du rich text, traiter le formatage
+        if (richTextValue && richTextValue.getText() === text) {
+            text = this.convertRichTextToWikitext(richTextValue, isHeader);
+        } else {
+            // Appliquer le formatage simple (gras/italique) si pas d'entête
+            if (!isHeader) {
+                if (fontWeight === 'bold' && fontStyle === 'italic') {
+                    text = "'''''" + text + "'''''";
+                } else if (fontWeight === 'bold') {
+                    text = "'''" + text + "'''";
+                } else if (fontStyle === 'italic') {
+                    text = "''" + text + "''";
+                }
+            }
+        }
+
+        // Préserver les retours chariot
+        text = text.replace(/\n/g, '<br />');
+
+        return text;
+    }
+
+    /**
+     * Convertit un RichTextValue en Wikitext avec formatage
+     */
+    convertRichTextToWikitext(richTextValue, isHeader) {
+        const text = richTextValue.getText();
+        const runs = richTextValue.getRuns();
+
+        if (runs.length === 0) {
+            return text;
+        }
+
+        let result = '';
+        let lastIndex = 0;
+
+        for (let run of runs) {
+            const startIndex = run.getStartIndex();
+            const endIndex = run.getEndIndex();
+            const runText = text.substring(startIndex, endIndex);
+
+            // Ajouter le texte précédent non formaté si nécessaire
+            if (startIndex > lastIndex) {
+                result += text.substring(lastIndex, startIndex);
+            }
+
+            const textStyle = run.getTextStyle();
+            let linkUrl = null;
+            
+            // Vérifier que textStyle existe et a la méthode getLinkUrl
+            if (textStyle && typeof textStyle.getLinkUrl === 'function') {
+                linkUrl = textStyle.getLinkUrl();
+            }
+            
+            let formattedText = runText;
+
+            // Gérer les liens
+            if (linkUrl) {
+                // Déterminer si c'est un lien interne ou externe
+                if (linkUrl.includes('wiki.tripleperformance.fr')) {
+                    // Lien interne : extraire le titre de la page
+                    const pageTitle = linkUrl.split('/wiki/')[1] || linkUrl;
+                    formattedText = '[[' + decodeURIComponent(pageTitle) + '|' + runText + ']]';
+                } else {
+                    // Lien externe
+                    formattedText = '[' + linkUrl + ' ' + runText + ']';
+                }
+            } else if (!isHeader && textStyle) {
+                // Appliquer gras/italique seulement si pas d'entête
+                const isBold = typeof textStyle.isBold === 'function' ? textStyle.isBold() : false;
+                const isItalic = typeof textStyle.isItalic === 'function' ? textStyle.isItalic() : false;
+
+                if (isBold && isItalic) {
+                    formattedText = "'''''" + runText + "'''''";
+                } else if (isBold) {
+                    formattedText = "'''" + runText + "'''";
+                } else if (isItalic) {
+                    formattedText = "''" + runText + "''";
+                }
+            }
+
+            result += formattedText;
+            lastIndex = endIndex;
+        }
+
+        // Ajouter le texte restant
+        if (lastIndex < text.length) {
+            result += text.substring(lastIndex);
+        }
+
+        return result;
     }
 
     getStrategieCommerciale(range) {
