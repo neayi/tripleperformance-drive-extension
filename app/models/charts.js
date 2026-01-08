@@ -1427,7 +1427,7 @@ class chartsBuilder {
         }
 
         // Construire le tableau Wikitext
-        let wikiTable = '{| class="wikitable"\n';
+        let wikiTable = '{| class="wikitable small table-responsive"\n';
 
         for (let rowIndex = 0; rowIndex < numRows; rowIndex++) {
             wikiTable += '|-\n';
