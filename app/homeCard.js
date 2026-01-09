@@ -4,6 +4,18 @@ function card_onHomepage(event) {
 
     try {
         ui.createAddonMenu()
+        .addSubMenu(ui.createMenu('Formations')
+            .addItem('Synchroniser les formations', 'syncTrainingCourses')
+            .addItem('Synchroniser les vignettes', 'pushTrainingCoursesThumbnailsToTriplePerformance')
+        )
+        .addSubMenu(ui.createMenu('YouTube')
+            .addItem("Charger les nouvelles vidéos de la chaîne", 'fetchVideosFromYouTubeChannel')
+            .addItem("Charger le détail des vidéos", 'fetchVideosDetailsFromYouTubeChannel')
+            .addItem("Vérifier les pages Triple Performance", 'checkVideosFromTriplePerformance')
+            .addItem("Pousser les vignettes vers Triple Performance", 'pushThumbnailsToTriplePerformance')
+            .addItem("Pousser les vidéos vers Triple Performance", 'pushVideosToTriplePerformance')
+            .addItem("Récupérer la langue des vidéos", 'fetchVideosLanguage')
+        )
         .addSubMenu(ui.createMenu('Traitements en lots')
             .addItem("Créer des pages avec une template", 'createPagesWithTemplate')
             .addItem("Ajouter des mots-clés aux pages", 'addKeywordsToPages')
@@ -85,6 +97,67 @@ function getGeminiModels() {
     return model.getModels();
 }
 
+
+function syncTrainingCourses() {
+    Logger.log("Synchro de la liste des formations")
+    let trainingModel = new TrainingCourseModel();
+    trainingModel.syncTrainings();
+}
+
+function pushTrainingCoursesThumbnailsToTriplePerformance() {
+    Logger.log("pushTrainingCoursesThumbnailsToTriplePerformance")
+    let trainingModel = new TrainingCourseModel();
+    trainingModel.syncThumbnails();
+}
+
+function updateTrainingCoursesSpeakersList() {
+    Logger.log("updateTrainingCoursesSpeakersList")
+    let trainingModel = new TrainingCourseModel();
+    trainingModel.buildSpeakersList();
+}
+
+function fetchVideosFromYouTubeChannel() {
+    Logger.log("fetchVideosFromYouTubeChannel")
+    let youTube = new YoutubeModel();
+    youTube.fetchVideosFromYouTube();
+}
+
+function fetchVideosDetailsFromYouTubeChannel() {
+    Logger.log("fetchVideosDetailsFromYouTubeChannel")
+    let youTube = new YoutubeModel();
+    youTube.fetchDetailsFromYoutube(800);
+}
+
+function checkVideosFromTriplePerformance() {
+    Logger.log("checkVideosFromTriplePerformance")
+    let youTube = new YoutubeModel();
+    youTube.checkVideosFromTriplePerformance();
+}
+
+function pushVideosToTriplePerformance() {
+    Logger.log("pushVideosToTriplePerformance")
+    let youTube = new YoutubeModel();
+    youTube.pushYoutubePagesToWiki();
+}
+
+function pushThumbnailsToTriplePerformance() {
+    Logger.log("pushThumbnailsToTriplePerformance")
+    let youTube = new YoutubeModel();
+    youTube.pushThumbnailsToWiki();
+}
+
+function updateYoutubeSpeakersList() {
+    Logger.log("updateYoutubeSpeakersList")
+    let youTube = new YoutubeModel();
+    youTube.buildSpeakersList();
+}
+
+function fetchVideosLanguage() {
+    Logger.log("fetchVideosLanguage")
+    let youTube = new YoutubeModel();
+    youTube.fetchVideosLanguage();
+}
+
 function pushSpeakersToTriplePerformance() {
     Logger.log("pushSpeakersToTriplePerformance")
     let speakers = new speakersModel();
@@ -119,6 +192,12 @@ function testConnection() {
 
 function goToSpecialTabs(e) {
     switch (e.parameters.tab) {
+        case "Gestion de formations":
+            return card_buildTrainingCourseCard();
+
+        case "Import YouTube":
+            return card_buildYoutubeCard();
+
         case "Traitements en lots":
             return card_buildBatchProcessingCard();
 
@@ -138,6 +217,14 @@ function createChart(e) {
 }
 
 function createFarmPortraitCreateTabsCard() {
+
+}
+
+function createTrainingCoursesCreateTabsCard() {
+
+}
+
+function createYoutubeCreateTabsCard() {
 
 }
 
@@ -174,6 +261,7 @@ function card_buildHomepageCard() {
             .setImage(CardService.newImageComponent()
                 .setImageUrl('https://neayi.com/Triple%20Performance%20by%20Neayi.png')
                 .setCropStyle(CardService.newImageCropStyle()
+                    .setAspectRatio(4)
                     .setImageCropType(CardService.ImageCropType.RECTANGLE_CUSTOM)))));
 
     // Add the grid with all the available charts
@@ -204,6 +292,8 @@ function card_buildHomepageCard() {
     cardSectionOthePages.addWidget(CardService.newTextParagraph().setText("<b>Gérer d'autres types de données</b>"));
     let buttonSet = CardService.newButtonSet();
     [
+     'Gestion de formations',
+     'Import YouTube',
      'Traitements en lots'
     ].forEach((tab) => {
         buttonSet.addButton(CardService.newTextButton()

@@ -24,6 +24,7 @@ Then copy the id of the new version to the [Apps Market API dashboard](https://c
 
 ## Documentation
 - Spreadsheet: https://developers.google.com/apps-script/reference/spreadsheet/spreadsheet-app
+- YouTube API: https://developers.google.com/youtube/v3/docs
 - Clasp: https://developers.google.com/apps-script/guides/clasp
 - Google App Script extension for VSCode: https://marketplace.visualstudio.com/items?itemName=labnol.google-apps-script
 - The Google card builder (which is lame): https://addons.gsuite.google.com/uikit/builder (the [old one](https://gw-card-builder.web.app/) was better)

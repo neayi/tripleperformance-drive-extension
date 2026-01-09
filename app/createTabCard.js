@@ -4,8 +4,16 @@ function onCreateTabSubmit(e)
     const tabsNames = e.formInputs.TabsToCreate;
 
     tabsNames.forEach((element) => {
+        let ytModel = new YoutubeModel();
+        if (ytModel.createTab(element))
+            return;
+
         let farm = new FarmModel();
         if (farm.createTab(element))
+            return;
+        
+        let tcModel = new TrainingCourseModel();
+        if (tcModel.createTab(element))
             return;
 
         let chartsModel = new chartsBuilder();
