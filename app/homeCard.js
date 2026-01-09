@@ -174,7 +174,6 @@ function card_buildHomepageCard() {
             .setImage(CardService.newImageComponent()
                 .setImageUrl('https://neayi.com/Triple%20Performance%20by%20Neayi.png')
                 .setCropStyle(CardService.newImageCropStyle()
-                    .setAspectRatio(4)
                     .setImageCropType(CardService.ImageCropType.RECTANGLE_CUSTOM)))));
 
     // Add the grid with all the available charts
