@@ -1,36 +1,72 @@
 {
-  "addOns": {
-    "common": {
-      "name": "Triple Performance",
-      "logoUrl": "https://wiki.tripleperformance.fr/skins/skin-neayi/favicon/apple-touch-icon.png",
-      "homepageTrigger": {
-        "enabled": true,
-        "runFunction": "card_onHomepage"
-      },
-      "layoutProperties": {
-        "primaryColor": "#15a072",
-        "secondaryColor": "#15a072"
-      },
-      "universalActions": [
-        {
-          "label": "Page d'accueil",
-          "openLink": "https://wiki.tripleperformance.fr"
-        },
-        {
-          "label": "Mentions légales",
-          "openLink": "https://wiki.tripleperformance.fr"
-        }
-      ]
-    },
-    "sheets": {}
-  },
+  "timeZone": "Europe/Paris",
+  "runtimeVersion": "V8",
+  "exceptionLogging": "STACKDRIVER",
+
   "oauthScopes": [
     "https://www.googleapis.com/auth/spreadsheets.currentonly",
     "https://www.googleapis.com/auth/script.container.ui",
     "https://www.googleapis.com/auth/script.external_request",
-    "https://www.googleapis.com/auth/youtube.readonly",
     "https://www.googleapis.com/auth/script.scriptapp"    
   ],
+
+  "addOns": {
+    "common": {
+      "name": "Triple Performance",
+      "logoUrl": "https://wiki.tripleperformance.fr/skins/skin-neayi/favicon/apple-touch-icon.png",
+      "layoutProperties": {
+        "primaryColor": "#15a072",
+        "secondaryColor": "#15a072"
+      },
+
+      "homepageTrigger": {
+        "enabled": true,
+        "runFunction": "card_onHomepage"
+      },
+
+      "universalActions": [
+        {
+          "label": "Page d'accueil",
+          "openLink": "https://wiki.tripleperformance.fr"
+        }
+      ],
+
+      "openLinkUrlPrefixes": [
+        "https://wiki.tripleperformance.fr/",
+        "https://fr.tripleperformance.ag/",
+        "https://en.tripleperformance.ag/",
+        "https://de.tripleperformance.ag/",
+        "https://es.tripleperformance.ag/",
+        "https://fi.tripleperformance.ag/",
+        "https://el.tripleperformance.ag/",
+        "https://hu.tripleperformance.ag/",
+        "https://it.tripleperformance.ag/",
+        "https://nl.tripleperformance.ag/",
+        "https://pl.tripleperformance.ag/",
+        "https://pt.tripleperformance.ag/",
+
+        "https://wiki.preprod.tripleperformance.fr/", 
+        "https://fr.preprod.tripleperformance.ag/",
+        "https://en.preprod.tripleperformance.ag/",
+        "https://de.preprod.tripleperformance.ag/",
+        "https://es.preprod.tripleperformance.ag/",
+        "https://fi.preprod.tripleperformance.ag/",
+        "https://el.preprod.tripleperformance.ag/",
+        "https://hu.preprod.tripleperformance.ag/",
+        "https://it.preprod.tripleperformance.ag/",
+        "https://nl.preprod.tripleperformance.ag/",
+        "https://pl.preprod.tripleperformance.ag/",
+        "https://pt.preprod.tripleperformance.ag/"
+      ]
+    },
+    "sheets": {
+      "homepageTrigger": {
+        "enabled": true,
+        "runFunction": "card_onHomepage"
+      }
+    }
+  },
+
   "urlFetchWhitelist": [
     "https://wiki.tripleperformance.fr/",
     "https://fr.tripleperformance.ag/",
@@ -56,20 +92,6 @@
     "https://it.preprod.tripleperformance.ag/",
     "https://nl.preprod.tripleperformance.ag/",
     "https://pl.preprod.tripleperformance.ag/",
-    "https://pt.preprod.tripleperformance.ag/",
-
-    "https://generativelanguage.googleapis.com/"
-  ],
-  "timeZone": "Europe/Paris",
-  "dependencies": {
-    "enabledAdvancedServices": [
-      {
-        "userSymbol": "YouTube",
-        "version": "v3",
-        "serviceId": "youtube"
-      }
-    ]
-  },
-  "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8"
+    "https://pt.preprod.tripleperformance.ag/"
+  ]  
 }

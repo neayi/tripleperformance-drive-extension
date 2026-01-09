@@ -626,7 +626,6 @@ class BatchProcessingytModel {
         // Start by getting a huge table of all the pages with the type of page and the type of production
         let apiTools = getApiTools('fr');
 
-        // if the page is not set, try to find the page using the youtube URL
         let pages = apiTools.getSemanticValuesWithForSemanticQuery("[[A un type de page::!Personne]]", ['A un type de page', 'A un type de production', 'Number of page views']);
         let viewByProductions = {};
         let viewByTypes = {};

@@ -55,8 +55,8 @@ function card_buildBatchProcessingCard() {
     var builder = CardService.newCardBuilder();
 
     // Add the parameters section
-    let cardSectionYoutube = CardService.newCardSection();
-    cardSectionYoutube.addWidget(CardService.newTextParagraph().setText('<b>Faire des traitements en lots</b>'));
+    let cardSectionBatchProcessing = CardService.newCardSection();
+    cardSectionBatchProcessing.addWidget(CardService.newTextParagraph().setText('<b>Faire des traitements en lots</b>'));
 
     let actions = [
         {title: "Ajouter les onglets de traitement en lots", subtitle: "Ajouter les onglets", function: 'addBatchProcessingTabs'},
@@ -71,7 +71,7 @@ function card_buildBatchProcessingCard() {
     actions.forEach((action) => {
         let cardaction = CardService.newAction().setFunctionName(action.function);
 
-        cardSectionYoutube.addWidget(CardService.newDecoratedText()
+        cardSectionBatchProcessing.addWidget(CardService.newDecoratedText()
             .setText(action.subtitle)
             .setBottomLabel(action.title)
             .setOnClickAction(cardaction)
@@ -80,7 +80,7 @@ function card_buildBatchProcessingCard() {
                 .setOnClickAction(cardaction)));
     });
 
-    builder.addSection(cardSectionYoutube);
+    builder.addSection(cardSectionBatchProcessing);
 
     return builder.build();
 }
