@@ -86,48 +86,48 @@ class tp_gemini {
     // Checks and sets a default model if not already set.
     const storedModelName = this.getSelectedModel();
 
-    // try {
-    //   // Retrieves the API key and throws an error if it is not set.
-    //   const apiKey = this.getGeminiApiKey();
+    try {
+      // Retrieves the API key and throws an error if it is not set.
+      const apiKey = this.getGeminiApiKey();
      
 
-    //   // Constructs the request URL, setting a default if no specific URL is stored.
-    //   const baseModelUrl = `https://generativelanguage.googleapis.com/v1beta/models/${storedModelName}:generateContent`;
-    //   const url = `${baseModelUrl}?key=${apiKey}`;
+      // Constructs the request URL, setting a default if no specific URL is stored.
+      const baseModelUrl = `https://generativelanguage.googleapis.com/v1beta/models/${storedModelName}:generateContent`;
+      const url = `${baseModelUrl}?key=${apiKey}`;
 
-    //   console.log("Calling " + baseModelUrl);
+      console.log("Calling " + baseModelUrl);
 
-    //   // Sets the request options, including payload and HTTP headers.
-    //   const options = {
-    //     method: "post",
-    //     contentType: 'application/json',
-    //     payload: JSON.stringify({
-    //       contents: [{role: "user", parts: [{text: inputText}]}],
-    //       safetySettings: [
-    //         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-    //         { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-    //         { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-    //         { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-    //       ]
-    //     }),
-    //     muteHttpExceptions: true
-    //   };
+      // Sets the request options, including payload and HTTP headers.
+      const options = {
+        method: "post",
+        contentType: 'application/json',
+        payload: JSON.stringify({
+          contents: [{role: "user", parts: [{text: inputText}]}],
+          safetySettings: [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+          ]
+        }),
+        muteHttpExceptions: true
+      };
 
-    //   // Sends the API request and handles the response.
-    //   const response = UrlFetchApp.fetch(url, options);
-    //   if (response.getResponseCode() !== 200) {
-    //     throw new Error(`API request failed with status ${response.getResponseCode()}`);
-    //   }
+      // Sends the API request and handles the response.
+      const response = UrlFetchApp.fetch(url, options);
+      if (response.getResponseCode() !== 200) {
+        throw new Error(`API request failed with status ${response.getResponseCode()}`);
+      }
 
-    //   console.log("ok");
+      console.log("ok");
 
-    //   // Parses the response and returns the generated content.
-    //   const responseData = JSON.parse(response.getContentText());
-    //   return responseData.candidates[0].content.parts[0].text.trim();
-    // } catch (error) {
-    //   console.log(error.message);
-    //   throw new Error("Failed to reach Gemini API: " + error.message);
-    // }
+      // Parses the response and returns the generated content.
+      const responseData = JSON.parse(response.getContentText());
+      return responseData.candidates[0].content.parts[0].text.trim();
+    } catch (error) {
+      console.log(error.message);
+      throw new Error("Failed to reach Gemini API: " + error.message);
+    }
   }
 
   /**
