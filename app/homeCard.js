@@ -205,7 +205,6 @@ function card_buildHomepageCard() {
     cardSectionOthePages.addWidget(CardService.newTextParagraph().setText("<b>Gérer d'autres types de données</b>"));
     let buttonSet = CardService.newButtonSet();
     [
-     'Gestion de formations',
      'Traitements en lots'
     ].forEach((tab) => {
         buttonSet.addButton(CardService.newTextButton()
