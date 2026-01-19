@@ -1,10 +1,12 @@
 [![clasp](https://img.shields.io/badge/built%20with-clasp-4285f4.svg)](https://github.com/google/clasp)
 
 This is the Triple Performance Add-On for Google Workspace. It allows to build Triple Performance farm portraits faster.
+
 Marketplace : https://workspace.google.com/marketplace/app/triple_performance/427792115089  
 
 ### Documentation on usage
 Installation: https://wiki.tripleperformance.fr/wiki/Aide:Utiliser_l%27add-on_Triple_Performance_pour_Google_Spreadsheet
+
 Usage: https://wiki.tripleperformance.fr/wiki/Aide:Ins%C3%A9rer_des_graphiques_dans_une_page
  
 ## Setup Clasp
