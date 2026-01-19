@@ -1725,38 +1725,6 @@ class chartsBuilder {
         return result;
     }
 
-    getStrategieCommerciale(range) {
-        const values = range.getValues();
-
-        let args = new Map();
-
-        const footerRow = this.getChartRowIndex("Fin du graphique", values);
-        let columnsFound = false;
-
-        for (let rowIndex = 1; rowIndex < footerRow; rowIndex++) {
-            let [nomAxe, value] = values[rowIndex];
-
-            if (!columnsFound &&
-                nomAxe.trim().length == 0 &&
-                value.trim().length > 0) {
-                args.set('Nom de la ferme', value);
-                columnsFound = true;
-                continue;
-            }
-
-            if (!columnsFound)
-                continue;
-
-            if (nomAxe.trim().length == 0 &&
-                value.trim().length == 0)
-                break;
-
-            args.set(nomAxe, Number(value) * 100);
-        }
-
-        return args;
-    }
-
     getCamembert(range) {
         const values = range.getValues();
         const formats = range.getNumberFormats(); // renvoie une string, ex : "0.00%" ou "0%"
@@ -1772,7 +1740,7 @@ class chartsBuilder {
             if (!columnsFound &&
                 nomAxe.trim().length == 0 &&
                 value.trim().length > 0) {
-                args.set('Nom de la ferme', value);
+                args.set('Title', value);
                 columnsFound = true;
                 continue;
             }
