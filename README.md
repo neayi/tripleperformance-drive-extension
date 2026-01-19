@@ -34,6 +34,13 @@ clasp deploy
 Sometimes publishing fails with no apparent reason. Here are a few things we've learned over time:
 * **Look at the console log**: the publish button calls an API that pushes and returns JSON that might explain things. Use LLM to analyse those. Once the issue was that the icons and screenshots that were uploaded in the [Marketplace tab](https://console.cloud.google.com/apis/api/appsmarket-component.googleapis.com/googleapps_sdk_publish?project=triple-performance-add-on) were no longer valid, so we had to reupload them in order to be able to publish.
 * Make sure the OAuth scopes are consistent between your .clasp.json file and the [Apps Market API dashboard](https://console.cloud.google.com/apis/api/appsmarket-component.googleapis.com/googleapps_sdk?project=triple-performance-add-on).
+^
+
+## Financing
+This project has been made possible thanks to the financing of ADEME, through the project "[Appel à Communs Sobriété et Résilience des Territoires](https://resilience-territoire.ademe.fr/)"
+
+![ADEME Résilience Territoire](https://wiki.resilience-territoire.ademe.fr/images/resilienceterritoire/thumb/5/59/Copie_de_Votre_texte_de_paragraphe_%288%29.jpg/498px-Copie_de_Votre_texte_de_paragraphe_%288%29.jpg)
+
 
 ## Documentation
 - Spreadsheet: https://developers.google.com/apps-script/reference/spreadsheet/spreadsheet-app
