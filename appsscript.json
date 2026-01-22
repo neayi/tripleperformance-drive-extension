@@ -8,7 +8,7 @@
     "https://www.googleapis.com/auth/script.container.ui",
     "https://www.googleapis.com/auth/script.external_request",
     "https://www.googleapis.com/auth/script.scriptapp",
-    "https://www.googleapis.com/auth/youtube.readonly"    
+    "https://www.googleapis.com/auth/youtube.readonly"
   ],
 
   "addOns": {
@@ -46,7 +46,7 @@
         "https://pl.tripleperformance.ag/",
         "https://pt.tripleperformance.ag/",
 
-        "https://wiki.preprod.tripleperformance.fr/", 
+        "https://wiki.preprod.tripleperformance.fr/",
         "https://fr.preprod.tripleperformance.ag/",
         "https://en.preprod.tripleperformance.ag/",
         "https://de.preprod.tripleperformance.ag/",
@@ -84,7 +84,7 @@
     "https://pl.tripleperformance.ag/",
     "https://pt.tripleperformance.ag/",
 
-    "https://wiki.preprod.tripleperformance.fr/", 
+    "https://wiki.preprod.tripleperformance.fr/",
     "https://fr.preprod.tripleperformance.ag/",
     "https://en.preprod.tripleperformance.ag/",
     "https://de.preprod.tripleperformance.ag/",
@@ -98,5 +98,15 @@
     "https://pt.preprod.tripleperformance.ag/",
 
     "https://generativelanguage.googleapis.com/"
-  ]  
+  ],
+
+  "dependencies": {
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "YouTube",
+        "version": "v3",
+        "serviceId": "youtube"
+      }
+    ]
+  }
 }
