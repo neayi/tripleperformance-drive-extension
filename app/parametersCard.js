@@ -40,6 +40,7 @@ function parametersbuildCard() {
         'https://nl.tripleperformance.ag/',
         'https://pl.tripleperformance.ag/',
         'https://pt.tripleperformance.ag/',
+        'https://ar.tripleperformance.ag/',
 
         'https://wiki.preprod.tripleperformance.fr/', 
         'https://en.preprod.tripleperformance.ag/',
